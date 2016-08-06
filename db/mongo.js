@@ -3,8 +3,8 @@
 var mongoose = require('mongoose'),
     Schema = mongoose.Schema;
 
-var mongo_user = 'colorina';
-var mongo_coll = 'lantube';
+var mongo_user = process.env.MONGO_USER || 'admin';
+var mongo_coll = process.env.MONGO_COLL || 'lantube';
 
 var MongoDB = mongoose.connect('mongodb://localhost/lantube').connection;
 
