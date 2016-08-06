@@ -1,4 +1,4 @@
-# Play youtube videos from LAN, just for fun #
+# MEAN youtube video player from LAN, just for fun #
 
 ### Installation ###
 * clone this repo and:
