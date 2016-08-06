@@ -6,25 +6,26 @@ var schemas = require('../db/mongo');
 const
 	spawn = require( 'child_process' ).spawn;
 
-var Videos = schemas.Videos;
+var 
+	Videos = schemas.Videos;
 
 /* GET home page. */
 
 // GET and render homepage
 router.get('/', function(req, res, next) {
 
-    Videos.find({}).exec(function(err, videos) {
+    Videos.find({})
+	.exec(function(err, videos) {
         if (err) {
             console.log(err);
         } else {
-			
 			res.render('index', {
 				title: 'Lantube',
+				lang: req.headers['accept-language'].slice(0, 2) || 'es',
 				videos: videos || {}
 			});
         }
     });
-
 });
 
 // GET all
@@ -33,28 +34,34 @@ router.route('/api/videos')
 // GET ALL
 .get(function(req, res, next) {
 
-    Videos
-        .find({})
-        .sort({ 'order': -1 })
-		.exec(function(err, videos) {
-
-	        if (err) {
-	            console.log(err);
-	        } else {
-				
-	            res.json(videos);
-	            res.end();
-	        }
-			
-	    });
-
+    Videos.find({})
+    .sort({ 'order': -1 })
+	.exec(function(err, videos) {
+        if (err) {
+            console.log(err);
+        } else {
+            res.json(videos);
+            res.end();
+        }
+		
+    });
 })
 
 // POST (insert)
 .post(function(req, res, next) {
 
-
-	//let yt_id = req.body.video.trim().replace(/http(s?):\/\/(w{3}?)(\.?)youtube\.com\/watch\?v=/, '');
+	var yt_id = req.body.video.trim().replace(/http(s?):\/\/(w{3}?)(\.?)youtube\.com\/watch\?v=/, '');
+	
+	console.log(yt_id);
+	
+	if ( yt_id == '' ) {
+		res.json({
+			result: 'error',
+			message: 'No video.'
+		});
+		res.end();
+	}
+	
     var yt_json = 'http://www.youtube.com/oembed?url=' + req.body.video + '&format=json';
 	
     request({
@@ -69,8 +76,8 @@ router.route('/api/videos')
                 url: req.body.video,
                 order: req.body.order
             });
+			
             video.save(function(err, result) {
-                
                 if (err) {
                     console.log(err);
                 } else {
@@ -127,7 +134,6 @@ router.route('/api/videos/:id')
 })
 
 // PLAY
-
 router.route('/api/videos/:order/play')
 
 .get(function(req, res, next) {
@@ -140,7 +146,7 @@ router.route('/api/videos/:order/play')
             console.log(err);
         } else {
 
-            if ( typeof video == 'undefined' ) {
+            if ( typeof video == 'undefined' || typeof video.url == 'undefined' ) {
                 res.json({
                     error: 'No hay banda!'
                 });

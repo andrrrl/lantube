@@ -57,7 +57,8 @@ if (app.get('env') === 'development') {
         res.render('error', {
             message: err.message,
             error: err,
-            title: 'error'
+            title: 'error',
+			lang: 'en'
         });
     });
 }
@@ -69,7 +70,8 @@ app.use(function(err, req, res, next) {
     res.render('error', {
         message: err.message,
         error: {},
-        title: 'error'
+        title: 'error',
+		lang: 'en'
     });
 });
 

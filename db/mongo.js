@@ -6,8 +6,8 @@ var mongoose = require('mongoose'),
 var mongo_user = process.env.MONGO_USER || 'admin';
 var mongo_coll = process.env.MONGO_COLL || 'lantube';
 
+mongoose.Promise = global.Promise;
 var MongoDB = mongoose.connect('mongodb://localhost/lantube').connection;
-
 
 MongoDB.on('error', function(err) {
     console.log(err.message);

@@ -57,7 +57,8 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	}
 
 	obj.add = function(video, order) {
-		
+		video = video || '';
+		order = order || 1;
 		return $http.post('/api/videos', {video: video, order: order})
 		.success(function(data) {
 			obj.videos.push(data);
@@ -80,9 +81,6 @@ app.controller('MainCtrl', [
 		$scope.play = videos.play;
 
 		$scope.add = videos.add;
-		
-		// $scope.add();
-		
 		
 	}
 ]);
