@@ -37,5 +37,5 @@ Just do:
 ```
  $ gulp 
 ```
-Local: navigate to http://localhost:3000 in any modern browser
-LAN: get your server's IP number and navigate to http://YOUR_SERVER_IP:3000 from any modern browser
+* Local: navigate to http://localhost:3000 in any modern browser
+* LAN: get your server's IP number and navigate to http://YOUR_SERVER_IP:3000 from any modern browser
