@@ -144,35 +144,38 @@ router.route('/api/videos/:order/play')
 
         if (err) {
             console.log(err);
+            res.end();
         } else {
 
-            if ( typeof video == 'undefined' || typeof video.url == 'undefined' ) {
+            if ( video == null ) {
                 res.json({
                     error: 'No hay banda!'
                 });
                 res.end();
+            } else {
+
+    			// Play video!
+    			let player = process.env.PLAYER || 'vlc';
+    			const playing = spawn( player, [ video.url ] );
+
+    			playing.stdout.on( 'data', data => {
+    				console.log( `stdout: ${data}` );
+    			});
+
+    			playing.stderr.on( 'data', data => {
+    				//console.log( `stderr: ${data}` );
+    			});
+
+    			// Close when video finished (I don't want to generates a playlist, understand?)
+    			playing.on( 'close', code => {
+    				console.log( `player finshed playing with code ${code}` );
+    				playing.kill('SIGINT');
+    				res.json({
+    					next_order: parseInt(req.params.order) + 1
+    				});
+    				res.end();
+    			});
             }
-
-			// Play video!
-			const mpv = spawn( 'mpv', [ video.url ] );
-
-			mpv.stdout.on( 'data', data => {
-				console.log( `stdout: ${data}` );
-			});
-
-			mpv.stderr.on( 'data', data => {
-				//console.log( `stderr: ${data}` );
-			});
-
-			// Close when video finished (I don't want to generates a playlist, understand?)
-			mpv.on( 'close', code => {
-				console.log( `mpv finshed playing with code ${code}` );
-				mpv.kill('SIGINT');
-				res.json({
-					next_order: parseInt(req.params.order) + 1
-				});
-				res.end();
-			});
 
         }
     });
