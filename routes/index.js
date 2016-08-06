@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var request = require('request');
 var schemas = require('../db/mongo');
 
 const
@@ -33,7 +34,8 @@ router.route('/api/videos')
 .get(function(req, res, next) {
 
     Videos
-		.find({}).sort({ 'order': -1 })
+        .find({})
+        .sort({ 'order': -1 })
 		.exec(function(err, videos) {
 
 	        if (err) {
@@ -51,29 +53,41 @@ router.route('/api/videos')
 // POST (insert)
 .post(function(req, res, next) {
 
-    //var video = new Videos(req.body);
 
-	console.log(req.body);
-(
-	console.log(req.body.video.trim()));
+	//let yt_id = req.body.video.trim().replace(/http(s?):\/\/(w{3}?)(\.?)youtube\.com\/watch\?v=/, '');
+    var yt_json = 'http://www.youtube.com/oembed?url=' + req.body.video + '&format=json';
+	
+    request({
+        url: yt_json,
+        json: true
+    }, function (error, response, body) {
 
-	res.end();
-
-    video.save(function(err, result) {
-
-        if (err) {
-            console.log(err);
-        } else {
-            res.json({
-                result: 'ok',
-                _id: result._id,
-				title: result.title,
-                url: result.url,
-				order: result.order
+        if (!error && response.statusCode === 200) {
+            
+            var video = new Videos({
+                title: body.title,
+                url: req.body.video,
+                order: req.body.order
             });
-            res.end();
+            video.save(function(err, result) {
+                
+                if (err) {
+                    console.log(err);
+                } else {
+                    res.json({
+                        result: 'ok',
+                        _id: result._id,
+                        title: body.title,
+                        url: result.url,
+                        order: result.order
+                    });
+                    res.end();
+                }
+            });
         }
     });
+    
+
 
 });
 
@@ -125,6 +139,13 @@ router.route('/api/videos/:order/play')
         if (err) {
             console.log(err);
         } else {
+
+            if ( typeof video == 'undefined' ) {
+                res.json({
+                    error: 'No hay banda!'
+                });
+                res.end();
+            }
 
 			// Play video!
 			const mpv = spawn( 'mpv', [ video.url ] );
