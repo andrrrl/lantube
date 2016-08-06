@@ -1,0 +1,16 @@
+{
+  "name": "lantube",
+  "version": "0.0.1",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "components"
+  ],
+  "dependencies": {
+    "angular": "angularjs#^1.5.8",
+    "angular-route": "^1.5.8",
+    "angular-animate": "^1.5.8",
+    "angular-bootstrap": "^2.0.1",
+    "angular-ui-router": "^0.3.1"
+  }
+}
