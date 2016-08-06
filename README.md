@@ -8,12 +8,12 @@ $ bower install
 ```
 
 ### Config (optional): ###
-* Create a .env file in the root directory with following options:
+* Create a `.env` file in the root directory with following options:
 
 ```
 # Config
 
-# Nodejs server, default 3000
+# Nodejs server port, default 3000
 NODE_PORT=3000
 
 # Mongo DB
