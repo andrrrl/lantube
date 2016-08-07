@@ -159,18 +159,11 @@ router.route('/api/videos/:order/play')
                 res.end();
             } else {
 
-
-				res.end();
     			// Play video!
     			var player = process.env.PLAYER || 'vlc';
     			const playing = spawn( player, [ process.env.PLAYER_OPTION || ' ', video.url ] );
 				
 				console.log('Starting ' + process.env.PLAYER + ' with ' + ( process.env.PLAYER_OPTIONS || 'no options.'));
-				
-				stopEmitter.on('stopEvent', () => {
-					playing.kill('SIGINT');
-					console.log('Playback stopped!');
-				});
 				
     			playing.stdout.on( 'data', data => {
     				console.log( `stdout: ${data}` );
@@ -180,15 +173,21 @@ router.route('/api/videos/:order/play')
     				//console.log( `stderr: ${data}` );
     			});
 				
+				stopEmitter.on('stopEvent', () => {
+					playing.kill('SIGINT');
+					res.end();
+					console.log('Playback stopped!');
+				});
+				
     			// Close when video finished (I don't want to generates a playlist, understand?)
     			playing.on( 'close', code => {
     				console.log( `Player finshed playing with code ${code}` );
     				playing.kill('SIGINT');
-					
-					if (req.params.order > 0 && !res.headersSent) {
+					if ( parseInt(req.params.order) > 0 && !res.headersSent) {
 	    				res.json({
 	    					next_order: parseInt(req.params.order) + 1
 	    				});
+						res.end();
 					}
     			});
 				
@@ -196,8 +195,6 @@ router.route('/api/videos/:order/play')
 
         }
     });
-	
-	res.end();
 	
 });
 
