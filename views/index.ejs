@@ -31,7 +31,14 @@
 						</span>
 					</div><!-- /input-group -->
 					<hr>
-					<input class="btn btn-success" type="button" name="play" value="Reproducir todo" ng-click="play()">
+					<button class="btn btn-success" type="button" name="play" ng-click="play()">
+						<fa ng-cloak="isPlaying()" name="{{ isPlaying() ? 'circle-o-notch' : 'play' }}" alt="Loading" size="1" spin="{{ isPlaying() }}" ng-style="{'color': spinnerColor}"></fa> 
+						{{playText()}}
+					</button>
+					<button ng-show="isPlaying()" class="btn btn-danger" type="button" ng-click="stop()">
+						<fa name="stop" alt="Stop" size="1" ng-style="{'color': spinnerColor}"></fa> 
+						{{stopText()}}
+					</button>
 				</form>
 			</div>
 			<div class="col-md-2">

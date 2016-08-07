@@ -1,4 +1,4 @@
-var app = angular.module('lantubeApp', ['ui.router']);
+var app = angular.module('lantubeApp', ['ui.router', 'picardy.fontawesome']);
 
 app.config([
   '$stateProvider', // provides page states
@@ -32,12 +32,17 @@ app.config([
 ]);
 
 app.factory('videos', ['$http', '$log', function($http, $log) {
+	
 	var obj = {
-		videos: []
+		videos: [],
+		isPlaying: false,
+		playText: 'Play',
+		stopText: 'Stop'
 	};
 
 	obj.getAll = function() {
 		return $http.get('/api/videos').success(function(data) {
+			obj.isPlaying = false;
 			// create a deep copy of the returned data (this way $scope.videos will be keep updated)
 			angular.copy(data, obj.videos);
 		});
@@ -49,13 +54,6 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 		});
 	};
 
-	obj.play = function(order) {
-		order = order || 1;
-		return $http.get('/api/videos/' + order + '/play').then(function(res) {
-			return obj.play(res.data.next_order);
-		});
-	}
-
 	obj.add = function(video, order) {
 		video = video || '';
 		order = order || 1;
@@ -64,6 +62,25 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 			obj.videos.push(data);
 		});
 	};
+	
+	obj.play = function(order) {
+		order = order || 1;
+		obj.isPlaying = true;
+		obj.playText = 'Playing...';
+		return $http.get('/api/videos/' + order + '/play').then(function(res) {
+			if (res.data.next_order < obj.videos.length) {
+				return obj.play(res.data.next_order);
+			}
+		});
+	};
+
+	obj.stop = function() {
+		obj.isPlaying = false;
+		obj.playText = 'Play';
+		return $http.get('/api/videos/stop').then(function(res){
+			return false;
+		});
+	}
 
 	return obj;
 
@@ -75,12 +92,34 @@ app.controller('MainCtrl', [
 	'videos',
 	function($scope, $log, videos) {
 
-		// getAll
+		// get all videos
 		$scope.videos = videos.videos;
-
-		$scope.play = videos.play;
-
+		
+		$scope.playText = function() { 
+			return videos.playText 
+		};
+		$scope.stopText = function() { 
+			return videos.stopText 
+		};
+		
+		// is loading?
+		$scope.isPlaying = function() { 
+			return videos.isPlaying 
+		};
+		
+		$log.log($scope.isPlaying());
+		
+		// add
 		$scope.add = videos.add;
+		
+		// play
+		$scope.play = videos.play;
+		
+		// stop
+		$scope.stop = videos.stop;
+		
+		// Spinner color?
+		$scope.spinnerColor = 'white';
 		
 	}
 ]);

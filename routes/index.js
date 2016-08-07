@@ -52,8 +52,6 @@ router.route('/api/videos')
 
 	var yt_id = req.body.video.trim().replace(/http(s?):\/\/(w{3}?)(\.?)youtube\.com\/watch\?v=/, '');
 	
-	console.log(yt_id);
-	
 	if ( yt_id == '' ) {
 		res.json({
 			result: 'error',
@@ -118,6 +116,9 @@ router.route('/api/videos/:id')
 
 .get(function(req, res, next) {
 
+	if ( req.params.id == 'stop' )
+		return next();
+
     Videos.findOne({
         '_id': req.params.id
     }).exec(function(err, video) {
@@ -130,8 +131,12 @@ router.route('/api/videos/:id')
             res.end();
         }
     });
+	
 
-})
+});
+
+const EventEmitter = require('events');
+const myEmitter = new EventEmitter();
 
 // PLAY
 router.route('/api/videos/:order/play')
@@ -155,24 +160,34 @@ router.route('/api/videos/:order/play')
             } else {
 
     			// Play video!
-    			let player = process.env.PLAYER || 'vlc';
-    			const playing = spawn( player, [ video.url ] );
-
+    			var player = process.env.PLAYER || 'vlc';
+    			const playing = spawn( player, [ process.env.PLAYER_OPTION || ' ', video.url ] );
+				
+				console.log('Starting ' + process.env.PLAYER + ' with ' + ( process.env.PLAYER_OPTIONS || 'no options.'));
+				
+				myEmitter.on('stopEvent', () => {
+					playing.kill('SIGINT');
+					console.log('Playback stopped!');
+				});
+				
     			playing.stdout.on( 'data', data => {
     				console.log( `stdout: ${data}` );
     			});
-
+				
     			playing.stderr.on( 'data', data => {
     				//console.log( `stderr: ${data}` );
     			});
-
+				
     			// Close when video finished (I don't want to generates a playlist, understand?)
     			playing.on( 'close', code => {
-    				console.log( `player finshed playing with code ${code}` );
+    				console.log( `Player finshed playing with code ${code}` );
     				playing.kill('SIGINT');
-    				res.json({
-    					next_order: parseInt(req.params.order) + 1
-    				});
+					
+					if (req.params.order > 0) {
+	    				res.json({
+	    					next_order: parseInt(req.params.order) + 1
+	    				});
+					}
     				res.end();
     			});
             }
@@ -180,7 +195,14 @@ router.route('/api/videos/:order/play')
         }
     });
 	
+	return next();
+	
 });
+
+router.route('/api/videos/stop')
+	.get(function(req, res, next){
+		myEmitter.emit('stopEvent');
+	});
 
 
 module.exports = router;
