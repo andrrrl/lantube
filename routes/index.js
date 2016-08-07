@@ -136,7 +136,7 @@ router.route('/api/videos/:id')
 });
 
 const EventEmitter = require('events');
-const myEmitter = new EventEmitter();
+const stopEmitter = new EventEmitter();
 
 // PLAY
 router.route('/api/videos/:order/play')
@@ -159,13 +159,15 @@ router.route('/api/videos/:order/play')
                 res.end();
             } else {
 
+
+				res.end();
     			// Play video!
     			var player = process.env.PLAYER || 'vlc';
     			const playing = spawn( player, [ process.env.PLAYER_OPTION || ' ', video.url ] );
 				
 				console.log('Starting ' + process.env.PLAYER + ' with ' + ( process.env.PLAYER_OPTIONS || 'no options.'));
 				
-				myEmitter.on('stopEvent', () => {
+				stopEmitter.on('stopEvent', () => {
 					playing.kill('SIGINT');
 					console.log('Playback stopped!');
 				});
@@ -183,25 +185,26 @@ router.route('/api/videos/:order/play')
     				console.log( `Player finshed playing with code ${code}` );
     				playing.kill('SIGINT');
 					
-					if (req.params.order > 0) {
+					if (req.params.order > 0 && !res.headersSent) {
 	    				res.json({
 	    					next_order: parseInt(req.params.order) + 1
 	    				});
 					}
-    				res.end();
     			});
+				
             }
 
         }
     });
 	
-	return next();
+	res.end();
 	
 });
 
 router.route('/api/videos/stop')
 	.get(function(req, res, next){
-		myEmitter.emit('stopEvent');
+		stopEmitter.emit('stopEvent');
+		res.end();
 	});
 
 
