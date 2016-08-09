@@ -1,20 +1,20 @@
 var app = angular.module('lantubeApp', ['ui.router', 'picardy.fontawesome']);
 
 app.config([
-  '$stateProvider', // provides page states
-  '$urlRouterProvider', // provides redirecting
-  function($stateProvider, $urlRouterProvider) {
+	'$stateProvider', // provides page states
+	'$urlRouterProvider', // provides redirecting
+	function($stateProvider, $urlRouterProvider) {
 
     $stateProvider
-      .state('home', {
-        url: '/home',
-        controller: 'MainCtrl',
-        resolve: {
-          videoPromise: ['videos', function(videos) {
-            return videos.getAll();
-          }]
-        }
-      });
+		.state('home', {
+			url: '/home',
+			controller: 'MainCtrl',
+			resolve: {
+				videoPromise: ['videos', function(videos) {
+					return videos.getAll();
+				}]
+			}
+		});
     // .state('videos', {
     //     url: '/api/videos/{id}',
     //     templateUrl: '/videos.html',
@@ -26,9 +26,9 @@ app.config([
     //     }
     // });
 
-    // $urlRouterProvider.when('', '/');
-    $urlRouterProvider.otherwise('home');
-  }
+    	// $urlRouterProvider.when('', '/');
+		$urlRouterProvider.otherwise('home');
+	}
 ]);
 
 app.factory('videos', ['$http', '$log', function($http, $log) {
@@ -36,7 +36,7 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	var obj = {
 		videos: [],
 		isPlaying: false,
-		playText: 'Play',
+		playAllText: 'Play All',
 		stopText: 'Stop'
 	};
 
@@ -58,15 +58,15 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 		video = video || '';
 		order = order || 1;
 		return $http.post('/api/videos', {video: video, order: order})
-		.success(function(data) {
-			obj.videos.push(data);
-		});
+			.success(function(data) {
+				obj.videos.push(data);
+			});
 	};
 	
 	obj.play = function(order) {
 		order = order || 1;
 		obj.isPlaying = true;
-		obj.playText = 'Playing...';
+		obj.playAllText = 'Playing...';
 		return $http.get('/api/videos/' + order + '/play').then(function(res) {
 			if (res.data.next_order < obj.videos.length) {
 				return obj.play(res.data.next_order);
@@ -76,7 +76,7 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 
 	obj.stop = function() {
 		obj.isPlaying = false;
-		obj.playText = 'Play';
+		obj.playAllText = 'Play All';
 		return $http.get('/api/videos/stop').then(function(res){
 			return false;
 		});
@@ -92,26 +92,31 @@ app.controller('MainCtrl', [
 	'videos',
 	function($scope, $log, videos) {
 
+		// Example
+		$scope.videourl = 'https://www.youtube.com/watch?v=WFuWPhlsyEI';
+
 		// get all videos
 		$scope.videos = videos.videos;
 		
-		$scope.playText = function() { 
-			return videos.playText 
+		// "play all" text
+		$scope.playAllText = function() { 
+			return videos.playAllText; 
 		};
+
+		// "stop" text
 		$scope.stopText = function() { 
-			return videos.stopText 
+			return videos.stopText; 
 		};
 		
 		// is loading?
-		$scope.isPlaying = function() { 
-			return videos.isPlaying 
+		$scope.isPlaying = function(order) { 
+			return videos.isPlaying; 
 		};
-		
 		$log.log($scope.isPlaying());
 		
 		// add
 		$scope.add = videos.add;
-		
+			
 		// play
 		$scope.play = videos.play;
 		
@@ -123,3 +128,17 @@ app.controller('MainCtrl', [
 		
 	}
 ]);
+
+app.directive('selectOnClick', ['$window', function ($window) {
+    return {
+        restrict: 'A',
+        link: function (scope, element, attrs) {
+            element.on('focus', function () {
+                if (!$window.getSelection().toString()) {
+                    // Required for mobile Safari
+                    this.setSelectionRange(0, this.value.length)
+                }
+            });
+        }
+    };
+}]);

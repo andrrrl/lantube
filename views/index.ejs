@@ -2,30 +2,27 @@
 
 	<div class="container-fluid" ng-controller="MainCtrl">
 		<div class="row">
-			<div class="col-md-2">
+			<div class="col-md-1">
 				
 			</div>
-			<div class="col-md-8">
+			<div class="col-md-10">
 				<h1><%- title %></h1>
 				<p>
                     Agregar un video de Youtube a la lista
                 </p>
-                <p>
-                    Por ejemplo: https://www.youtube.com/watch?v=WFuWPhlsyEI
-                </p>
 			</div>
-			<div class="col-md-2">
+			<div class="col-md-1">
 				
 			</div>
 		</div>
 		<div class="row">
-			<div class="col-md-2">
+			<div class="col-md-1">
 				
 			</div>
-			<div class="col-md-8">
+			<div class="col-md-10">
 				<form class="form">
 					<div class="input-group">
-						<input id="video" type="text" class="form-control" placeholder="Link del video de Youtube..." ng-model="videourl" value="https://www.youtube.com/watch?v=WFuWPhlsyEI">
+						<input id="video" type="text" class="form-control" placeholder="Link del video de Youtube..." ng-model="videourl" value="" select-on-click>
 						<span class="input-group-btn">
 							<button id="agregar" class="btn btn-default" type="button" ng-click="add(videourl, videos.length + 1)">Agregar</button>
 						</span>
@@ -33,7 +30,7 @@
 					<hr>
 					<button class="btn btn-success" type="button" name="play" ng-click="play()">
 						<fa ng-cloak="isPlaying()" name="{{ isPlaying() ? 'circle-o-notch' : 'play' }}" alt="Loading" size="1" spin="{{ isPlaying() }}" ng-style="{'color': spinnerColor}"></fa> 
-						{{playText()}}
+						{{playAllText()}}
 					</button>
 					<button ng-show="isPlaying()" class="btn btn-danger" type="button" ng-click="stop()">
 						<fa name="stop" alt="Stop" size="1" ng-style="{'color': spinnerColor}"></fa> 
@@ -41,32 +38,37 @@
 					</button>
 				</form>
 			</div>
-			<div class="col-md-2">
+			<div class="col-md-1">
 				
 			</div>
 			
 		</div>
 		
 		<div class="row">
-			<div class="col-md-2">
+			<div class="col-md-1">
 				
 			</div>
-			<div class="col-md-8">
+			<div class="col-md-10">
 				<hr>
 			</div>
-			<div class="col-md-2">
+			<div class="col-md-1">
 				
 			</div>
 		</div>
 		
 		<div class="row">
-			<div class="col-md-2">
+			<div class="col-md-1">
 				
 			</div>
-			<div class="col-md-8">
+			<div class="col-md-10">
 				<table class="table table-striped lista-videos">
 					<tr ng-repeat="video in videos | orderBy:'order'">
 						<td class="orden">{{video.order}}</td>
+						<td>
+							<button class="play btn-xs btn-warning" type="button">
+								<fa ng-cloak="isPlaying(video.order)" name="{{ isPlaying(video.order) ? 'circle-o-notch' : 'play' }}" size="1" spin="{{ isPlaying(video.order) }}" ng-click="play(video.order)"></fa>
+							</button>
+						</td>
 						<td class="tiulo">{{video.title}}</td>
 						<td class="url">{{video.url}}</td>
 					</tr>

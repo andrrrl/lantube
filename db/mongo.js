@@ -16,23 +16,3 @@ MongoDB.on('error', function(err) {
 MongoDB.once('open', function() {
     console.log('Connected to MongoDB with user ' + mongo_user);
 });
-
-var VideosSchema = new mongoose.Schema({
-	url: {
-		type: String,
-		required: true
-	},
-	title: String,
-    order: Number
-}, {
-    collection: 'videos'
-});
-
-
-var Videos = mongoose.model('videos', VideosSchema);
-
-var schemas = {
-    'Videos': Videos
-}
-
-module.exports = schemas;
