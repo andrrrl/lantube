@@ -28,11 +28,11 @@
 						</span>
 					</div><!-- /input-group -->
 					<hr>
-					<button class="btn btn-success" type="button" name="play" ng-click="play()">
-						<fa ng-cloak="isPlaying()" name="{{ isPlaying() ? 'circle-o-notch' : 'play' }}" alt="Loading" size="1" spin="{{ isPlaying() }}" ng-style="{'color': spinnerColor}"></fa> 
+					<button ng-hide="showStop()" class="btn btn-success" type="button" name="play" ng-click="play(0)">
+						<fa name="{{ isPlaying() != 0 ? 'circle-o-notch' : 'play' }}" alt="Loading" size="1" spin="{{ isPlaying() != 0 }}" ng-style="{'color': spinnerColor}"></fa> 
 						{{playAllText()}}
 					</button>
-					<button ng-show="isPlaying()" class="btn btn-danger" type="button" ng-click="stop()">
+					<button ng-show="showStop()" class="btn btn-danger" type="button" ng-click="stop()">
 						<fa name="stop" alt="Stop" size="1" ng-style="{'color': spinnerColor}"></fa> 
 						{{stopText()}}
 					</button>
@@ -66,7 +66,12 @@
 						<td class="orden">{{video.order}}</td>
 						<td>
 							<button class="play btn-xs btn-warning" type="button">
-								<fa ng-cloak="isPlaying(video.order)" name="{{ isPlaying(video.order) ? 'circle-o-notch' : 'play' }}" size="1" spin="{{ isPlaying(video.order) }}" ng-click="play(video.order)"></fa>
+								<fa ng-cloak="{{ isPlaying() == video.order }}" 
+									name="{{ isPlaying() == video.order ? 'circle-o-notch' : 'play' }}" 
+									spin="{{ isPlaying() == video.order }}" 
+									ng-click="play(video.order)" 
+									size="1">
+								</fa>
 							</button>
 						</td>
 						<td class="tiulo">{{video.title}}</td>

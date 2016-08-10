@@ -172,7 +172,9 @@ router.route('/api/videos/:order/play')
 
 router.route('/api/videos/stop')
 	.get(function(req, res, next){
-		stopEmitter.emit('stopEvent');
+		
+		let video_stop = new Videos();
+		res.send(video_stop.stopAll());
 		res.end();
 	});
 

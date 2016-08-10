@@ -35,7 +35,8 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	
 	var obj = {
 		videos: [],
-		isPlaying: false,
+		isPlaying: 0,
+		showStop: false,
 		playAllText: 'Play All',
 		stopText: 'Stop'
 	};
@@ -64,21 +65,30 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	};
 	
 	obj.play = function(order) {
-		order = order || 1;
-		obj.isPlaying = true;
+		order = order || 0;
+		obj.isPlaying = order;
 		obj.playAllText = 'Playing...';
-		return $http.get('/api/videos/' + order + '/play').then(function(res) {
-			if (res.data.next_order < obj.videos.length) {
-				return obj.play(res.data.next_order);
-			}
-		});
+		obj.showStop = true;
+		
+		if ( order > 0 ) {
+			return $http.get('/api/videos/' + order + '/play').then(function(res) {
+				if (res.data.next_order < obj.videos.length) {
+					return obj.play(res.data.next_order);
+				}
+			});
+		} else {
+			return $http.get('/api/videos/playlist').then(function(res) {
+				return res.data.playing;
+			});
+		}
 	};
 
 	obj.stop = function() {
-		obj.isPlaying = false;
+		obj.isPlaying = 0;
+		obj.showStop = false;
 		obj.playAllText = 'Play All';
 		return $http.get('/api/videos/stop').then(function(res){
-			return false;
+			return res.data;
 		});
 	}
 
@@ -112,6 +122,11 @@ app.controller('MainCtrl', [
 		$scope.isPlaying = function(order) { 
 			return videos.isPlaying; 
 		};
+		
+		$scope.showStop = function() {
+			return videos.showStop;
+		}
+		
 		$log.log($scope.isPlaying());
 		
 		// add
