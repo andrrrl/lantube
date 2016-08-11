@@ -62,6 +62,6 @@ Finally:
 * Lantube is limited to LAN, any external IP will not be allowed.
 * Lantube is just for fun, don't rely too much on it for serious matters.
 
-### TO-DOs: ### 
+### TODOs: ###
 * Add Mongo auth?
 * API auth? 
