@@ -5,8 +5,7 @@ var router = express.Router();
 var request = require('request');
 var schemas = require('../models/Videos');
 
-var 
-	Videos = schemas.Videos;
+var Videos = schemas.Videos;
 
 
 // Disallow non-LAN or Local IPs
@@ -174,7 +173,7 @@ router.route('/api/videos/:order/play')
 	                });
 	            } else {
 	    			// Play video!
-	    			let player = process.env.PLAYER || 'vlc';
+	    			let player = process.env.PLAYER || 'mpv';
 	    			let player_option = process.env.PLAYER_OPTION || ' ';
 					video.playThis( player, player_option, video.url );
 					res.json({
@@ -247,7 +246,7 @@ router.route('/api/videos/playlist')
 					console.log(process.env.PLAYER_OPTION);
 				
 					// Play PLS playlist!
-					let player = process.env.PLAYER || 'vlc';
+					let player = process.env.PLAYER || 'mpv';
 					let player_option = process.env.PLAYER_OPTION || ' ';
 					let playlist_option = '--playlist';
 					video[0].playThis( player, playlist_option, 'http://127.0.0.1:3000/api/videos/pls');
