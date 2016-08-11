@@ -1,7 +1,7 @@
 # MEAN youtube video player from LAN, just for fun! #
 
 ### Installation ###
-* clone this repo and:
+* clone this repo with `$ git clone https://github.com/andrrrl/lantube` and:
 ```
 $ npm install && bower install
 ```
