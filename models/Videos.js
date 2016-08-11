@@ -1,8 +1,7 @@
 'use strict';
 
 var mongoose = require('mongoose');
-var request = require('request');
-
+var autoIncrement = require('mongoose-auto-increment');
 const spawn = require( 'child_process' ).spawn;
 
 var VideosSchema = new mongoose.Schema({
@@ -15,6 +14,13 @@ var VideosSchema = new mongoose.Schema({
 }, {
     collection: 'videos'
 });
+
+
+VideosSchema.methods.stopAll = function(cb) {
+	stopEmitter.emit('stopEvent');	
+	return cb;
+}
+
 
 const EventEmitter = require('events');
 const stopEmitter = new EventEmitter();
@@ -42,7 +48,6 @@ VideosSchema.methods.playThis = function(player, player_options, video_url, cb) 
 	// Close when video finished (I don't want to generates a playlist, understand?)
 	playing.on( 'close', code => {
 		console.log( `Player finshed playing with code ${code}` );
-		//request('http://localhost:3000/api/videos/stop');
 		playing.kill('SIGINT');
 	});
 	
@@ -50,14 +55,14 @@ VideosSchema.methods.playThis = function(player, player_options, video_url, cb) 
 	
 };
 
-VideosSchema.methods.stopAll = function(cb) {
-	stopEmitter.emit('stopEvent');
-	
-	return cb;
-}
-
-
 var Videos = mongoose.model('videos', VideosSchema);
+
+VideosSchema.plugin(autoIncrement.plugin, {
+    model: 'Videos',
+    field: 'order',
+    startAt: 1,
+    incrementBy: 1
+});
 
 var schemas = {
     'Videos': Videos

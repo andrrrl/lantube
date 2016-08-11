@@ -2,24 +2,24 @@
 
 	<div class="container-fluid" ng-controller="MainCtrl">
 		<div class="row">
-			<div class="col-md-1">
+			<div class="col-md-1 col-sm-0">
 				
 			</div>
-			<div class="col-md-10">
+			<div class="col-md-10 col-sm-12">
 				<h1><%- title %></h1>
 				<p>
                     Agregar un video de Youtube a la lista
                 </p>
 			</div>
-			<div class="col-md-1">
+			<div class="col-md-1 col-sm-0">
 				
 			</div>
 		</div>
 		<div class="row">
-			<div class="col-md-1">
+			<div class="col-md-1 col-sm-0">
 				
 			</div>
-			<div class="col-md-10">
+			<div class="col-md-10 col-sm-12">
 				<form class="form">
 					<div class="input-group">
 						<input id="video" type="text" class="form-control" placeholder="Link del video de Youtube..." ng-model="videourl" value="" select-on-click>
@@ -38,29 +38,29 @@
 					</button>
 				</form>
 			</div>
-			<div class="col-md-1">
+			<div class="col-md-1 col-sm-0">
 				
 			</div>
 			
 		</div>
 		
 		<div class="row">
-			<div class="col-md-1">
+			<div class="col-md-1 col-sm-0">
 				
 			</div>
-			<div class="col-md-10">
+			<div class="col-md-10 col-sm-12">
 				<hr>
 			</div>
-			<div class="col-md-1">
+			<div class="col-md-1 col-sm-0">
 				
 			</div>
 		</div>
 		
 		<div class="row">
-			<div class="col-md-1">
+			<div class="col-md-1 col-sm-0">
 				
 			</div>
-			<div class="col-md-10">
+			<div class="col-md-10 col-sm-12">
 				<table class="table table-striped lista-videos">
 					<tr ng-repeat="video in videos | orderBy:'order'">
 						<td class="orden">{{video.order}}</td>
@@ -79,7 +79,7 @@
 					</tr>
 				</table>
 			</div>
-			<div class="col-md-4">
+			<div class="col-md-1 col-sm-0">
 				
 			</div>
 		</div>

@@ -8,23 +8,39 @@ var schemas = require('../models/Videos');
 var 
 	Videos = schemas.Videos;
 
-/* GET home page. */
+
+// Disallow non-LAN or Local IPs
+router.use(function(req, res, next) {
+	
+	let ip = req.headers["X-Forwarded-For"] || req.headers["x-forwarded-for"] || req.client.remoteAddress;
+	
+	if ( ip.match( '192.168.' ) || ip == '::1' || ip == '::ffff:127.0.0.1' ) {
+		console.log('Hi ' + ip);
+		next();
+	} else {
+		res.status(401);
+		res.send( ip + ' is unallowed.');
+		res.end();
+	}
+
+});
 
 // GET and render homepage
 router.get('/', function(req, res, next) {
 
     Videos.find({})
-	.exec(function(err, videos) {
-        if (err) {
-            console.log(err);
-        } else {
-			res.render('index', {
-				title: 'Lantube',
-				lang: req.headers['accept-language'].slice(0, 2) || 'es',
-				videos: videos || {}
-			});
-        }
-    });
+		.exec(function(err, videos) {
+	        if (err) {
+	            console.log(err);
+	        } else {
+				res.render('index', {
+					title: 'Lantube',
+					lang: req.headers['accept-language'].slice(0, 2) || 'es',
+					videos: videos || {}
+				});
+	        }
+	    });
+	
 });
 
 // GET all
@@ -70,8 +86,7 @@ router.route('/api/videos')
 	            
 	            var video = new Videos({
 	                title: body.title,
-	                url: req.body.video,
-	                order: req.body.order
+	                url: req.body.video
 	            });
 				
 	            video.save(function(err, result) {
@@ -140,9 +155,13 @@ router.route('/api/videos/:order/play')
 
 	.get(function(req, res, next) {
 		
-		Videos.findOne({
-	        'order': req.params.order
-	    }).exec(function(err, video) {
+		let order = req.params.order == 'last' ? '-order' : req.params.order;
+		
+		Videos.findOne(
+			( order == '-order' ? {} : { order: req.params.order } )
+		)
+		.sort(order)
+		.exec(function(err, video) {
 
 	        if (err) {
 	            console.log(err);
@@ -160,7 +179,7 @@ router.route('/api/videos/:order/play')
 					video.playThis( player, player_option, video.url );
 					res.json({
 						playing: video.url,
-						order: req.params.order
+						order: video.order
 					});
 	            }
 
