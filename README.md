@@ -8,11 +8,15 @@
 * Requires a media player like mplayer, mpv, vlc, etc. to work. If no player is set (or if `.env` file is missing), it will try to use mpv.
 
 ### Installation ###
-* Clone this repo with `$ git clone https://github.com/andrrrl/lantube` and:
-* If any requirements are missing, look at the error logs, traces, etc.
+* Clone this repo with: 
+```
+$ git clone https://github.com/andrrrl/lantube
+```
+* Install npm (server) and bower (client) dependencies:
 ```
 $ npm install && bower install
 ```
+* If any requirements are missing, look at the error logs, traces, etc.
 
 ### Config (optional): ###
 * Rename `.env_example` file to `.env` in the root directory
