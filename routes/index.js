@@ -39,7 +39,7 @@ function eventStreamResponse(res, stats) {
 router.route('/api/videos/stats')
 	.get(function(req, res, next){
 
-		Server.findOne({ hostname: process.env.HOST_NAME })
+		Server.findOne({ hostname: process.env.HOST_NAME || 'localhost' })
 			.exec(function(err, stats){
 				
 				if ( err )
@@ -206,7 +206,7 @@ router.route('/api/videos/:order/play')
 					
 					// Update stats
 					let server_stats = Server.updateStats('playing', video.order);
-					Server.findOneAndUpdate({ hostname: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
+					Server.findOneAndUpdate({ hostname: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
 						.exec(function(err, stats){});
 					
 	    			// Play video!
@@ -234,7 +234,7 @@ router.route('/api/videos/stop')
 
 		// Update stats
 		let server_stats = Server.updateStats('stopped', 0);
-		Server.findOneAndUpdate({ hostname: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
+		Server.findOneAndUpdate({ hostname: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
 			.exec(function(err, stats){});
 
 		res.json({
@@ -294,7 +294,7 @@ router.route('/api/videos/playlist')
 				
 					// Update stats
 					let server_stats = Server.updateStats('playing', 0);
-					Server.findOneAndUpdate({ hostname: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
+					Server.findOneAndUpdate({ hostname: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
 						.exec(function(err, stats){});
 				
 					// Play PLS playlist!
