@@ -71,7 +71,6 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 		obj.isPlaying = order;
 		obj.playAllText = 'Playing...';
 		obj.showStop = true;
-	
 		
 		if ( order > 0 ) {
 			// Play single video
@@ -95,7 +94,7 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 			if ( response.data.result == 'stopped' )
 				obj.isPlaying = 0;
 				obj.showStop = false;
-				obj.playAllText = 'Play All';
+				obj.playAllText = 'Play All...';
 			return response.data;
 		});
 	}
@@ -112,13 +111,42 @@ app.controller('MainCtrl', [
 	'videos',
 	function($scope, $rootScope, $log, videos) {
 		
-		$scope.startScanner = function() {
-			$rootScope.$broadcast('scanner-started');
-		}
-
-		$scope.$on('scanner-started', function(event, args) {
-			$log.log('asdasd');
-		});
+		
+		// the last received msg
+        //$scope.msg = {};
+ 
+        // handles the callback from the received event
+        var handleCallback = function (msg) {
+            $scope.$apply(function () {
+                let server_stats = JSON.parse(msg.data);
+				switch ( server_stats.status ) {
+					
+					case 'idle':
+						videos.isPlaying = 0;
+						videos.showStop = false;
+						videos.playAllText = 'Play All...';
+					break;
+					
+					case 'playing':
+						videos.isPlaying = server_stats.video_order;
+						videos.showStop = true;
+						videos.playAllText = 'Playing...';
+					break;
+					
+					case 'stopped':
+						videos.isPlaying = 0;
+						videos.showStop = false;
+						videos.playAllText = 'Play All...';
+					break;
+					
+				}
+				//$log.log(message.data);
+            });
+        }
+		
+ 
+        var source = new EventSource('/api/videos/stats');
+        source.addEventListener('message', handleCallback, true);
 		
 		// Example
 		$scope.videourl = 'https://www.youtube.com/watch?v=WFuWPhlsyEI';

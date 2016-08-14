@@ -3,10 +3,11 @@
 var express = require('express');
 var router = express.Router();
 var request = require('request');
-var schemas = require('../models/Videos');
+var schema = require('../models/Videos');
+var server_schema = require('../models/Server');
 
-var Videos = schemas.Videos;
-
+var Videos = schema.Videos;
+var Server = server_schema.Server;
 
 // Disallow non-LAN or Local IPs
 router.use(function(req, res, next) {
@@ -23,6 +24,31 @@ router.use(function(req, res, next) {
 	}
 
 });
+
+function eventStreamResponse(res, stats) {
+	res.setHeader('Content-type', 'text/event-stream');
+	res.setHeader('Cache-Control', 'no-cache');
+	res.setHeader('Connection', 'keep-alive');
+	res.write('id: ' + (new Date().getMilliseconds()) + '\n');
+	res.write('data:' + JSON.stringify(stats) +   '\n\n'); // Note the extra newline
+	res.end() 
+}
+
+
+// Server stats
+router.route('/api/videos/stats')
+	.get(function(req, res, next){
+
+		Server.findOne({ hostname: process.env.HOST_NAME })
+			.exec(function(err, stats){
+				
+				if ( err )
+					console.log(err);
+					
+				eventStreamResponse(res, stats);
+			});
+			
+	});
 
 // GET and render homepage
 router.get('/', function(req, res, next) {
@@ -134,6 +160,8 @@ router.route('/api/videos/:id')
 			return next();
 		if ( req.params.id == 'playlist' )
 			return next();
+		if ( req.params.id == 'stats' )
+			return next();
 
 	    Videos.findOne({
 	        '_id': req.params.id
@@ -149,6 +177,7 @@ router.route('/api/videos/:id')
 	    });
 	
 });
+
 
 // PLAY
 router.route('/api/videos/:order/play')
@@ -174,6 +203,12 @@ router.route('/api/videos/:order/play')
 	                });
 					res.end();
 	            } else {
+					
+					// Update stats
+					let server_stats = Server.updateStats('playing', video.order);
+					Server.findOneAndUpdate({ hostname: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
+						.exec(function(err, stats){});
+					
 	    			// Play video!
 	    			let player = process.env.PLAYER || 'mpv';
 	    			let player_option = process.env.PLAYER_OPTION || ' ';
@@ -195,11 +230,12 @@ router.route('/api/videos/:order/play')
 router.route('/api/videos/stop')
 	.get(function(req, res, next){
 		
-		Videos.stopAll(function(err){
-			if ( err ) {
-				console.log(err);
-			}
-		});
+		Videos.stopAll();
+
+		// Update stats
+		let server_stats = Server.updateStats('stopped', 0);
+		Server.findOneAndUpdate({ hostname: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
+			.exec(function(err, stats){});
 
 		res.json({
 			result: 'stopped'
@@ -256,7 +292,10 @@ router.route('/api/videos/playlist')
 	                });
 	            } else {
 				
-					console.log(process.env.PLAYER_OPTION);
+					// Update stats
+					let server_stats = Server.updateStats('playing', 0);
+					Server.findOneAndUpdate({ hostname: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
+						.exec(function(err, stats){});
 				
 					// Play PLS playlist!
 					let player = process.env.PLAYER || 'mpv';

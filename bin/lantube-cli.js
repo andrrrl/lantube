@@ -68,7 +68,7 @@ if ( typeof options.action !== 'undefined' ) {
 		if (!error && response.statusCode == 200) {	
 			
 			// Show bubble notification
-			// notifier.notify(lantube_notify);
+			notifier.notify(lantube_notify);
 			
 			// Show console notificatio
 			console.log('+-------------------------+');
