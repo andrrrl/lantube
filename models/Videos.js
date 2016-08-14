@@ -1,5 +1,6 @@
 'use strict';
 
+var request = require('request');
 var mongoose = require('mongoose');
 var autoIncrement = require('mongoose-auto-increment');
 const spawn = require( 'child_process' ).spawn;
@@ -16,8 +17,8 @@ var VideosSchema = new mongoose.Schema({
 });
 
 
-VideosSchema.methods.stopAll = function(cb) {
-	stopEmitter.emit('stopEvent');	
+VideosSchema.statics.stopAll = function(cb) {
+	stopEmitter.emit('stopEvent');
 	return cb;
 }
 

@@ -21,7 +21,7 @@ class YTSearch():
     def __init__(self):
 
 		# Config Lantube server
-		LANTUBE_SERVER = 'http://localhost:3000'
+		LANTUBE_SERVER = 'http://localhost:3000/videos/api'
 		
 		# use this to pipe all output to dev/null
 		FNULL = open(os.devnull, 'w')
@@ -46,7 +46,7 @@ class YTSearch():
 		player_options = '--start=00'
 
 		if len(sys.argv) < 2:
-			search = raw_input('Buscar en youtube: ')
+			search = raw_input('Youtube search: ')
 		else:
 			
 			# If option is 'play', start playing video list and exit this script:
@@ -54,10 +54,10 @@ class YTSearch():
 				print 'Playing full Lantube list...'
 				
 				if len(sys.argv) == 2:
-					subprocess.call(['curl', LANTUBE_SERVER + '/api/videos/playlist'], stdout=FNULL, stderr=subprocess.STDOUT)
+					subprocess.call(['curl', LANTUBE_SERVER + '/playlist'], stdout=FNULL, stderr=subprocess.STDOUT)
 				else:
 					order = sys.argv[2]
-					subprocess.call(['curl', LANTUBE_SERVER + '/api/videos/' + order + '/play'], stdout=FNULL, stderr=subprocess.STDOUT)
+					subprocess.call(['curl', LANTUBE_SERVER + order + '/play'], stdout=FNULL, stderr=subprocess.STDOUT)
 				
 				exit()
 				
@@ -65,7 +65,7 @@ class YTSearch():
 			if sys.argv[1] == 'stop':
 				print 'Stopping any Lantube playback...'
 				# Don't show output
-				subprocess.call(['curl', LANTUBE_SERVER + '/api/videos/stop'], stdout=FNULL, stderr=subprocess.STDOUT)
+				subprocess.call(['curl', LANTUBE_SERVER + '/stop'], stdout=FNULL, stderr=subprocess.STDOUT)
 				
 				exit()
 			
@@ -121,7 +121,7 @@ class YTSearch():
 		select = raw_input('Add video to Lantube: ')
 
 		# Post video to Lantube API
-		lantube_add = subprocess.call(['curl', '--silent', LANTUBE_SERVER + '/api/videos', '-d', 'video=https://www.youtube.com' + links[int(select)-1] + '&order=last'], stdout=FNULL, stderr=subprocess.STDOUT)
+		lantube_add = subprocess.call(['curl', '--silent', LANTUBE_SERVER, '-d', 'video=https://www.youtube.com' + links[int(select)-1] + '&order=last'], stdout=FNULL, stderr=subprocess.STDOUT)
 
 		# Adding video...
 		print 'Adding video...'
@@ -134,7 +134,7 @@ class YTSearch():
 
 			if play_now == 's' or play_now == 'S':
 				# Play!
-				playing = subprocess.call(['curl', '--silent', LANTUBE_SERVER + '/api/videos/last/play'], stdout=FNULL, stderr=subprocess.STDOUT)
+				playing = subprocess.call(['curl', '--silent', LANTUBE_SERVER + 'last/play'], stdout=FNULL, stderr=subprocess.STDOUT)
 				if playing == 0:
 					print 'Playing...'
 			else:

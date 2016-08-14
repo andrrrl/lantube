@@ -71,10 +71,12 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 		obj.isPlaying = order;
 		obj.playAllText = 'Playing...';
 		obj.showStop = true;
+	
 		
 		if ( order > 0 ) {
 			// Play single video
 			return $http.get('/api/videos/' + order + '/play').then(function(res) {
+				$log.log(res);
 				if (res.data.next_order < obj.videos.length) {
 					return obj.play(res.data.next_order);
 				}
@@ -89,11 +91,12 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 
 	// Stop all playback (single or list)
 	obj.stop = function() {
-		obj.isPlaying = 0;
-		obj.showStop = false;
-		obj.playAllText = 'Play All';
-		return $http.get('/api/videos/stop').then(function(res){
-			return res.data;
+		return $http.get('/api/videos/stop').then(function(response){
+			if ( response.data.result == 'stopped' )
+				obj.isPlaying = 0;
+				obj.showStop = false;
+				obj.playAllText = 'Play All';
+			return response.data;
 		});
 	}
 
@@ -104,10 +107,19 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 // App contrller
 app.controller('MainCtrl', [
 	'$scope',
+	'$rootScope',
 	'$log',
 	'videos',
-	function($scope, $log, videos) {
+	function($scope, $rootScope, $log, videos) {
+		
+		$scope.startScanner = function() {
+			$rootScope.$broadcast('scanner-started');
+		}
 
+		$scope.$on('scanner-started', function(event, args) {
+			$log.log('asdasd');
+		});
+		
 		// Example
 		$scope.videourl = 'https://www.youtube.com/watch?v=WFuWPhlsyEI';
 

@@ -14,7 +14,7 @@ router.use(function(req, res, next) {
 	let ip = req.headers["X-Forwarded-For"] || req.headers["x-forwarded-for"] || req.client.remoteAddress;
 	
 	if ( ip.match( '192.168.' ) || ip == '::1' || ip == '::ffff:127.0.0.1' ) {
-		console.log('Hi ' + ip);
+		console.log('Hi you "' + ip + '"');
 		next();
 	} else {
 		res.status(401);
@@ -37,6 +37,7 @@ router.get('/', function(req, res, next) {
 					lang: req.headers['accept-language'].slice(0, 2) || 'es',
 					videos: videos || {}
 				});
+				res.end();
 	        }
 	    });
 	
@@ -69,7 +70,7 @@ router.route('/api/videos')
 		if ( yt_id == '' ) {
 			res.json({
 				result: 'error',
-				message: 'No video.'
+				error: 'No video.'
 			});
 			res.end();
 		}
@@ -126,7 +127,7 @@ router.param('id', function(req, res, next, id) {
 router.route('/api/videos/:id')
 
 	.get(function(req, res, next) {
-
+		
 		if ( req.params.id == 'stop' )
 			return next();
 		if ( req.params.id == 'pls' )
@@ -171,18 +172,21 @@ router.route('/api/videos/:order/play')
 	                res.json({
 	                    error: 'No hay banda!'
 	                });
+					res.end();
 	            } else {
 	    			// Play video!
 	    			let player = process.env.PLAYER || 'mpv';
 	    			let player_option = process.env.PLAYER_OPTION || ' ';
-					video.playThis( player, player_option, video.url );
-					res.json({
-						playing: video.url,
-						order: video.order
+					video.playThis( player, player_option, video.url, function(err){
+						res.json({
+							result: 'playing',
+							playing: video.url,
+							order: video.order
+						});
 					});
+					res.end();
 	            }
 
-				res.end();
 	        }
 	    });
 	
@@ -191,9 +195,17 @@ router.route('/api/videos/:order/play')
 router.route('/api/videos/stop')
 	.get(function(req, res, next){
 		
-		let video_stop = new Videos();
-		res.send(video_stop.stopAll());
+		Videos.stopAll(function(err){
+			if ( err ) {
+				console.log(err);
+			}
+		});
+
+		res.json({
+			result: 'stopped'
+		});
 		res.end();
+
 	});
 
 
@@ -239,6 +251,7 @@ router.route('/api/videos/playlist')
 				
 				if ( video == null ) {
 	                res.json({
+						result: 'error',
 	                    error: 'No hay lista!'
 	                });
 	            } else {
@@ -249,9 +262,9 @@ router.route('/api/videos/playlist')
 					let player = process.env.PLAYER || 'mpv';
 					let player_option = process.env.PLAYER_OPTION || ' ';
 					let playlist_option = '--playlist';
-					video[0].playThis( player, playlist_option, 'http://127.0.0.1:3000/api/videos/pls');
+					video[0].playThis( player, playlist_option, 'http://localhost:3000/api/videos/pls');
 						res.json({
-							playing: 'PLS playlist',
+							result: 'playlist',
 							order: req.params.order
 						});
 				}
