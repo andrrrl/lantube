@@ -1,22 +1,12 @@
 #!/usr/bin/node
 
-/**
- *
- * Timer for tea or mate time! or anything else. 
- * Displays system notification bubble
- * Author: Andrrr
- * 
- * Usage: $ node timer.js [time in minutes] [message on timer finish] 
- * Example: $ node timer.js 0.3 "Finished after 30 seconds!"
- * 
- */
-
 'use strict';
+
 
 let
     path = require('path'),
-	colors = require('colors'),
 	request = require('request');
+	require('colors');
 
 var
 	notifier = require('node-notifier');
@@ -68,7 +58,7 @@ if ( typeof options.action !== 'undefined' ) {
 		if (!error && response.statusCode == 200) {	
 			
 			// Show bubble notification
-			notifier.notify(lantube_notify);
+			// notifier.notify(lantube_notify);
 			
 			// Show console notificatio
 			console.log('+-------------------------+');
@@ -79,9 +69,7 @@ if ( typeof options.action !== 'undefined' ) {
 	});
 
 } else {
-	
+
 	console.log('Lantube: '.green.bold + lantube_message.yellow.bold);
-	
+
 }
-
-

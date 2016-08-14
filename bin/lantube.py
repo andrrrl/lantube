@@ -21,7 +21,7 @@ class YTSearch():
     def __init__(self):
 
 		# Config Lantube server
-		LANTUBE_SERVER = 'http://localhost:3000/videos/api'
+		LANTUBE_SERVER = 'http://localhost:3000/api/videos'
 		
 		# use this to pipe all output to dev/null
 		FNULL = open(os.devnull, 'w')
@@ -51,13 +51,13 @@ class YTSearch():
 			
 			# If option is 'play', start playing video list and exit this script:
 			if sys.argv[1] == 'play':
-				print 'Playing full Lantube list...'
+				print 'Playing...'
 				
 				if len(sys.argv) == 2:
 					subprocess.call(['curl', LANTUBE_SERVER + '/playlist'], stdout=FNULL, stderr=subprocess.STDOUT)
 				else:
 					order = sys.argv[2]
-					subprocess.call(['curl', LANTUBE_SERVER + order + '/play'], stdout=FNULL, stderr=subprocess.STDOUT)
+					subprocess.call(['curl', LANTUBE_SERVER + '/' + order + '/play'], stdout=FNULL, stderr=subprocess.STDOUT)
 				
 				exit()
 				
@@ -69,6 +69,9 @@ class YTSearch():
 				
 				exit()
 			
+            # If options is "list", show available videos to play
+            # TODO
+            
 			# If help requested
 			if sys.argv[1] == 'help':
 				print 'Usage:'
@@ -134,7 +137,7 @@ class YTSearch():
 
 			if play_now == 's' or play_now == 'S':
 				# Play!
-				playing = subprocess.call(['curl', '--silent', LANTUBE_SERVER + 'last/play'], stdout=FNULL, stderr=subprocess.STDOUT)
+				playing = subprocess.call(['curl', '--silent', LANTUBE_SERVER + '/last/play'], stdout=FNULL, stderr=subprocess.STDOUT)
 				if playing == 0:
 					print 'Playing...'
 			else:
