@@ -4,7 +4,7 @@
 
 
 let
-    path = require('path'),
+	path = require('path'),
 	request = require('request');
 	require('colors');
 
@@ -58,7 +58,7 @@ if ( typeof options.action !== 'undefined' ) {
 		if (!error && response.statusCode == 200) {	
 			
 			// Show bubble notification
-			// notifier.notify(lantube_notify);
+			notifier.notify(lantube_notify);
 			
 			// Show console notificatio
 			console.log('+-------------------------+');
