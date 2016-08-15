@@ -13,6 +13,7 @@ import subprocess
 import os
 import re
 import urllib2
+from lxml.html import parse
 import json
 
 class YTSearch():
