@@ -94,7 +94,7 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 			if ( response.data.result == 'stopped' )
 				obj.isPlaying = 0;
 				obj.showStop = false;
-				obj.playAllText = 'Play All...';
+				obj.playAllText = 'Play All';
 			return response.data;
 		});
 	}
@@ -124,7 +124,7 @@ app.controller('MainCtrl', [
 					case 'idle':
 						videos.isPlaying = 0;
 						videos.showStop = false;
-						videos.playAllText = 'Play All...';
+						videos.playAllText = 'Play All';
 					break;
 					
 					case 'playing':
@@ -136,7 +136,7 @@ app.controller('MainCtrl', [
 					case 'stopped':
 						videos.isPlaying = 0;
 						videos.showStop = false;
-						videos.playAllText = 'Play All...';
+						videos.playAllText = 'Play All';
 					break;
 					
 				}
@@ -144,7 +144,8 @@ app.controller('MainCtrl', [
             });
         }
 		
- 
+		// Listen for server stats
+		// So the page can update according to server changes
         var source = new EventSource('/api/videos/stats');
         source.addEventListener('message', handleCallback, true);
 		

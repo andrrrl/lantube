@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Lantube CLI v. 0.2
+# Lantube CLI v. 0.1.2
 # by Andrrr <andresin@gmail.com>
 # CLI interface for Lantube server
 # Small server/client for playing youtube videos from LAN
@@ -13,8 +13,7 @@ import subprocess
 import os
 import re
 import urllib2
-from lxml.html import parse
-
+import json
 
 class YTSearch():
 
@@ -68,9 +67,24 @@ class YTSearch():
 				subprocess.call(['curl', LANTUBE_SERVER + '/stop'], stdout=FNULL, stderr=subprocess.STDOUT)
 				
 				exit()
-			
-            # If options is "list", show available videos to play
-            # TODO
+
+			# If options is "list", show available videos to play
+			if sys.argv[1] == 'list':
+				print 'List of current videos:'
+
+				videos = json.load(urllib2.urlopen(LANTUBE_SERVER))
+
+				i = 1
+				for video in videos:
+					print '%d - %s (%s)' % (i, video['title'], video['url'])
+					i = i + 1
+				
+				video_order = raw_input('Play a video from the list:')
+				playing = subprocess.call(['curl', '--silent', LANTUBE_SERVER + '/' + video_order + '/play'], stdout=FNULL, stderr=subprocess.STDOUT)
+				if playing == 0:
+					print 'Playing... '
+				
+				exit()
             
 			# If help requested
 			if sys.argv[1] == 'help':

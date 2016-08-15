@@ -30,7 +30,7 @@ function eventStreamResponse(res, stats) {
 	res.setHeader('Cache-Control', 'no-cache');
 	res.setHeader('Connection', 'keep-alive');
 	res.write('id: ' + (new Date().getMilliseconds()) + '\n');
-	res.write('data:' + JSON.stringify(stats) +   '\n\n'); // Note the extra newline
+	res.write('data:' + JSON.stringify(stats) + '\n\n'); // Note the extra newline
 	res.end() 
 }
 
