@@ -19,7 +19,7 @@ $ npm install
 * Also will run `node ./tools/install.js`, a tiny tool that creates a default `.env` file
 * If any requirements are missing, look at the error logs, traces, etc.
 
-### Default Config (.env_example file): ###
+### Default config (.env_example file): ###
 
 ```
 # Lantube environment
@@ -42,19 +42,18 @@ PLAYER=mpv
 
 Just run of following commands:
 
-# Livereload mode (default, better for dev): 
+#### Livereload mode (default, better for dev): ####
 ```
  $ gulp 
 ```
-It will run tasks like sass, uglify and start node server with nodemon + livereload.
+It will run tasks like sass, uglify and start node server with [nodemon](http://nodemon.io/) + [livereload](http://livereload.com/).
 
-# Non-livereload mode (better for user experience):
+#### Non-livereload mode (better for user experience): ####
 ```
 $ gulp lantube
 ```
 
-
-Finally:
+### Use it: ###
 * Local: Navigate to http://localhost:3000 in any modern browser
 * LAN: Get your server's IP number and navigate to http://YOUR_SERVER_IP:3000 from any modern browser
 
@@ -63,5 +62,6 @@ Finally:
 * Lantube is just for fun, don't rely too much on it for serious matters.
 
 ### TODOs: ###
+- Not the idea to use outside LAN, but still:
 * Add Mongo auth?
 * API auth? 
