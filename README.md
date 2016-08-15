@@ -25,7 +25,7 @@ $ npm install
 # Lantube environment
 
 # Server host name
-HOST_NAME=daniela-ubuntu
+HOST_NAME=localhost
 # Nodejs server port, default 3000
 NODE_PORT=3000
 
