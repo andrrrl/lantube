@@ -14,45 +14,45 @@ $ git clone https://github.com/andrrrl/lantube
 ```
 * Install npm (server) and bower (client) dependencies:
 ```
-$ npm install && bower install
+$ npm install
 ```
+* Also will run `node ./tools/install.js`, a tiny tool that creates a default `.env` file
 * If any requirements are missing, look at the error logs, traces, etc.
 
-### Config (optional): ###
-* Rename `.env_example` file to `.env` in the root directory
-* Lantube can work without `.env` file, but some config is likely to be needed
-* Default config has following options:
+### Default Config (.env_example file): ###
 
 ```
-# Config
+# Lantube environment
 
+# Server host name
+HOST_NAME=daniela-ubuntu
 # Nodejs server port, default 3000
 NODE_PORT=3000
 
 # Mongo DB
-MONGO_USER=admin
+MONGO_USER=colorina
 MONGO_DB=lantube
 MONGO_COLL=videos
 
 # Player
 PLAYER=mpv
-
-# TODO: support player options, like:
-
-# Force player to start video from begining
-# PLAYER_OPTION_START=--start:00
-
-# Force start in fullscreen
-# PLAYER_OPTION_FS=--fs
 ```
 
 ### Usage: ###
 
-Just do:
+Just run of following commands:
+
+# Livereload mode (default, better for dev): 
 ```
  $ gulp 
 ```
-It will run tasks like sass, uglify and start node server with nodemon.
+It will run tasks like sass, uglify and start node server with nodemon + livereload.
+
+# Non-livereload mode (better for user experience):
+```
+$ gulp lantube
+```
+
 
 Finally:
 * Local: Navigate to http://localhost:3000 in any modern browser
