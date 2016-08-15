@@ -30,7 +30,7 @@ HOST_NAME=daniela-ubuntu
 NODE_PORT=3000
 
 # Mongo DB
-MONGO_USER=colorina
+MONGO_USER=admin
 MONGO_DB=lantube
 MONGO_COLL=videos
 
