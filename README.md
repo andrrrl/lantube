@@ -52,8 +52,9 @@ It will run tasks like sass, uglify and start node server with [nodemon](http://
 ```
 $ gulp lantube
 ```
+It will also run sass, uglify and start node server with [nodemon](http://nodemon.io/).
 
-### Use it: ###
+### Use it7: ###
 * Local: Navigate to http://localhost:3000 in any modern browser
 * LAN: Get your server's IP number and navigate to http://YOUR_SERVER_IP:3000 from any modern browser
 
