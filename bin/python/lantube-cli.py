@@ -17,9 +17,9 @@ import subprocess
 import os
 import re
 try:
-	    import urllib2
+    import urllib2
 except ImportError:
-	    import urllib as urllib2
+    import urllib as urllib2
 from lxml.html import parse
 import json
 from youtube import YTSearch
@@ -105,9 +105,19 @@ class Lantube():
 			# TODO: better stats
 			if args[1] == 'stats':
 				print 'RAW Stats: '
-				raw_stats = urllib2.urlopen(self.LANTUBE_SERVER + '/stats')
-				for stat in raw_stats:
-					print stat
+				url_stats = urllib2.urlopen(self.LANTUBE_SERVER + '/stats')
+				raw_stats = url_stats.readlines()
+				stats = re.match(r"data:.*", raw_stats[1])
+
+				if stats:
+					stats = stats.group().replace('data:', '')
+
+				json_stats = json.loads(stats)
+				
+				for index, stat_val in enumerate(json_stats):
+					#print '- %s:\t\t%s' % stat_title, stat_val
+					print "- %s: %s" % (stat_val, json_stats[stat_val])
+
 				exit()
 
 		else:
