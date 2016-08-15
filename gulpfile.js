@@ -1,3 +1,5 @@
+'use strict';
+
 var gulp = require('gulp'),
   nodemon = require('gulp-nodemon'),
   plumber = require('gulp-plumber'),
@@ -13,13 +15,13 @@ gulp.task('sass', function() {
 });
 
 gulp.task('compress', function(cb) {
-	pump([
-		gulp.src('./assets/js/*.js'),
-		uglify(),
-		gulp.dest('./public/js')
-	],
-	cb
-	);
+  pump([
+      gulp.src('./assets/js/*.js'),
+      uglify(),
+      gulp.dest('./public/js')
+    ],
+    cb
+  );
 });
 
 gulp.task('watch', function() {
@@ -27,6 +29,7 @@ gulp.task('watch', function() {
   gulp.watch('./assets/**/*.js', ['compress']);
 });
 
+// DEV
 gulp.task('develop', function() {
   livereload.listen();
   nodemon({
@@ -44,9 +47,32 @@ gulp.task('develop', function() {
   });
 });
 
+// PROD
+gulp.task('run', function() {
+  //livereload.listen();
+  nodemon({
+    script: 'bin/www',
+    ext: 'js ejs coffee',
+    stdout: false
+  }).on('readable', function() {
+    this.stdout.pipe(process.stdout);
+    this.stderr.pipe(process.stderr);
+  });
+});
+
+// nodemon: YES, livereload: YES
 gulp.task('default', [
-	'compress',
-	'sass',
-	'develop',
-	'watch'
+  'compress',
+  'sass',
+  'develop',
+  'watch'
 ]);
+
+// nodemon: YES, livereload: NO
+gulp.task('lantube', [
+  'compress',
+  'sass',
+  'run',
+  'watch'
+]);
+

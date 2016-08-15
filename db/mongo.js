@@ -16,5 +16,5 @@ MongoDB.on('error', function(err) {
     console.log(err.message);
 });
 MongoDB.once('open', function() {
-    console.log('Connected to MongoDB with user ' + mongo_user);
+    console.log('Connected to MongoDB.');
 });

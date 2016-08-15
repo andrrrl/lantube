@@ -33,13 +33,15 @@ VideosSchema.methods.playThis = function(player, player_options, video_url, cb) 
 	// Play video!
 	const playing = spawn( player, [ player_options, video_url ] );
 	
-	console.log('Starting ' + process.env.PLAYER + ' with ' + ( player_options || 'no options.'));
+    player_options = player_options == '--' ? null : player_options;
 	
 	playing.stdout.on( 'data', data => {
+        console.log( 'Starting ' + process.env.PLAYER + ' with ' + ( player_options || 'no options.') );
 		console.log( `stdout: ${data}` );
 	});
 	
 	playing.stderr.on( 'data', data => {
+        // will print stuff continuously...
 		//console.log( `stderr: ${data}` );
 	});
 	

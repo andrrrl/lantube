@@ -1,8 +1,10 @@
 {
   "name": "lantube",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "bower install",
+	"install": "node ./tools/install.js",
     "start": "node ./bin/www"
   },
   "dependencies": {
@@ -18,7 +20,8 @@
     "node-notifier": "^4.6.0",
     "pump": "^1.0.1",
     "request": "^2.74.0",
-    "serve-favicon": "^2.3.0"
+    "serve-favicon": "^2.3.0",
+    "shelljs": "^0.7.3"
   },
   "devDependencies": {
     "gulp": "^3.9.0",

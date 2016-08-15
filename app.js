@@ -15,7 +15,6 @@ require('./db/mongo');
 require('./models/Videos');
 
 var routes = require('./routes/index');
-var users = require('./routes/user');
 
 var app = express();
 
@@ -49,7 +48,6 @@ app.use('/stylesheets', express.static(__dirname + '/components/font-awesome/css
 app.use('/fonts', express.static(__dirname + '/components/font-awesome/fonts')); // Angular font-awesome CSS
 
 app.use('/', routes);
-app.use('/users', users);
 
 
 // app.on('stopEvent', function () {

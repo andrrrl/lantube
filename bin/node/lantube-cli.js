@@ -1,16 +1,17 @@
 #!/usr/bin/node
 
 /**
- *
- *  Lantube Node.js CLI
- *  - Sends api calls for:
- *  	a) play all
- *  	b) play single
- *  	c) stop (anything that's playing)
- *  	d) server status
- *  	
+ * 
+ *  Lantube Node.js CLI v 0.1.0 for testing api calls
+ *  
+ *  - Project: https://github.com/andrrrl/lantube
+ *  - Author: Andrrr <andresin@gmail.com>
+ *  - This CLI just sends api calls for:
+ *  	a) play all videos: `$ node lantube-cli.js playlist`
+ *  	b) play single video: `$ node lantube-cli.js play [order=[1-n]]`
+ *  	c) stop (anything that's playing): `$ node lantube-cli.js stop`
+ *  	d) show server status: `$ node lantube-cli.js stats`
  */
-
 
 'use strict';
 

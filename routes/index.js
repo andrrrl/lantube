@@ -19,7 +19,7 @@ router.use(function(req, res, next) {
 		next();
 	} else {
 		res.status(401);
-		res.send( ip + ' is unallowed.');
+		res.send( 'Yikes! ' + ip + ' is unallowed.');
 		res.end();
 	}
 
@@ -76,7 +76,7 @@ router.route('/api/videos')
 	.get(function(req, res, next) {
 
 	    Videos.find({})
-	    .sort({ 'order': -1 })
+	    .sort({ 'order': 1 })
 		.exec(function(err, videos) {
 	        if (err) {
 	            console.log(err);
@@ -211,7 +211,7 @@ router.route('/api/videos/:order/play')
 					
 	    			// Play video!
 	    			let player = process.env.PLAYER || 'mpv';
-	    			let player_option = process.env.PLAYER_OPTION || ' ';
+	    			let player_option = process.env.PLAYER_OPTION || '--';
 					video.playThis( player, player_option, video.url, function(err){
 						res.json({
 							result: 'playing',
