@@ -27,11 +27,22 @@ from youtube import YTSearch
 
 class Lantube():
 
+	# Version
+	LANTUBE_VERSION = '0.1.2'
+
 	# Config Lantube server
 	LANTUBE_SERVER = 'http://localhost:3000/api/videos'
 
 	# use this to pipe all output to dev/null
 	FNULL = open(os.devnull, 'w')
+
+	def welcome(self):
+		print '+----------------------+'
+		print '|                      |-+'
+		print '| Lantube CLI v.' + self.LANTUBE_VERSION + '  | |'
+		print '|                      | |'
+		print '+----------------------+ |'
+		print ' +-----------------------+'
 
 	def __init__(self, args):
 
@@ -54,17 +65,21 @@ class Lantube():
 		if len(args) < 3:
 
 			# If option is 'stop', attempt to stop any playback
-			if args[1] == 'stop':
-				print 'Stopping any Lantube playback...'
+			if len(args) == 2 and args[1] == 'stop':
 				# Don't show output
-				subprocess.call(['curl', self.LANTUBE_SERVER + '/stop'],
-				                stdout=self.FNULL, stderr=subprocess.STDOUT)
+				stopped = subprocess.call(
+					['curl', self.LANTUBE_SERVER + '/stop'], 
+					stdout=self.FNULL, stderr=subprocess.STDOUT
+				)
 
+				if stopped == 0:
+					print 'Stopping any Lantube playback...'
+			
 				exit()
 
 			# If options is "list", show available videos to play
 
-			if args[1] == 'list':
+			if len(args) == 2 and args[1] == 'list':
 				print 'List of current videos: '
 
 				videos = json.load(urllib2.urlopen(self.LANTUBE_SERVER))
@@ -88,7 +103,7 @@ class Lantube():
 				exit()
 
 			# If help requested
-			if args[1] == 'help':
+			if len(args) == 2 and args[1] == 'help':
 				print 'Usage:'
 				print '- Search & add video to Lantube (interactive): $ lantube.py'
 				print '- Search & add video to Lantube (with args): $ lantube.py "my search terms" [quality=large]'
@@ -102,8 +117,8 @@ class Lantube():
 
 				exit()
 
-			# TODO: better stats
-			if args[1] == 'stats':
+			# Some stats
+			if len(args) == 2 and args[1] == 'stats':
 				print 'RAW Stats: '
 				url_stats = urllib2.urlopen(self.LANTUBE_SERVER + '/stats')
 				raw_stats = url_stats.readlines()
@@ -113,7 +128,7 @@ class Lantube():
 					stats = stats.group().replace('data:', '')
 
 				json_stats = json.loads(stats)
-				
+
 				for index, stat_val in enumerate(json_stats):
 					#print '- %s:\t\t%s' % stat_title, stat_val
 					print "- %s: %s" % (stat_val, json_stats[stat_val])
@@ -123,7 +138,7 @@ class Lantube():
 		else:
 
 			# If option is 'play', start playing video list and exit this script:
-			if args[1] == 'play':
+			if len(args) > 1 and args[1] == 'play':
 
 				print 'Playing...'
 
@@ -162,9 +177,9 @@ class Lantube():
 
 			print 'done!'
 
-			play_now = raw_input('Play now? S/n: ')
+			play_now = raw_input('Play now? Y/n: ')
 
-			if play_now == 's' or play_now == 'S':
+			if play_now == 'y' or play_now == 'Y':
 				# Play!
 				playing = subprocess.call(
 					['curl', '--silent', self.LANTUBE_SERVER + '/last/play'],
@@ -176,11 +191,6 @@ class Lantube():
 
 		print 'Bye!'
 		exit()
-
-	def welcome(self):
-		print '************************'
-		print '* Lantube CLI v. 0.1.2 *'
-		print '************************'
 
 if __name__ == '__main__':
 	Lantube(sys.argv)

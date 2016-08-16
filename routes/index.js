@@ -211,7 +211,7 @@ router.route('/api/videos/:order/play')
 					
 	    			// Play video!
 	    			let player = process.env.PLAYER || 'mpv';
-	    			let player_option = process.env.PLAYER_OPTION || '--';
+	    			let player_option = process.env.PLAYER_OPTION || (player == 'mpv' ? '--fs' : '--');
 					video.playThis( player, player_option, video.url, function(err){
 						res.json({
 							result: 'playing',
@@ -299,7 +299,7 @@ router.route('/api/videos/playlist')
 				
 					// Play PLS playlist!
 					let player = process.env.PLAYER || 'mpv';
-					let player_option = process.env.PLAYER_OPTION || ' ';
+					let player_option = process.env.PLAYER_OPTION || (player == 'mpv' ? '--fs' : '--');
 					let playlist_option = '--playlist';
 					video[0].playThis( player, playlist_option, 'http://localhost:3000/api/videos/pls');
 						res.json({

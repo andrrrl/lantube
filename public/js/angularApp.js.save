@@ -111,13 +111,13 @@ app.controller('MainCtrl', [
 	'videos',
 	function($scope, $rootScope, $log, videos) {
 
-	// the last received msg
-        //$scope.msg = {};
+		// the last received msg
+        	//$scope.msg = {};
 
-        // handles the callback from the received event
-        var handleCallback = function (msg) {
-            $scope.$apply(function () {
-                var server_stats = JSON.parse(msg.data);
+		// handles the callback from the received event
+        	var handleCallback = function (msg) {
+            	$scope.$apply(function () {
+                	let server_stats = JSON.parse(msg.data);
 				switch ( server_stats.status ) {
 
 					case 'idle':
@@ -143,14 +143,12 @@ app.controller('MainCtrl', [
             });
         }
 
-	// Listen for server stats
-	// So the page can update according to server changes
-        if (typeof(EventSource) !== "undefined") {
-		var source = new EventSource('/api/videos/stats');
-        	source.addEventListener('message', handleCallback, true);
-	}
+		// Listen for server stats
+		// So the page can update according to server changes
+        var source = new EventSource('/api/videos/stats');
+        source.addEventListener('message', handleCallback, true);
 
-	// Example
+	// Example url
 	$scope.videourl = 'https://www.youtube.com/watch?v=WFuWPhlsyEI';
 
 	// get all videos
@@ -166,28 +164,28 @@ app.controller('MainCtrl', [
 		return videos.stopText;
 	};
 
-	// is loading?
-	$scope.isPlaying = function(order) { 
-		return videos.isPlaying; 
-	};
+		// is loading?
+		$scope.isPlaying = function(order) {
+			return videos.isPlaying;
+		};
 
-	$scope.showStop = function() {
-		return videos.showStop;
-	}
+		$scope.showStop = function() {
+			return videos.showStop;
+		}
 
-	$log.log($scope.isPlaying());
+		$log.log($scope.isPlaying());
 
-	// add
-	$scope.add = videos.add;
+		// add
+		$scope.add = videos.add;
 
-	// play
-	$scope.play = videos.play;
+		// play
+		$scope.play = videos.play;
 
-	// stop
-	$scope.stop = videos.stop;
+		// stop
+		$scope.stop = videos.stop;
 
-	// Spinner color?
-	$scope.spinnerColor = 'white';
+		// Spinner color?
+		$scope.spinnerColor = 'white';
 
 	}
 ]);
