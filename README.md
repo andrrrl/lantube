@@ -12,27 +12,40 @@
 ```
 $ git clone https://github.com/andrrrl/lantube
 ```
-* Install npm (server) and bower (client) dependencies:
+* Install Lantube:
 ```
 $ npm install
 ```
-* Also will run `node ./tools/install.js`, a tiny tool that creates a default `.env` file
-* If any requirements are missing, look at the error logs, traces, etc.
+* Will run `bower install`
+* Also will run `node ./tools/install.js`, a tiny tool that creates a default `.env` file (see below)
 
 ### Default config (.env_example file): ###
 
 ```
-# Lantube environment
-
 # Server host name
-HOST_NAME=localhost
+HOST_NAME=hostname
 # Nodejs server port, default 3000
 NODE_PORT=3000
 
-# Mongo DB
-MONGO_USER=admin
+# [DEV] MongoDB Connection
+MONGO_HOST=localhost
+MONGO_PORT=
 MONGO_DB=lantube
-MONGO_COLL=videos
+MONGO_AUTH=no
+MONGO_USER=admin
+MONGO_PASS
+
+# [PROD] MongoDB Connection
+# MONGO_HOST=example.com
+# MONGO_PORT=27001
+# MONGO_DB=lantube
+# MONGO_AUTH=yes
+# MONGO_USER=admin
+# MONGO_PASS=shhhh
+
+# MongoDB Collections
+MONGO_VIDEOS_COLL=videos
+MONGO_STATS_COLL=serverStats
 
 # Player
 PLAYER=mpv
