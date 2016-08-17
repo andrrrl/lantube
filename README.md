@@ -76,5 +76,5 @@ It will also run sass, uglify and start node server with [nodemon](http://nodemo
 * Lantube is just for fun, don't rely too much on it for serious matters.
 
 ### TODOs: ###
-- Not the idea to use outside LAN, but still:
 * API auth with passport?
+* Make it work use outside LAN?
