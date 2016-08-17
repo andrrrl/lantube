@@ -1,5 +1,5 @@
 // lantube App!
-var app = angular.module('lantubeApp', ['ui.router', 'picardy.fontawesome']);
+var app = angular.module('lantubeApp', ['ui.router', 'ngAnimate', 'picardy.fontawesome']);
 
 // App config
 app.config([
@@ -30,17 +30,17 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	// Defaults
 	var obj = {
 		videos: [], // Init videos array
-		isPlaying: 0, // Order in the list of current playing video, 0 means "play all"
+		isPlaying: false, // Order in the list of current playing video
 		nowPlaying: false, // Current playing video
 		showStop: false, // Show "Stop" button?
 		playAllText: 'Play All', // Text for "play all" button
-		stopText: 'Stop' // Text for "stop" button
+		stopText: 'Stop All' // Text for "stop" button
 	};
 
 	// Get all videos
 	obj.getAll = function() {
 		return $http.get('/api/videos').success(function(data) {
-			// Don't play yet
+			// Don't autoplay
 			obj.isPlaying = false;
 			// create a deep copy of the returned data (this way $scope.videos will be keep updated)
 			angular.copy(data, obj.videos);
@@ -50,7 +50,6 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	// Get video data (unused for now)
 	obj.get = function(order) {
 		return $http.get('/api/videos/' + order).then(function(res) {
-			$log.log(res.data);
 			return res.data;
 		});
 	};
@@ -68,24 +67,36 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 
 	// Play single video by order or entire list, if order == 0 (default)
 	obj.play = function(order) {
+		
+		// avoid opening player twice
+		if ( order == obj.isPlaying ) {
+			return;
+		}
+		
+		if ( obj.isPlaying ) {
+			obj.stop();
+		}
+		
 		order = order || 0;
 
-		obj.isPlaying = order;
-		obj.playAllText = 'Playing...';
-		obj.showStop = true;
+		if ( order ){
+			obj.isPlaying = order;
+			obj.playAllText = 'Playing...';
+			obj.showStop = true;
 
-		if ( order > 0 ) {
-			// Play single video
-			return $http.get('/api/videos/' + order + '/play').then(function(res) {
-				if (res.data.next_order < obj.videos.length) {
-					return obj.play(res.data.next_order);
-				}
-			});
-		} else {
-			// Play entire list
-			return $http.get('/api/videos/playlist').then(function(res) {
-				return res.data.playing;
-			});
+			if ( order > 0 ) {
+				// Play single video
+				return $http.get('/api/videos/' + order + '/play').then(function(res) {
+					if (res.data.next_order < obj.videos.length) {
+						return obj.play(res.data.next_order);
+					}
+				});
+			} else {
+				// Play entire list
+				return $http.get('/api/videos/playlist').then(function(res) {
+					return res.data.playing;
+				});
+			}
 		}
 	};
 
@@ -128,7 +139,7 @@ app.controller('MainCtrl', [
 				switch ( server_stats.status ) {
 
 					case 'idle':
-						videos.isPlaying = 0;
+						videos.isPlaying = false;
 						videos.nowPlaying = false;
 						videos.showStop = false;
 						videos.playAllText = 'Play All';
@@ -142,7 +153,7 @@ app.controller('MainCtrl', [
 					break;
 
 					case 'stopped':
-						videos.isPlaying = 0;
+						videos.isPlaying = false;
 						videos.nowPlaying = false;
 						videos.showStop = false;
 						videos.playAllText = 'Play All';
@@ -197,7 +208,8 @@ app.controller('MainCtrl', [
 		// stop
 		$scope.stop = videos.stop;
 
-		// Spinner color? (just for testing)
+		// Some colors? (just for testing)
+		$scope.logoColor = 'darkorange';
 		$scope.spinnerColor = 'white';
 		$scope.speakerColor = 'black';
 

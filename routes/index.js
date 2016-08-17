@@ -15,7 +15,7 @@ router.use(function(req, res, next) {
 	let ip = req.headers["X-Forwarded-For"] || req.headers["x-forwarded-for"] || req.client.remoteAddress;
 
 	if ( ip.match( '192.168.' ) || ip == '::1' || ip == '::ffff:127.0.0.1' ) {
-		console.log('Hi you "' + ip + '"');
+		//console.log('Hi you "' + ip + '"');
 		next();
 	} else {
 		res.status(401);
@@ -30,6 +30,7 @@ function eventStreamResponse(res, stats) {
 	res.setHeader('Cache-Control', 'no-cache');
 	res.setHeader('Connection', 'keep-alive');
 	res.write('id: ' + (new Date().getMilliseconds()) + '\n');
+	res.write('retry: 1000\n');
 	res.write('data:' + JSON.stringify(stats) + '\n\n'); // Note the extra newline
 	res.end()
 }

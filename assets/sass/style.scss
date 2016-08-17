@@ -1,13 +1,20 @@
 body {
   padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  font: 14px "Roboto";
 }
 a {
   color: #00B7FF;
 }
+.now-playing {
+    padding: 15px;
+}
 .blink {
   animation: blink-animation 1s steps(5, start) infinite;
   -webkit-animation: blink-animation 1s steps(5, start) infinite;
+}
+.table-text {
+    position: relative;
+    top: 6px;
 }
 @keyframes blink-animation {
   to {
@@ -18,4 +25,11 @@ a {
   to {
     visibility: hidden;
   }
+}
+
+.now-playing {
+    transition: all linear 0.5s;
+}
+.ng-hide {
+    opacity: 0;
 }

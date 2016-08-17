@@ -35,9 +35,33 @@ VideosSchema.methods.playThis = function(player, player_options, video_url, cb) 
 	
     player_options = player_options == '--' ? null : player_options;
 	
+	var stuck = 0;
+	
 	playing.stdout.on( 'data', data => {
         console.log( 'Starting ' + process.env.PLAYER + ' with ' + ( player_options || 'no options.') );
 		console.log( `stdout: ${data}` );
+		
+		// Check if connection is stuck (only mpv / mplayer)
+		if ( data.toString().match(/Cache is not responding/) ) {
+		
+			stuck++;
+		
+			// If video is stuck after 20 retries, stop it and play again
+			if ( stuck == 20 ) {
+				setTimeout(function(){
+				
+					Videos.stopAll(function(){
+						
+						Videos.playThis(player, player_options, video_url, function(){
+							console.log( 'Connection stuck, retrying...' );
+						});
+						
+					});
+				
+				}, 5000);
+			}
+		}
+		
 	});
 	
 	playing.stderr.on( 'data', data => {
