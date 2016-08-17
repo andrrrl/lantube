@@ -53,7 +53,7 @@ PLAYER=mpv
 
 ### Usage: ###
 
-Just run of following commands:
+Just run one of the following commands:
 
 #### Livereload mode (default, better for dev): ####
 ```
