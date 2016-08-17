@@ -16,7 +16,7 @@ $ git clone https://github.com/andrrrl/lantube
 ```
 $ npm install
 ```
-* Will run `bower install`
+* Will auto-run `bower install` too
 * Also will run `node ./tools/install.js`, a tiny tool that creates a default `.env` file (see below)
 
 ### Default config (.env_example file): ###
