@@ -11,9 +11,9 @@ var Server = server_schema.Server;
 
 // Disallow non-LAN or Local IPs
 router.use(function(req, res, next) {
-	
+
 	let ip = req.headers["X-Forwarded-For"] || req.headers["x-forwarded-for"] || req.client.remoteAddress;
-	
+
 	if ( ip.match( '192.168.' ) || ip == '::1' || ip == '::ffff:127.0.0.1' ) {
 		console.log('Hi you "' + ip + '"');
 		next();
@@ -31,7 +31,7 @@ function eventStreamResponse(res, stats) {
 	res.setHeader('Connection', 'keep-alive');
 	res.write('id: ' + (new Date().getMilliseconds()) + '\n');
 	res.write('data:' + JSON.stringify(stats) + '\n\n'); // Note the extra newline
-	res.end() 
+	res.end()
 }
 
 
@@ -41,13 +41,13 @@ router.route('/api/videos/stats')
 
 		Server.findOne({ hostname: process.env.HOST_NAME || 'localhost' })
 			.exec(function(err, stats){
-				
+
 				if ( err )
 					console.log(err);
-					
+
 				eventStreamResponse(res, stats);
 			});
-			
+
 	});
 
 // GET and render homepage
