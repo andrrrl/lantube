@@ -16,7 +16,7 @@ var VideosSchema = new mongoose.Schema({
 	title: String,
     order: Number
 }, {
-    collection: 'videos'
+    collection: process.env.MONGO_VIDEOS_COLL || 'videos'
 });
 
 
@@ -57,7 +57,7 @@ VideosSchema.methods.playThis = function(player, player_options, video_url, cb) 
 		
 		// Update stats
 		let server_stats = Server.updateStats('stopped', 0);
-		Server.findOneAndUpdate({ hostname: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
+		Server.findOneAndUpdate({ host: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
 			.exec(function(err, stats){});
 		
 	});
@@ -66,7 +66,7 @@ VideosSchema.methods.playThis = function(player, player_options, video_url, cb) 
 	
 };
 
-var Videos = mongoose.model('videos', VideosSchema);
+var Videos = mongoose.model(process.env.MONGO_VIDEOS_COLL || 'videos', VideosSchema);
 
 VideosSchema.plugin(autoIncrement.plugin, {
     model: 'Videos',

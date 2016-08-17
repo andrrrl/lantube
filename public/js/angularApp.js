@@ -31,6 +31,7 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	var obj = {
 		videos: [], // Init videos array
 		isPlaying: 0, // Order in the list of current playing video, 0 means "play all"
+		nowPlaying: false, // Current playing video
 		showStop: false, // Show "Stop" button?
 		playAllText: 'Play All', // Text for "play all" button
 		stopText: 'Stop' // Text for "stop" button
@@ -49,6 +50,7 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	// Get video data (unused for now)
 	obj.get = function(order) {
 		return $http.get('/api/videos/' + order).then(function(res) {
+			$log.log(res.data);
 			return res.data;
 		});
 	};
@@ -75,7 +77,6 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 		if ( order > 0 ) {
 			// Play single video
 			return $http.get('/api/videos/' + order + '/play').then(function(res) {
-				$log.log(res);
 				if (res.data.next_order < obj.videos.length) {
 					return obj.play(res.data.next_order);
 				}
@@ -90,12 +91,19 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 
 	// Stop all playback (single or list)
 	obj.stop = function() {
-		return $http.get('/api/videos/stop').then(function(response){
-			if ( response.data.result == 'stopped' )
+		return $http.get('/api/videos/stop').then(function(res){
+			if ( res.data.result == 'stopped' )
 				obj.isPlaying = 0;
 				obj.showStop = false;
 				obj.playAllText = 'Play All';
-			return response.data;
+			return res.data;
+		});
+	}
+	
+	// Get server stats with AJAX [UNUSED, using SSE (Server-Side Events)]
+	obj.stats = function() {
+		return $http.get('/api/videos/stats').then(function(res){
+			return res;
 		});
 	}
 
@@ -108,11 +116,10 @@ app.controller('MainCtrl', [
 	'$scope',
 	'$rootScope',
 	'$log',
+	'$timeout', 
+	'$interval',
 	'videos',
-	function($scope, $rootScope, $log, videos) {
-
-	// the last received msg
-        //$scope.msg = {};
+	function($scope, $rootScope, $log, $timeout, $interval, videos) {
 
         // handles the callback from the received event
         var handleCallback = function (msg) {
@@ -122,72 +129,77 @@ app.controller('MainCtrl', [
 
 					case 'idle':
 						videos.isPlaying = 0;
+						videos.nowPlaying = false;
 						videos.showStop = false;
 						videos.playAllText = 'Play All';
 					break;
 
 					case 'playing':
 						videos.isPlaying = server_stats.video_order;
+						videos.nowPlaying = server_stats.video_title + ' [' + server_stats.video_url + ']';
 						videos.showStop = true;
 						videos.playAllText = 'Playing...';
 					break;
 
 					case 'stopped':
 						videos.isPlaying = 0;
+						videos.nowPlaying = false;
 						videos.showStop = false;
 						videos.playAllText = 'Play All';
 					break;
 
 				}
-				//$log.log(message.data);
             });
         }
 
-	// Listen for server stats
-	// So the page can update according to server changes
-        if (typeof(EventSource) !== "undefined") {
-		var source = new EventSource('/api/videos/stats');
-        	source.addEventListener('message', handleCallback, true);
-	}
+		// Listen for SSE with stats data 
+		// So the page can update according to server changes
+	    if (typeof(EventSource) !== "undefined") {
+			var source = new EventSource('/api/videos/stats');
+	        	source.addEventListener('message', handleCallback, true);
+		}
 
-	// Example
-	$scope.videourl = 'https://www.youtube.com/watch?v=WFuWPhlsyEI';
+		// Example URL
+		$scope.videourl = 'https://www.youtube.com/watch?v=WFuWPhlsyEI';
 
-	// get all videos
-	$scope.videos = videos.videos;
+		// get all videos
+		$scope.videos = videos.videos;
 
-	// "play all" text
-	$scope.playAllText = function() {
-		return videos.playAllText;
-	};
+		// "play all" text
+		$scope.playAllText = function() {
+			return videos.playAllText;
+		};
 
-	// "stop" text
-	$scope.stopText = function() {
-		return videos.stopText;
-	};
+		// "stop" text
+		$scope.stopText = function() {
+			return videos.stopText;
+		};
 
-	// is loading?
-	$scope.isPlaying = function(order) { 
-		return videos.isPlaying; 
-	};
+		// is loading?
+		$scope.isPlaying = function(order) { 
+			return videos.isPlaying; 
+		};
+		
+		// is playing?
+		$scope.nowPlaying = function(order) { 
+			return videos.nowPlaying; 
+		};
 
-	$scope.showStop = function() {
-		return videos.showStop;
-	}
+		// show stop button?
+		$scope.showStop = function() {
+			return videos.showStop;
+		};
 
-	$log.log($scope.isPlaying());
+		// add
+		$scope.add = videos.add;
+		// play
+		$scope.play = videos.play;
+		// stop
+		$scope.stop = videos.stop;
 
-	// add
-	$scope.add = videos.add;
-
-	// play
-	$scope.play = videos.play;
-
-	// stop
-	$scope.stop = videos.stop;
-
-	// Spinner color?
-	$scope.spinnerColor = 'white';
+		// Spinner color? (just for testing)
+		$scope.spinnerColor = 'white';
+		$scope.speakerColor = 'black';
 
 	}
 ]);

@@ -43,21 +43,12 @@ app.use('/javascripts', express.static(__dirname + '/components/angular')); // A
 app.use('/javascripts', express.static(__dirname + '/components/angular-ui-router/release')); // Angular route JS
 app.use('/javascripts', express.static(__dirname + '/components/angular-bootstrap')); // Angular bootstrap JS
 app.use('/javascripts', express.static(__dirname + '/components/angular-fontawesome/dist')); // Angular font-awesome JS
+app.use('/javascripts', express.static(__dirname + '/components/event-source-polyfill')); // Angular font-awesome JS
 
 app.use('/stylesheets', express.static(__dirname + '/components/font-awesome/css')); // Angular font-awesome CSS
 app.use('/fonts', express.static(__dirname + '/components/font-awesome/fonts')); // Angular font-awesome CSS
 
 app.use('/', routes);
-
-
-// app.on('stopEvent', function () {
-// 	return console.log('responded to stopEvent');
-// });
-// 
-// app.get('/api/videos/stop', function (req, res) {
-// 	app.emit('stopEvent');
-// 	return res.status(200).end();
-// });
 
 /// catch 404 and forward to error handler
 app.use(function(req, res, next) {

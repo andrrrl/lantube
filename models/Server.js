@@ -5,9 +5,10 @@ var request = require('request');
 var mongoose = require('mongoose');
 
 var ServerStatsSchema = new mongoose.Schema({
-	hostname: {
+	host: {
 		type: String,
-		required: true
+		required: true,
+		default: process.env.HOST_NAME || 'localhost'
 	},
 	os_type: String,
 	platform: String,
@@ -22,12 +23,14 @@ var ServerStatsSchema = new mongoose.Schema({
 		enum: ['playing', 'stopped', 'idle'],
 		default: 'idle'
 	},
-	video_order: Number
+	video_order: Number,
+	video_title: String,
+	video_url: String
 }, {
-    collection: 'serverStats'
+    collection: process.env.MONGO_STATS_COLL
 });
 
-ServerStatsSchema.statics.updateStats = function(status, order) {
+ServerStatsSchema.statics.updateStats = function(status, order, title, url) {
 	
 	var stats = {
 		type: os.type(),
@@ -39,13 +42,15 @@ ServerStatsSchema.statics.updateStats = function(status, order) {
 		totalmem: os.totalmem(),
 		freemem: os.freemem(),
 		status: status,
-		video_order: order
+		video_order: order,
+		video_title: title,
+		video_url: url
 	}
 	
 	return stats;
 };
 
-var Server = mongoose.model('serverStats', ServerStatsSchema);
+var Server = mongoose.model(process.env.MONGO_STATS_COLL || 'serverStats', ServerStatsSchema);
 
 var serverSchema = {
     'Server': Server

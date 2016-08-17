@@ -39,7 +39,7 @@ function eventStreamResponse(res, stats) {
 router.route('/api/videos/stats')
 	.get(function(req, res, next){
 
-		Server.findOne({ hostname: process.env.HOST_NAME || 'localhost' })
+		Server.findOne({ host: process.env.HOST_NAME || 'localhost' })
 			.exec(function(err, stats){
 
 				if ( err )
@@ -53,26 +53,27 @@ router.route('/api/videos/stats')
 // GET and render homepage
 router.get('/', function(req, res, next) {
 
-    Videos.find({})
-		.exec(function(err, videos) {
-	        if (err) {
-	            console.log(err);
-	        } else {
-				res.render('index', {
-					title: 'Lantube',
-					lang: req.headers['accept-language'].slice(0, 2) || 'es',
-					videos: videos || {}
-				});
-				res.end();
-	        }
-	    });
+	// Render index
+	Videos.find({})
+	.exec(function(err, videos) {
+		if (err) {
+			console.log(err);
+		} else {
+			res.render('index', {
+				title: 'Lantube',
+				lang: req.headers['accept-language'].slice(0, 2) || 'es',
+				videos: videos || {}
+			});
+			res.end();
+		}
+	});
 	
 });
 
 // GET all
 router.route('/api/videos')
 
-	// GET ALL
+	// GET ALL VIDEOS
 	.get(function(req, res, next) {
 
 	    Videos.find({})
@@ -91,8 +92,10 @@ router.route('/api/videos')
 	// POST (insert)
 	.post(function(req, res, next) {
 
+		// Extract Youtube video ID
 		var yt_id = req.body.video.trim().replace(/http(s?):\/\/(w{3}?)(\.?)youtube\.com\/watch\?v=/, '');
 		
+		// Check ID
 		if ( yt_id == '' ) {
 			res.json({
 				result: 'error',
@@ -101,10 +104,9 @@ router.route('/api/videos')
 			res.end();
 		}
 		
-	    var yt_json = 'http://www.youtube.com/oembed?url=' + req.body.video + '&format=json';
-		
+		// Get video data from Youtube
 	    request({
-	        url: yt_json,
+	        url: 'http://www.youtube.com/oembed?url=' + req.body.video + '&format=json',
 	        json: true
 	    }, function (error, response, body) {
 
@@ -136,35 +138,36 @@ router.route('/api/videos')
 
 
 // parameter middleware that will run before the next routes
-router.param('id', function(req, res, next, id) {
+router.param('option', function(req, res, next, option) {
 
-    // check if the Bordado with that id exists
-    // TODO: do some validations
-    var modified = id.toString();
+    // if numeric, force order to be an integer
+    var modified = typeof option == 'number' ? parseInt(option) : option;
 
     // save id to the request
-    req.id = modified;
+    req.option = modified;
 
     next();
 });
 
 
 // GET (load)
-router.route('/api/videos/:id')
+router.route('/api/videos/:option')
 
 	.get(function(req, res, next) {
 		
-		if ( req.params.id == 'stop' )
+		// Filter options
+		if ( req.params.option == 'stop' )
 			return next();
-		if ( req.params.id == 'pls' )
+		if ( req.params.option == 'pls' )
 			return next();
-		if ( req.params.id == 'playlist' )
+		if ( req.params.option == 'playlist' )
 			return next();
-		if ( req.params.id == 'stats' )
+		if ( req.params.option == 'stats' )
 			return next();
 
+		// Default is "order"
 	    Videos.findOne({
-	        '_id': req.params.id
+	        'order': req.params.option || 0
 	    }).exec(function(err, video) {
 
 	        if (err) {
@@ -205,8 +208,8 @@ router.route('/api/videos/:order/play')
 	            } else {
 					
 					// Update stats
-					let server_stats = Server.updateStats('playing', video.order);
-					Server.findOneAndUpdate({ hostname: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
+					let server_stats = Server.updateStats('playing', video.order, video.title, video.url);
+					Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
 						.exec(function(err, stats){});
 					
 	    			// Play video!
@@ -233,8 +236,8 @@ router.route('/api/videos/stop')
 		Videos.stopAll();
 
 		// Update stats
-		let server_stats = Server.updateStats('stopped', 0);
-		Server.findOneAndUpdate({ hostname: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
+		let server_stats = Server.updateStats('stopped', 0, '', '');
+		Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
 			.exec(function(err, stats){});
 
 		res.json({
@@ -293,8 +296,8 @@ router.route('/api/videos/playlist')
 	            } else {
 				
 					// Update stats
-					let server_stats = Server.updateStats('playing', 0);
-					Server.findOneAndUpdate({ hostname: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
+					let server_stats = Server.updateStats('playing', 0, 'Full PLS Playlist', '/api/videos/pls');
+					Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
 						.exec(function(err, stats){});
 				
 					// Play PLS playlist!

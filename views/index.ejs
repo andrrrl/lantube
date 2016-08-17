@@ -8,7 +8,7 @@
 			<div class="col-md-10 col-sm-12">
 				<h1><%- title %></h1>
 				<p>
-                    Agregar un video de Youtube a la lista <br>
+                    Append any Youtube video to the list <br>
                 </p>
 			</div>
 			<div class="col-md-1 col-sm-0">
@@ -24,7 +24,7 @@
 					<div class="input-group">
 						<input id="video" type="text" class="form-control" placeholder="Link del video de Youtube..." ng-model="videourl" value="" select-on-click>
 						<span class="input-group-btn">
-							<button id="agregar" class="btn btn-default" type="button" ng-click="add(videourl, videos.length + 1)">Agregar</button>
+							<button id="agregar" class="btn btn-default" type="button" ng-click="add(videourl, videos.length + 1)">Add</button>
 						</span>
 					</div><!-- /input-group -->
 					<hr>
@@ -36,7 +36,12 @@
 						<fa name="stop" alt="Stop" size="1" ng-style="{'color': spinnerColor}"></fa> 
 						{{stopText()}}
 					</button>
+					<span class="text-success" ng-show="nowPlaying()">
+						<fa name="volume-up" alt="Playing..." size="1" ng-class="nowPlaying() && 'blink'" ng-style="{'color': speakerColor}"></fa>
+						<b>Now playing:</b> {{ nowPlaying() }}
+					</span>
 				</form>
+				
 			</div>
 			<div class="col-md-1 col-sm-0">
 				
@@ -65,11 +70,10 @@
 					<tr ng-repeat="video in videos | orderBy:'order'">
 						<td class="orden">{{video.order}}</td>
 						<td>
-							<button class="play btn-xs btn-warning" type="button">
+							<button class="play btn-sm btn-warning" type="button" ng-click="play(video.order)">
 								<fa ng-cloak="{{ isPlaying() == video.order }}" 
 									name="{{ isPlaying() == video.order ? 'circle-o-notch' : 'play' }}" 
 									spin="{{ isPlaying() == video.order }}" 
-									ng-click="play(video.order)" 
 									size="1">
 								</fa>
 							</button>
