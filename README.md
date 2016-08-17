@@ -77,5 +77,4 @@ It will also run sass, uglify and start node server with [nodemon](http://nodemo
 
 ### TODOs: ###
 - Not the idea to use outside LAN, but still:
-* Add Mongo auth?
-* API auth? 
+* API auth with passport?
