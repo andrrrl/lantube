@@ -3,9 +3,9 @@
 /**
  *
  * Lantube post install script
- * by Andrrr <andresin@gmail.com>
+ * Author: Andrrr <andresin@gmail.com>
  *
- * . This script is meant to be executed with `npm install`
+ * . This script is meant to be executed as a postinstall of `npm install`
  * 
  * - Will check if a .env file exists
  * 		1) If .env file already exists, will just end the script  

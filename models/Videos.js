@@ -19,7 +19,6 @@ var VideosSchema = new mongoose.Schema({
     collection: process.env.MONGO_VIDEOS_COLL || 'videos'
 });
 
-
 const EventEmitter = require('events');
 const stopEmitter = new EventEmitter();
 

@@ -157,6 +157,8 @@ router.route('/api/videos/:option')
 	.get(function(req, res, next) {
 		
 		// Filter options
+		if ( req.params.option == 'list' )
+			return next();
 		if ( req.params.option == 'stop' )
 			return next();
 		if ( req.params.option == 'pls' )
@@ -178,9 +180,29 @@ router.route('/api/videos/:option')
 	            res.json(video);
 	            res.end();
 	        }
+			
+			next();
+			
 	    });
 	
 });
+
+// LIST
+router.route('/api/videos/list')
+	.get(function(req, res, next) {
+		
+		Videos.find({})
+	    .sort({ 'order': 1 })
+		.exec(function(err, videos) {
+	        if (err) {
+	            console.log(err);
+	        } else {
+	            res.json(videos);
+	            res.end();
+	        }
+			
+	    });
+	});
 
 
 // PLAY
@@ -210,18 +232,18 @@ router.route('/api/videos/:order/play')
 					
 					// Update stats
 					let server_stats = Server.updateStats('playing', video.order, video.title, video.url);
-					Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
+					Server.findOneAndUpdate({ 
+						host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
 						.exec(function(err, stats){});
 					
 	    			// Play video!
 	    			let player = process.env.PLAYER || 'mpv';
 	    			let player_option = process.env.PLAYER_OPTION || (player == 'mpv' ? '--fs' : '--');
-					video.playThis( player, player_option, video.url, function(err){
-						res.json({
-							result: 'playing',
-							playing: video.url,
-							order: video.order
-						});
+					video.playThis( player, player_option, video.url );
+					res.json({
+						result: 'playing',
+						playing: video.url,
+						order: video.order
 					});
 					res.end();
 	            }
