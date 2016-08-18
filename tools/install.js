@@ -53,7 +53,7 @@ if ( env_found ) {
 			shell.echo('[INFO] Generating file...'.bold);
 			
 			// Remove example comments
-			shell.exec('cat .env_example | grep -vP \'(\# \\(?\\!)\' > .env', { silent:true }, function(code, stdout, stderr){
+			shell.exec('cat .env | grep -vP \'(\# \\(?\\!)\' > .env', { silent:true }, function(code, stdout, stderr){
 				shell.echo('[OK] .env file created!'.green.bold);
 				shell.echo('[INFO] You can delete .env_example now.'.bold);
 				shell.echo('[INFO] Don\'t forget to check your config in .env file!'.bold);
