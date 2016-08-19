@@ -13,11 +13,7 @@ Project: https://github.com/andrrrl/lantube
 
 import sys
 import re
-try:
-    import urllib2
-except ImportError:
-    import urllib as urllib2
-
+import urllib2
 from lxml.html import parse
 
 
@@ -25,7 +21,6 @@ from lxml.html import parse
 Youtube search
 Given some search terms, prints a list of youtube results
 '''
-
 
 class YTSearch():
 
@@ -58,7 +53,6 @@ class YTSearch():
     		if len(args) == 3:
     			self.video_quality = args[2] or 'large'
 
-
     	print "Searching videos for \"%s\" with quality [%s]..." % (self.search, self.video_quality)
     	self.search = re.sub(' ', '+', self.search)
 
@@ -67,8 +61,6 @@ class YTSearch():
     	    ('User-agent', 'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11')]
     	url = opener.open('https://www.youtube.com/results?search_query=' + self.search)
     	self.html = parse(url).getroot()
-
-    	self.print_links()
 
 
     def get_links(self):

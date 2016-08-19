@@ -326,7 +326,7 @@ router.route('/api/videos/playlist')
 					// Play PLS playlist!
 					let player = process.env.PLAYER || 'mpv';
 					let player_option = process.env.PLAYER_OPTION || (player == 'mpv' ? '--fs' : '--');
-					let playlist_option = '--playlist';
+					let playlist_option = '--' + process.env.PLAYER_PLAYLIST;
 					video[0].playThis( player, playlist_option, 'http://localhost:3000/api/videos/pls');
 						res.json({
 							result: 'playlist',
