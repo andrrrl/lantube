@@ -83,10 +83,10 @@ It will also run sass, uglify and start node server with [nodemon](http://nodemo
 
 ### Client (CLI): ###
 * Python CLI (full featured):
-  1. `$ cd bin/python`
+  1. `$ cd cli/python`
   2. `$ python lantube-cli.py help`
 * Node.js CLI (for quick tests): 
-  1. `$ cd bin/node/`
+  1. `$ cd cli/node/`
   2. `$ node lantube-cli.js help`
 
 ### Security: ###
