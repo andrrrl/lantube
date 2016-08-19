@@ -2,25 +2,14 @@
 # -*- coding: utf-8 -*-
 
 '''
-
-Lantube Python CLI v. 0.1.2
-by Andrrr <andresin@gmail.com>
-CLI interface for Lantube, a small MEAN server/client app for playing youtube videos in a LAN
-Project: https://github.com/andrrrl/lantube
-*** Just for fun! ***
-
+Simple Youtube CLI search
+Given some search terms, prints a list of youtube results
 '''
 
 import sys
 import re
 import urllib2
 from lxml.html import parse
-
-
-'''
-Youtube search
-Given some search terms, prints a list of youtube results
-'''
 
 class YTSearch():
 
