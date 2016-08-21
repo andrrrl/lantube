@@ -27,12 +27,21 @@ VideosSchema.statics.stopAll = function(cb) {
 	return cb;
 }
 
-VideosSchema.methods.playThis = function(player, player_options, video_url, cb) {
+// VideosSchema.methods.pause() = function( current_video_order ) {
+// 	// TODO
+// }
+
+VideosSchema.methods.playThis = function(player_options, cb) {
+	
+	console.log(player_options);
+	
+	let player = player_options.player || process.env.PLAYR || 'mpv';
+	let player_only_audio = player_options.only_audio || process.env.PLAYER_ONLY_AUDIO || '--';
+	let player_playlist = player_options.player_playlist || process.env.PLAYER_PLAYLIST || '';
+	let video_url = player_options.url || '';
 	
 	// Play video!
-	const playing = spawn( player, [ player_options, video_url ] );
-	
-    player_options = player_options == '--' ? null : player_options;
+	const playing = spawn( player, [ player_only_audio, player_playlist, video_url ] );
 	
 	var stuck = 0;
 	
@@ -51,7 +60,7 @@ VideosSchema.methods.playThis = function(player, player_options, video_url, cb) 
 				
 					Videos.stopAll(function(){
 						
-						Videos.playThis(player, player_options, video_url, function(){
+						Videos.playThis(player_options, function(){
 							console.log( 'Connection stuck, retrying...' );
 						});
 						

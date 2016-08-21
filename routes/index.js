@@ -105,7 +105,7 @@ router.route('/api/videos')
 			res.end();
 		}
 		
-		// Get video data from Youtube
+		// Get video data from Youtube embed API
 	    request({
 	        url: 'http://www.youtube.com/oembed?url=' + req.body.video + '&format=json',
 	        json: true
@@ -237,9 +237,13 @@ router.route('/api/videos/:order/play')
 						.exec(function(err, stats){});
 					
 	    			// Play video!
-	    			let player = process.env.PLAYER || 'mpv';
-	    			let player_option = process.env.PLAYER_OPTION || (player == 'mpv' ? '--fs' : '--');
-					video.playThis( player, player_option, video.url );
+					video.playThis({
+						player: process.env.PLAYER, 
+						only_audio: process.env.PLAYER_ONLY_AUDIO, 
+						playlist: process.env.PLAYER_PLAYLIST, 
+						url: video.url
+					});
+					
 					res.json({
 						result: 'playing',
 						playing: video.url,
@@ -324,10 +328,12 @@ router.route('/api/videos/playlist')
 						.exec(function(err, stats){});
 				
 					// Play PLS playlist!
-					let player = process.env.PLAYER || 'mpv';
-					let player_option = process.env.PLAYER_OPTION || (player == 'mpv' ? '--fs' : '--');
-					let playlist_option = '--' + process.env.PLAYER_PLAYLIST;
-					video[0].playThis( player, playlist_option, 'http://localhost:3000/api/videos/pls');
+					video[0].playThis({ 
+							player: process.env.PLAYER, 
+							only_audio: process.env.PLAYER_ONLY_AUDIO, 
+							playlist: process.env.PLAYER_PLAYLIST, 
+							url: 'http://localhost:3000/api/videos/pls'
+						});
 						res.json({
 							result: 'playlist',
 							order: req.params.order
