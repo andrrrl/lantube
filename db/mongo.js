@@ -31,3 +31,5 @@ MongoDB.on('error', function(err) {
 MongoDB.once('open', function() {
     console.log('Connected to MongoDB');
 });
+
+module.exports = mongoose.connection;
