@@ -236,11 +236,13 @@ router.route('/api/videos/:order/play')
 						host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
 						.exec(function(err, stats){});
 					
+					
 	    			// Play video!
 					video.playThis({
 						player: process.env.PLAYER, 
 						only_audio: process.env.PLAYER_ONLY_AUDIO, 
-						playlist: process.env.PLAYER_PLAYLIST, 
+						playlist: '', 
+						fullscreen: process.env.PLAYER_FULLSCREEN,
 						url: video.url
 					});
 					
@@ -331,7 +333,8 @@ router.route('/api/videos/playlist')
 					video[0].playThis({ 
 							player: process.env.PLAYER, 
 							only_audio: process.env.PLAYER_ONLY_AUDIO, 
-							playlist: process.env.PLAYER_PLAYLIST, 
+							playlist: process.env.PLAYER_PLAYLIST,
+							fullscreen: process.env.PLAYER_FULLSCREEN,
 							url: 'http://localhost:3000/api/videos/pls'
 						});
 						res.json({
