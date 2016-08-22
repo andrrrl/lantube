@@ -31,6 +31,10 @@
 						</span>
 					</div><!-- /input-group -->
 					<br>
+					<label>
+						Play fullscreen?
+						<input type="checkbox" ng-model="fullscreen" ng-click="toggleFS(fullscreen)">
+					<br>
 					<button ng-hide="showStop()" class="btn btn-success" type="button" name="play" ng-click="play('all')">
 						<fa name="{{ isPlaying() != 0 ? 'circle-o-notch' : 'play' }}" alt="Loading" size="1" spin="{{ isPlaying() != 0 }}" ng-style="{'color': spinnerColor}"></fa> 
 						{{playAllText()}}
@@ -101,6 +105,16 @@
 				</table>
 			</div>
 			<div class="col-md-1 col-sm-0">
+				
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-1">
+				
+			</div>
+			<div class="col-md-10">
+			</div>
+			<div class="col-md-1">
 				
 			</div>
 		</div>

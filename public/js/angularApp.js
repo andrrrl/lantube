@@ -30,6 +30,7 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	// Defaults
 	var obj = {
 		videos: [], // Init videos array
+		fullscreen: false, // Toggle fullscreen
 		isPlaying: false, // Order in the list of current playing video
 		nowPlaying: false, // Current playing video
 		showStop: false, // Show "Stop" button?
@@ -118,6 +119,12 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 		});
 	}
 
+	obj.toggleFS = function(fs) {
+		return $http.patch('/api/videos/stats', {player_fullscreen: fs}).then(function(res){
+			return res;
+		});
+	}
+
 	return obj;
 
 }]);
@@ -136,6 +143,9 @@ app.controller('MainCtrl', [
         var handleCallback = function (msg) {
             $scope.$apply(function () {
                 var server_stats = JSON.parse(msg.data);
+				
+				$scope.fullscreen = server_stats.player_fullscreen != '' ? true : false;
+				
 				switch ( server_stats.status ) {
 
 					case 'idle':
@@ -150,6 +160,7 @@ app.controller('MainCtrl', [
 						videos.nowPlaying = server_stats.video_title + ' [' + server_stats.video_url + ']';
 						videos.showStop = true;
 						videos.playAllText = 'Playing...';
+
 					break;
 
 					case 'stopped':
@@ -168,6 +179,11 @@ app.controller('MainCtrl', [
 	    if (typeof(EventSource) !== "undefined") {
 			var source = new EventSource('/api/videos/stats');
 	        	source.addEventListener('message', handleCallback, true);
+		}
+
+		$scope.toggleFS = function(fs) {
+			videos.toggleFS();
+			return !fs;
 		}
 
 		// Example URL
@@ -200,7 +216,7 @@ app.controller('MainCtrl', [
 		$scope.showStop = function() {
 			return videos.showStop;
 		};
-
+		
 		// add
 		$scope.add = videos.add;
 		// play

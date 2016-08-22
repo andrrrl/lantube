@@ -25,7 +25,10 @@ var ServerStatsSchema = new mongoose.Schema({
 	},
 	video_order: Number,
 	video_title: String,
-	video_url: String
+	video_url: String,
+	player: String,
+	player_playlist: String,
+	player_fullscreen: String
 }, {
     collection: process.env.MONGO_STATS_COLL
 });
@@ -44,7 +47,10 @@ ServerStatsSchema.statics.updateStats = function(status, order, title, url) {
 		status: status,
 		video_order: order,
 		video_title: title,
-		video_url: url
+		video_url: url,
+		player: process.env.PLAYER || false,
+		player_playlist: process.env.PLAYER_PLAYLIST || false,
+		player_fullscreen: process.env.PLAYER_FULLSCREEN || false
 	}
 	
 	return stats;

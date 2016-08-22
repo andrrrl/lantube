@@ -49,6 +49,16 @@ router.route('/api/videos/stats')
 				eventStreamResponse(res, stats);
 			});
 
+	})
+	.patch(function(req, res, next){
+		
+		Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, {player_fullscreen: req.body.fs}).exec(function(err, stats){
+			res.json({
+				fullscreen: stats.player_fullscreen
+			});
+			res.end();
+		});
+		
 	});
 
 // GET and render homepage
