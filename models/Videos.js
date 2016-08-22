@@ -34,7 +34,7 @@ VideosSchema.statics.stopAll = function(cb) {
 VideosSchema.methods.playThis = function(player_options, cb) {
 	
 	let player = player_options.player || process.env.PLAYR || 'mpv';
-	let player_only_audio = player_options.only_audio || process.env.PLAYER_ONLY_AUDIO || '--';
+	let player_only_audio = player_options.only_audio || process.env.PLAYER_ONLY_AUDIO || '';
 	let player_playlist = player_options.player_playlist ? process.env.PLAYER_PLAYLIST : '';
 	let player_fullscreen = player_options.player_fullscreen || process.env.PLAYER_FULLSCREEN || '';
 	let video_url = player_options.url || '';
