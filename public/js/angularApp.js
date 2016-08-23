@@ -14,7 +14,7 @@ app.config([
 				resolve: {
 					// Get all saved videos 
 					videoPromise: ['videos', function(videos) {
-						return videos.getAll();
+						return [ videos.getAll(), videos.player() ];
 					}]
 				}
 			});
@@ -30,12 +30,13 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	// Defaults
 	var obj = {
 		videos: [], // Init videos array
-		fullscreen: false, // Toggle fullscreen
+		player: {},
 		isPlaying: false, // Order in the list of current playing video
 		nowPlaying: false, // Current playing video
 		showStop: false, // Show "Stop" button?
 		playAllText: 'Play All', // Text for "play all" button
-		stopText: 'Stop All' // Text for "stop" button
+		stopText: 'Stop All', // Text for "stop" button
+		playFullscreenText: 'Play fullscreen'
 	};
 
 	// Get all videos
@@ -45,8 +46,15 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 			obj.isPlaying = false;
 			// create a deep copy of the returned data (this way $scope.videos will be keep updated)
 			angular.copy(data, obj.videos);
+			
 		});
 	};
+	
+	obj.player = function() {
+		return $http.get('/api/videos/player').success(function(data){
+			angular.copy(data, obj.player);
+		});
+	}
 
 	// Get video data (unused for now)
 	obj.get = function(order) {
@@ -67,7 +75,9 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	};
 
 	// Play single video by order or entire list, if order == 0 (default)
-	obj.play = function(order) {
+	obj.play = function(order, fs) {
+		
+		$log.log(fs);
 		
 		// avoid opening player twice
 		if ( order == obj.isPlaying ) {
@@ -115,12 +125,12 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	// Get server stats with AJAX [UNUSED, using SSE (Server-Side Events)]
 	obj.stats = function() {
 		return $http.get('/api/videos/stats').then(function(res){
-			return res;
+			return res.data;
 		});
 	}
-
+	
 	obj.toggleFS = function(fs) {
-		return $http.patch('/api/videos/stats', {player_fullscreen: fs}).then(function(res){
+		return $http.patch('/api/videos/stats', { fs: fs }).then(function(res){
 			return res;
 		});
 	}
@@ -134,17 +144,13 @@ app.controller('MainCtrl', [
 	'$scope',
 	'$rootScope',
 	'$log',
-	'$timeout', 
-	'$interval',
 	'videos',
-	function($scope, $rootScope, $log, $timeout, $interval, videos) {
+	function($scope, $rootScope, $log, videos) {
 
         // handles the callback from the received event
         var handleCallback = function (msg) {
             $scope.$apply(function () {
                 var server_stats = JSON.parse(msg.data);
-				
-				$scope.fullscreen = server_stats.player_fullscreen != '' ? true : false;
 				
 				switch ( server_stats.status ) {
 
@@ -160,7 +166,6 @@ app.controller('MainCtrl', [
 						videos.nowPlaying = server_stats.video_title + ' [' + server_stats.video_url + ']';
 						videos.showStop = true;
 						videos.playAllText = 'Playing...';
-
 					break;
 
 					case 'stopped':
@@ -180,11 +185,25 @@ app.controller('MainCtrl', [
 			var source = new EventSource('/api/videos/stats');
 	        	source.addEventListener('message', handleCallback, true);
 		}
-
-		$scope.toggleFS = function(fs) {
-			videos.toggleFS();
-			return !fs;
-		}
+		
+		$scope.player = videos.player();
+		$scope.playFullscreenText = $scope.fullscreen == false ? 'Don\'t play fullscreen' : 'Play fullscreen';
+		
+		$scope.toggleFS = videos.toggleFS;
+	
+		$scope.checkboxModel = {
+	        fullscreen: {
+				selected: $scope.fullscreen ? true : false
+			},
+			toggleFS: function($event) { 
+				$scope.fullscreen = $event.selected;
+				this.fullscreen.selected = $event.selected;
+				$scope.playFullscreenText = $scope.fullscreen == false ? 'Don\'t play fullscreen' : 'Play fullscreen';
+				
+				$scope.toggleFS($scope.fullscreen);
+				$log.log($scope.fullscreen);
+			}
+	    };
 
 		// Example URL
 		$scope.videourl = 'https://www.youtube.com/watch?v=WFuWPhlsyEI';

@@ -15,11 +15,10 @@ router.use(function(req, res, next) {
 	let ip = req.headers["X-Forwarded-For"] || req.headers["x-forwarded-for"] || req.client.remoteAddress;
 
 	if ( ip.match( '192.168.' ) || ip == '::1' || ip == '::ffff:127.0.0.1' ) {
-		//console.log('Hi you "' + ip + '"');
 		next();
 	} else {
 		res.status(401);
-		res.send( 'Yikes! ' + ip + ' is unallowed.');
+		res.send( 'Yikes! ' + ip + ' is NOT allowed.');
 		res.end();
 	}
 
@@ -45,38 +44,66 @@ router.route('/api/videos/stats')
 
 				if ( err )
 					console.log(err);
-
+				
 				eventStreamResponse(res, stats);
+				
 			});
 
 	})
-	.patch(function(req, res, next){
+	.patch(function(req, res, next) {
 		
-		Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, {player_fullscreen: req.body.fs}).exec(function(err, stats){
+		Server.findOneAndUpdate(
+			{ host: process.env.HOST_NAME }, 
+			{ player_fullscreen: req.body.fs }, 
+			{ upsert: true }
+		)
+		.exec(function(err, env_player){
 			res.json({
-				fullscreen: stats.player_fullscreen
+				player_options: env_player
 			});
 			res.end();
 		});
 		
 	});
 
+
+// Get player options
+router.route('/api/videos/player')
+	.get(function(req, res, next){
+		Server.findOne({ host: process.env.HOST_NAME || 'localhost' })
+			.exec(function(err, player){
+
+				if ( err )
+					console.log(err);
+				
+				res.json(player);
+				res.end();
+				
+			});
+	});
+
 // GET and render homepage
 router.get('/', function(req, res, next) {
 
-	// Render index
-	Videos.find({})
-	.exec(function(err, videos) {
-		if (err) {
-			console.log(err);
-		} else {
-			res.render('index', {
-				title: 'Lantube',
-				lang: req.headers['accept-language'].slice(0, 2) || 'es',
-				videos: videos || {}
-			});
-			res.end();
-		}
+	Server.findOne({ 
+		host: process.env.HOST_NAME 
+	})
+	.exec(function(err, env_player){
+
+		// Render index
+		Videos.find({})
+		.exec(function(err, videos) {
+			if (err) {
+				console.log(err);
+			} else {
+				res.render('index', {
+					title: 'Lantube',
+					lang: req.headers['accept-language'].slice(0, 2) || 'es',
+					player_options: env_player
+				});
+				res.end();
+			}
+		});
 	});
 	
 });
@@ -252,7 +279,7 @@ router.route('/api/videos/:order/play')
 						player: process.env.PLAYER, 
 						only_audio: process.env.PLAYER_ONLY_AUDIO, 
 						playlist: '', 
-						fullscreen: process.env.PLAYER_FULLSCREEN,
+						player_fullscreen: '',
 						url: video.url
 					});
 					
@@ -337,20 +364,23 @@ router.route('/api/videos/playlist')
 					// Update stats
 					let server_stats = Server.updateStats('playing', 0, 'Full PLS Playlist', '/api/videos/pls');
 					Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
-						.exec(function(err, stats){});
+						.exec(function(err, stats){
+							
+							// Play PLS playlist!
+							video[0].playThis({
+								player: process.env.PLAYER, 
+								only_audio: process.env.PLAYER_ONLY_AUDIO, 
+								playlist: process.env.PLAYER_PLAYLIST,
+								player_fullscreen: stats.player_fullscreen,
+								url: 'http://localhost:3000/api/videos/pls'
+							});
+							res.json({
+								result: 'playlist',
+								order: req.params.order
+							});
+							
+						});
 				
-					// Play PLS playlist!
-					video[0].playThis({ 
-							player: process.env.PLAYER, 
-							only_audio: process.env.PLAYER_ONLY_AUDIO, 
-							playlist: process.env.PLAYER_PLAYLIST,
-							fullscreen: process.env.PLAYER_FULLSCREEN,
-							url: 'http://localhost:3000/api/videos/pls'
-						});
-						res.json({
-							result: 'playlist',
-							order: req.params.order
-						});
 				}
 			}
 		});

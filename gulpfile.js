@@ -1,6 +1,7 @@
 'use strict';
 
 var gulp = require('gulp'),
+  exec = require('child_process').exec,
   nodemon = require('gulp-nodemon'),
   plumber = require('gulp-plumber'),
   livereload = require('gulp-livereload'),
@@ -48,19 +49,17 @@ gulp.task('develop', function() {
 });
 
 // PROD
-gulp.task('run', function() {
-  //livereload.listen();
-  nodemon({
-    script: 'bin/www',
-    ext: 'js ejs coffee',
-    stdout: false
-  }).on('readable', function() {
-    this.stdout.pipe(process.stdout);
-    this.stderr.pipe(process.stderr);
-  });
+gulp.task('run', function(cb) {
+  livereload.listen();
+  exec('node bin/www', function (err, stdout, stderr) {
+    console.log(stdout);
+    console.log(stderr);
+    cb(err);
+  })
 });
 
 // nodemon: YES, livereload: YES
+// Notice: nodemon will stop any Lantube playback
 gulp.task('default', [
   'compress',
   'sass',
@@ -68,7 +67,7 @@ gulp.task('default', [
   'watch'
 ]);
 
-// nodemon: YES, livereload: NO
+// nodemon: NO, livereload: YES
 gulp.task('lantube', [
   'compress',
   'sass',

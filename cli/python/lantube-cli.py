@@ -109,8 +109,7 @@ class Lantube():
 				
 				exit()
 
-			# If options is "list", show available videos to play
-
+			# If options is "list", show available videos to plays
 			if len(args) == 2 and args[1] == 'list':
 				print 'List of current videos: '
 

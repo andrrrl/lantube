@@ -31,18 +31,23 @@
 						</span>
 					</div><!-- /input-group -->
 					<br>
-					<label>
-						Play fullscreen?
-						<input type="checkbox" ng-model="fullscreen" ng-click="toggleFS(fullscreen)">
+					<!-- <label>
+						{{checkboxModel.fullscreen.selected}} == <%= player_options.player_fullscreen %> ?
+						<input type="checkbox" 
+							ng-init="checkboxModel.fullscreen.selected = <%= player_options.player_fullscreen %>"
+							ng-true-value="true"
+							ng-false-value="false"
+							ng-model="checkboxModel.fullscreen.selected" 
+							ng-change="checkboxModel.toggleFS(checkboxModel.fullscreen)">
+						{{playFullscreenText}}
+					<br> -->
 					<br>
-					<button ng-hide="showStop()" class="btn btn-success" type="button" name="play" ng-click="play('all')">
+					<button ng-hide="showStop()" class="btn btn-success" type="button" name="play" ng-click="play('all', checkboxModel.fullscreen.selected)">
 						<fa name="{{ isPlaying() != 0 ? 'circle-o-notch' : 'play' }}" alt="Loading" size="1" spin="{{ isPlaying() != 0 }}" ng-style="{'color': spinnerColor}"></fa> 
-						{{playAllText()}}
-					</button>
+					</button> <span ng-hide="showStop()">{{playAllText()}}</span>
 					<button ng-show="showStop()" class="btn btn-danger" type="button" ng-click="stop()">
 						<fa name="stop" alt="Stop" size="1" ng-style="{'color': spinnerColor}"></fa> 
-						{{stopText()}}
-					</button>
+					</button> <span ng-show="showStop()">{{stopText()}}</span>
 					<br>
 					<br>
 					<div class="bg-success now-playing" ng-show="nowPlaying()">
@@ -83,7 +88,7 @@
 							</div>
 						</td>
 						<td>
-							<button class="play btn-sm btn-danger" type="button" ng-click="play(video.order)">
+							<button class="play btn-sm btn-danger" type="button" ng-click="play(video.order, checkboxModel.fullscreen.selected)">
 								<fa ng-cloak="{{ isPlaying() == video.order }}" 
 									name="{{ isPlaying() == video.order ? 'circle-o-notch' : 'play' }}" 
 									spin="{{ isPlaying() == video.order }}" 

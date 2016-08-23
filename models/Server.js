@@ -56,6 +56,20 @@ ServerStatsSchema.statics.updateStats = function(status, order, title, url) {
 	return stats;
 };
 
+ServerStatsSchema.statics.getPlayer = function(player) {
+	
+	//Server.findOne({ host: process.env.HOST_NAME }).exec(function(err, player){
+		
+		var env = {
+			player: player.player || process.env.PLAYER || false,
+			player_playlist: player.player_playlist || process.env.PLAYER_PLAYLIST || false,
+			player_fullscreen: player.player_fullscreen || process.env.PLAYER_FULLSCREEN || false
+		}
+		return env;
+	//});
+	
+}
+
 var Server = mongoose.model(process.env.MONGO_STATS_COLL || 'serverStats', ServerStatsSchema);
 
 var serverSchema = {

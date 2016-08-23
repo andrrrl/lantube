@@ -27,16 +27,17 @@ VideosSchema.statics.stopAll = function(cb) {
 	return cb;
 }
 
+// TODO
 // VideosSchema.methods.pause() = function( current_video_order ) {
-// 	// TODO
+// 
 // }
 
 VideosSchema.methods.playThis = function(player_options, cb) {
 	
-	let player = player_options.player || process.env.PLAYR || 'mpv';
+	let player = player_options.player || process.env.PLAYER || 'mpv';
 	let player_only_audio = player_options.only_audio || process.env.PLAYER_ONLY_AUDIO || '';
 	let player_playlist = player_options.player_playlist ? process.env.PLAYER_PLAYLIST : '';
-	let player_fullscreen = player_options.player_fullscreen || process.env.PLAYER_FULLSCREEN || '';
+	let player_fullscreen = player_options.player_fullscreen || process.env.PLAYER_FULLSCREEN || false;
 	let video_url = player_options.url || '';
 	
 	// (sigh) Need to split the options if they have spaces for now...
@@ -47,12 +48,12 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 		var playing = spawn( player, [ player_only_audio, player_playlist, player_fullscreen, video_url ] );
 	}
 	
-	// Play video!
-	
+	// Counter for retrying (if slow connection, etc)
 	var stuck = 0;
 	
+	// Play video!
 	playing.stdout.on( 'data', data => {
-        console.log( 'Starting playback ' + 'with ' + ( JSON.stringify(player_options) || 'no options.') );
+        console.log( 'Starting playback with ' + ( JSON.stringify(player_options) || 'no options.') );
 		console.log( `stdout: ${data}` );
 		
 		// Check if connection is stuck (only mpv / mplayer)
