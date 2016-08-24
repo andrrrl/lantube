@@ -12,26 +12,29 @@ var Server = server_schema.Server;
 // Disallow non-LAN or Local IPs
 router.use(function(req, res, next) {
 
-	let ip = req.headers["X-Forwarded-For"] || req.headers["x-forwarded-for"] || req.client.remoteAddress;
+	let ip = req.headers['X-Forwarded-For'] || req.headers['x-forwarded-for'] || req.client.remoteAddress;
 
 	if ( ip.match( '192.168.' ) || ip == '::1' || ip == '::ffff:127.0.0.1' ) {
 		next();
 	} else {
 		res.status(401);
-		res.send( 'Yikes! ' + ip + ' is NOT allowed.');
+		res.send( 'Yikes! ' + ip + ' is NOT allowed.' );
 		res.end();
 	}
 
 });
 
 function eventStreamResponse(res, stats) {
-	res.setHeader('Content-type', 'text/event-stream');
-	res.setHeader('Cache-Control', 'no-cache');
-	res.setHeader('Connection', 'keep-alive');
-	res.write('id: ' + (new Date().getMilliseconds()) + '\n');
-	res.write('retry: 1000\n');
-	res.write('data:' + JSON.stringify(stats) + '\n\n'); // Note the extra newline
-	res.end()
+	// Headers
+	res.setHeader( 'Content-type', 'text/event-stream' );
+	res.setHeader( 'Cache-Control', 'no-cache' );
+	res.setHeader( 'Connection', 'keep-alive' );
+	
+	// Message
+	res.write( 'id: ' + ( new Date().getMilliseconds() ) + '\n' );
+	res.write( 'retry: 1000\n' );
+	res.write( 'data:' + JSON.stringify( stats ) + '\n\n' ); // Note the extra newline
+	res.end();
 }
 
 
@@ -41,12 +44,9 @@ router.route('/api/videos/stats')
 
 		Server.findOne({ host: process.env.HOST_NAME || 'localhost' })
 			.exec(function(err, stats){
-
-				if ( err )
-					console.log(err);
-				
+				if ( err ) console.log(err);
+				// Send stats to client
 				eventStreamResponse(res, stats);
-				
 			});
 
 	})
@@ -54,7 +54,7 @@ router.route('/api/videos/stats')
 		
 		Server.findOneAndUpdate(
 			{ host: process.env.HOST_NAME }, 
-			{ player_fullscreen: req.body.fs }, 
+			{ player_mode: req.body.player_mode }, 
 			{ upsert: true }
 		)
 		.exec(function(err, env_player){
@@ -73,27 +73,45 @@ router.route('/api/videos/player')
 		Server.findOne({ host: process.env.HOST_NAME || 'localhost' })
 			.exec(function(err, player){
 
-				if ( err )
+				if ( err ) {
 					console.log(err);
-				
-				res.json(player);
-				res.end();
+				} else {
+					res.json(player);
+					res.end();
+				}
 				
 			});
+	})
+	.put(function(req, res, next){
+		
+		Server.findOneAndUpdate(
+			{ host: process.env.HOST_NAME },
+			{ player_mode: req.body.video_mode },
+			{ new: true }
+		).exec(function(err, player){
+			res.json(player.player_mode);
+			res.end();
+		});
 	});
 
 // GET and render homepage
 router.get('/', function(req, res, next) {
 
-	Server.findOne({ 
-		host: process.env.HOST_NAME 
-	})
+	Server.findOneAndUpdate(
+		{ host: process.env.HOST_NAME },
+		{ 
+			player: process.env.PLAYER, 
+			player_mode: process.env.PLAYER_MODE, 
+			player_playlist: process.env.PLAYER_PLAYLIST 
+		}, 
+		{ upsert: true }
+	)
 	.exec(function(err, env_player){
 
 		// Render index
-		Videos.find({})
+		Videos.find()
 		.exec(function(err, videos) {
-			if (err) {
+			if (err) { 
 				console.log(err);
 			} else {
 				res.render('index', {
@@ -204,6 +222,8 @@ router.route('/api/videos/:option')
 			return next();
 		if ( req.params.option == 'stats' )
 			return next();
+		if ( req.params.option == 'player' )
+			return next();
 
 		// Default is "order"
 	    Videos.findOne({
@@ -269,26 +289,31 @@ router.route('/api/videos/:order/play')
 					
 					// Update stats
 					let server_stats = Server.updateStats('playing', video.order, video.title, video.url);
-					Server.findOneAndUpdate({ 
-						host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
-						.exec(function(err, stats){});
-					
-					
-	    			// Play video!
-					video.playThis({
-						player: process.env.PLAYER, 
-						only_audio: process.env.PLAYER_ONLY_AUDIO, 
-						playlist: '', 
-						player_fullscreen: '',
-						url: video.url
+					Server.findOneAndUpdate(
+						{ host: process.env.HOST_NAME || 'localhost' }, 
+						{ $set: server_stats }, 
+						{ upsert: true, new: true }
+					)
+					.exec(function(err, stats){
+						
+						// Play video!
+						video.playThis({
+							player: stats.player, 
+							player_mode: stats.player_mode, 
+							player_playlist: false, 
+							url: video.url
+						});
+						
+						res.json({
+							result: 'playing',
+							playing: video.url,
+							order: video.order
+						});
+						res.end();
+						
 					});
 					
-					res.json({
-						result: 'playing',
-						playing: video.url,
-						order: video.order
-					});
-					res.end();
+					
 	            }
 
 	        }
@@ -303,8 +328,14 @@ router.route('/api/videos/stop')
 
 		// Update stats
 		let server_stats = Server.updateStats('stopped', 0, '', '');
-		Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
-			.exec(function(err, stats){});
+		Server.findOneAndUpdate(
+			{ host: process.env.HOST_NAME || 'localhost' }, 
+			{ $set: server_stats }, 
+			{ upsert: true, new: true }
+		)
+		.exec(function(err, stats){
+			
+		});
 
 		res.json({
 			result: 'stopped'
@@ -363,23 +394,26 @@ router.route('/api/videos/playlist')
 				
 					// Update stats
 					let server_stats = Server.updateStats('playing', 0, 'Full PLS Playlist', '/api/videos/pls');
-					Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
-						.exec(function(err, stats){
-							
-							// Play PLS playlist!
-							video[0].playThis({
-								player: process.env.PLAYER, 
-								only_audio: process.env.PLAYER_ONLY_AUDIO, 
-								playlist: process.env.PLAYER_PLAYLIST,
-								player_fullscreen: stats.player_fullscreen,
-								url: 'http://localhost:3000/api/videos/pls'
-							});
-							res.json({
-								result: 'playlist',
-								order: req.params.order
-							});
-							
+					Server.findOneAndUpdate(
+						{ host: process.env.HOST_NAME || 'localhost' }, 
+						{ $set: server_stats }, 
+						{ upsert: true, new: true }
+					)
+					.exec(function(err, stats){
+						
+						// Play PLS playlist!
+						video[0].playThis({
+							player: stats.player, 
+							player_mode: stats.player_mode,
+							playlist: true,
+							url: 'http://localhost:3000/api/videos/pls'
 						});
+						res.json({
+							result: 'playlist',
+							order: req.params.order
+						});
+						
+					});
 				
 				}
 			}

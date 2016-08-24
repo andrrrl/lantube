@@ -34,18 +34,32 @@ VideosSchema.statics.stopAll = function(cb) {
 
 VideosSchema.methods.playThis = function(player_options, cb) {
 	
+	
 	let player = player_options.player || process.env.PLAYER || 'mpv';
-	let player_only_audio = player_options.only_audio || process.env.PLAYER_ONLY_AUDIO || '';
-	let player_playlist = player_options.player_playlist ? process.env.PLAYER_PLAYLIST : '';
-	let player_fullscreen = player_options.player_fullscreen || process.env.PLAYER_FULLSCREEN || false;
 	let video_url = player_options.url || '';
 	
+	let player_playlist = player_options.player_playlist === true ? process.env.PLAYER_PLAYLIST : '';
+	let player_mode = player_options.player_mode || process.env.PLAYER_MODE || 'windowed';
+	
+	let player_mode_arg = '';
+	
+	// Switch?
+	if ( player_mode == 'windowed' ) {
+		player_mode_arg = '';
+	} 
+	if ( player_mode == 'fullscreen' ){
+		player_mode_arg = process.env.PLAYER_MODE_FULLSCREEN_ARG;
+	}
+	if ( player_mode == 'audio-only' ){
+		player_mode_arg = process.env.PLAYER_MODE_AUDIO_ONLY_ARG;
+	}
+	
 	// (sigh) Need to split the options if they have spaces for now...
-	if ( player == 'mpv' || player == 'mplayer' ) {
-		player_only_audio = player_only_audio.split(' ');
-		var playing = spawn( player, [ player_only_audio[0], player_only_audio[1], player_playlist, player_fullscreen, video_url ] );
+	if ( player == 'mpv' || player == 'mplayer' && player_mode == 'audio-only' ) {
+		player_mode_arg = player_mode_arg.split(' ');
+		var playing = spawn( player, [ player_mode_arg[0], player_mode_arg[1], player_playlist, video_url ] );
 	} else {
-		var playing = spawn( player, [ player_only_audio, player_playlist, player_fullscreen, video_url ] );
+		var playing = spawn( player, [ player_mode_arg, player_playlist, video_url ] );
 	}
 	
 	// Counter for retrying (if slow connection, etc)

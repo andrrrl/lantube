@@ -1,20 +1,29 @@
 body {
   padding: 50px;
   font: 14px "Roboto";
+  color: #ddd;
+  background: #222;
 }
+.table-striped>tbody>tr:nth-of-type(odd) {
+    background: #000;
+}
+.table>tbody>tr>td, .table>tbody>tr>th, .table>tfoot>tr>td, .table>tfoot>tr>th, .table>thead>tr>td, .table>thead>tr>th {
+    border-top: 1px solid #444;
+}
+
 a {
   color: #00B7FF;
 }
 .now-playing {
-    padding: 15px;
+  padding: 15px;
 }
 .blink {
   animation: blink-animation 1s steps(5, start) infinite;
   -webkit-animation: blink-animation 1s steps(5, start) infinite;
 }
 .table-text {
-    position: relative;
-    top: 6px;
+  position: relative;
+  top: 6px;
 }
 @keyframes blink-animation {
   to {
@@ -26,10 +35,9 @@ a {
     visibility: hidden;
   }
 }
-
 .now-playing {
-    transition: all linear 0.5s;
+  transition: all linear 0.5s;
 }
 .ng-hide {
-    opacity: 0;
+  opacity: 0;
 }

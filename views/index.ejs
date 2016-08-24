@@ -31,18 +31,31 @@
 						</span>
 					</div><!-- /input-group -->
 					<br>
-					<!-- <label>
-						{{checkboxModel.fullscreen.selected}} == <%= player_options.player_fullscreen %> ?
-						<input type="checkbox" 
-							ng-init="checkboxModel.fullscreen.selected = <%= player_options.player_fullscreen %>"
-							ng-true-value="true"
-							ng-false-value="false"
-							ng-model="checkboxModel.fullscreen.selected" 
-							ng-change="checkboxModel.toggleFS(checkboxModel.fullscreen)">
-						{{playFullscreenText}}
-					<br> -->
+
+					<div class="form-group"> 
+						<label>{{videoModes.title}}</label>
+						<div class="radio">
+							<label>
+								<input ng-model="videoModes.selected" type="radio" name="videoMode" value="{{videoModes.modes.fullscreen.toLowerCase().replace(' ', '-')}}">
+								{{videoModes.modes.fullscreen}}
+							</label>
+						</div>
+						<div class="radio">
+							<label>
+								<input ng-model="videoModes.selected" type="radio" name="videoMode" value="{{videoModes.modes.windowed.toLowerCase().replace(' ', '-')}}">
+								{{videoModes.modes.windowed}}
+							</label>
+						</div>
+						<div class="radio">
+							<label>
+								<input ng-model="videoModes.selected" type="radio" name="videoMode" value="{{videoModes.modes.noVideo.toLowerCase().replace(' ', '-')}}">
+								{{videoModes.modes.noVideo}}
+							</label>
+						</div>
+						
+					</div>
 					<br>
-					<button ng-hide="showStop()" class="btn btn-success" type="button" name="play" ng-click="play('all', checkboxModel.fullscreen.selected)">
+					<button ng-hide="showStop()" class="btn btn-success" type="button" name="play" ng-click="play('all', videoModes.selected)">
 						<fa name="{{ isPlaying() != 0 ? 'circle-o-notch' : 'play' }}" alt="Loading" size="1" spin="{{ isPlaying() != 0 }}" ng-style="{'color': spinnerColor}"></fa> 
 					</button> <span ng-hide="showStop()">{{playAllText()}}</span>
 					<button ng-show="showStop()" class="btn btn-danger" type="button" ng-click="stop()">
@@ -50,7 +63,7 @@
 					</button> <span ng-show="showStop()">{{stopText()}}</span>
 					<br>
 					<br>
-					<div class="bg-success now-playing" ng-show="nowPlaying()">
+					<div class="bg-success now-playing" ng-show="nowPlaying()" ng-style="{'color': playingColor}">
 						<fa name="volume-up" alt="Playing..." size="1" ng-class="nowPlaying() && 'blink'" ng-style="{'color': speakerColor}"></fa>
 						<b>Now playing:</b> {{ nowPlaying() }}
 					</div>
@@ -88,7 +101,7 @@
 							</div>
 						</td>
 						<td>
-							<button class="play btn-sm btn-danger" type="button" ng-click="play(video.order, checkboxModel.fullscreen.selected)">
+							<button class="play btn-sm btn-danger" type="button" ng-click="play(video.order, videoModes.selected)">
 								<fa ng-cloak="{{ isPlaying() == video.order }}" 
 									name="{{ isPlaying() == video.order ? 'circle-o-notch' : 'play' }}" 
 									spin="{{ isPlaying() == video.order }}" 

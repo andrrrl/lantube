@@ -31,6 +31,15 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	var obj = {
 		videos: [], // Init videos array
 		player: {},
+		videoModes: {
+			title: 'Playback mode:',
+			modes: {
+				fullscreen: 'Fullscreen',
+				windowed: 'Windowed',
+				noVideo: 'Audio only'
+			},
+			selected: 'windowed'
+		},
 		isPlaying: false, // Order in the list of current playing video
 		nowPlaying: false, // Current playing video
 		showStop: false, // Show "Stop" button?
@@ -49,12 +58,6 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 			
 		});
 	};
-	
-	obj.player = function() {
-		return $http.get('/api/videos/player').success(function(data){
-			angular.copy(data, obj.player);
-		});
-	}
 
 	// Get video data (unused for now)
 	obj.get = function(order) {
@@ -75,13 +78,18 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	};
 
 	// Play single video by order or entire list, if order == 0 (default)
-	obj.play = function(order, fs) {
+	obj.play = function(order, video_mode) {
 		
-		$log.log(fs);
+		$log.log(video_mode);
 		
 		// avoid opening player twice
 		if ( order == obj.isPlaying ) {
 			return;
+		}
+		
+		// avoid undefined video mode
+		if ( video_mode == '' ){
+			video_mode = 'windowed';
 		}
 		
 		if ( obj.isPlaying ) {
@@ -95,19 +103,28 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 			obj.playAllText = 'Playing...';
 			obj.showStop = true;
 
-			if ( order > 0 ) {
-				// Play single video
-				return $http.get('/api/videos/' + order + '/play').then(function(res) {
-					if (res.data.next_order < obj.videos.length) {
-						return obj.play(res.data.next_order);
-					}
-				});
-			} else {
-				// Play entire list
-				return $http.get('/api/videos/playlist').then(function(res) {
-					return res.data.playing;
-				});
-			}
+			// Set the video mode
+			$http.put('/api/videos/player', { video_mode: video_mode }).success(function(res){
+				
+				$log.log('Client: ');
+				$log.log(res);
+				
+				if ( order > 0 ) {
+					// Play single video
+					return $http.get('/api/videos/' + order + '/play').then(function(res) {
+						if (res.data.next_order < obj.videos.length) {
+							return obj.play(res.data.next_order);
+						}
+					});
+				} else {
+					// Play entire list
+					return $http.get('/api/videos/playlist').then(function(res) {
+						return res.data.playing;
+					});
+				}
+				
+			});
+
 		}
 	};
 
@@ -122,16 +139,19 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 		});
 	}
 	
-	// Get server stats with AJAX [UNUSED, using SSE (Server-Side Events)]
-	obj.stats = function() {
-		return $http.get('/api/videos/stats').then(function(res){
-			return res.data;
+	// Set video mode
+	obj.setVideoMode = function(fs) {
+		return $http.patch('/api/videos/stats', { fs: fs }).then(function(res){
+			return res;
 		});
 	}
 	
-	obj.toggleFS = function(fs) {
-		return $http.patch('/api/videos/stats', { fs: fs }).then(function(res){
-			return res;
+	// Get player config
+	obj.player = function() {
+		return $http.get('/api/videos/player').then(function(res){
+			$log.log(res.data.player_mode);
+			obj.videoModes.selected = res.data.player_mode;
+			return res.data;
 		});
 	}
 
@@ -186,30 +206,23 @@ app.controller('MainCtrl', [
 	        	source.addEventListener('message', handleCallback, true);
 		}
 		
-		$scope.player = videos.player();
-		$scope.playFullscreenText = $scope.fullscreen == false ? 'Don\'t play fullscreen' : 'Play fullscreen';
-		
-		$scope.toggleFS = videos.toggleFS;
-	
-		$scope.checkboxModel = {
-	        fullscreen: {
-				selected: $scope.fullscreen ? true : false
-			},
-			toggleFS: function($event) { 
-				$scope.fullscreen = $event.selected;
-				this.fullscreen.selected = $event.selected;
-				$scope.playFullscreenText = $scope.fullscreen == false ? 'Don\'t play fullscreen' : 'Play fullscreen';
-				
-				$scope.toggleFS($scope.fullscreen);
-				$log.log($scope.fullscreen);
-			}
-	    };
-
-		// Example URL
-		$scope.videourl = 'https://www.youtube.com/watch?v=WFuWPhlsyEI';
+		// Init URL
+		$scope.videourl = '';
 
 		// get all videos
 		$scope.videos = videos.videos;
+		
+		// video modes
+		$scope.videoModes = videos.videoModes;
+		
+		// add
+		$scope.add = videos.add;
+		
+		// play
+		$scope.play = videos.play;
+		
+		// stop
+		$scope.stop = videos.stop;
 
 		// "play all" text
 		$scope.playAllText = function() {
@@ -235,18 +248,12 @@ app.controller('MainCtrl', [
 		$scope.showStop = function() {
 			return videos.showStop;
 		};
-		
-		// add
-		$scope.add = videos.add;
-		// play
-		$scope.play = videos.play;
-		// stop
-		$scope.stop = videos.stop;
 
 		// Some colors? (just for testing)
 		$scope.logoColor = 'darkorange';
-		$scope.spinnerColor = 'white';
-		$scope.speakerColor = 'black';
+		$scope.spinnerColor = '#ffffff';
+		$scope.playingColor = '#333333';
+		$scope.speakerColor = '#000000';
 
 	}
 ]);

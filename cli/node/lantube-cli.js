@@ -79,7 +79,13 @@ if ( typeof options.action !== 'undefined' && options.action != 'help' ) {
 				break;
 				case 'stats': 
 					lantube_message = 'Current server stats...';
-					let stats = JSON.parse(response.body.match(/\{(.*)\}/)[0]);
+					let unordered_stats = JSON.parse(response.body.match(/\{(.*)\}/)[0]);
+					
+					var stats = {};
+					Object.keys(unordered_stats).sort().forEach(function(key) {
+						stats[key] = unordered_stats[key];
+					});
+					
 					result = '\n';
 					for ( let stat in stats ) {
 						result += ' - ' + stat + ':	' + ( '' + stats[stat] ).trim() + '\n';
