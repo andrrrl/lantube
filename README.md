@@ -57,8 +57,32 @@ MONGO_PASS=
 MONGO_VIDEOS_COLL=videos
 MONGO_STATS_COLL=serverStats
 
-# Player
+# Players:
+
+# *** MPV ***
+# * Command that opens the player
 PLAYER=mpv
+
+# * Player video modes (windowed:default|fullscreen|audio-only):
+PLAYER_MODE="fullscreen"
+PLAYER_MODE_FULLSCREEN_ARG="--fs"
+PLAYER_MODE_AUDIO_ONLY_ARG="-vo null"
+
+# * Argument for passing a playlist:
+PLAYER_PLAYLIST=--playlist
+
+
+# *** VLC/CVLC ***
+# * Command that opens the player:
+# PLAYER=vlc
+
+# * Player video modes (windowed:default|fullscreen|audio-only):
+# PLAYER_MODE="fullscreen"
+# PLAYER_MODE_FULLSCREEN_ARG="--fullscreen"
+# PLAYER_MODE_AUDIO_ONLY_ARG="--no-video"
+
+# * Argument for passing a playlist:
+# PLAYER_PLAYLIST=--play-and-exit
 ```
 
 ### Server: ###
