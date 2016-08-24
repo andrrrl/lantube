@@ -4,7 +4,7 @@
 * Uses local media player software, like MPV (tested, default), VLC (tested) and maybe omxplayer (not tested yet)
 * Runs as a service in a media center computer, like a [Raspberry Pi](https://www.raspberrypi.org/), with very few configs
 * Users in the same LAN area can add and play (and stop) any Youtube video
-* Use of Lantube over the Internet is possible but **not recommended** at all
+* Use of Lantube in untrusted LANs or over the Internet is possible but **not recommended** at all
 
 ### Requirements and Notices: ###
 * Lantube is tested only on Debian-based systems
@@ -105,6 +105,7 @@ It will also run sass and uglify but will start node server with regular `node` 
 ### Client (Browser): ###
 * Local: Navigate to http://localhost:3000 in any modern browser
 * LAN: Get your server's IP number and navigate to http://YOUR_SERVER_IP:3000 from any modern browser
+* Select playback mode (fullscreen, windowed or audio-only). Deafults to what's defined in the `.env` file.
 
 ### Client (CLI): ###
 * Python CLI (full featured):
@@ -115,6 +116,7 @@ It will also run sass and uglify but will start node server with regular `node` 
   2. `$ node lantube-cli.js help`
 
 ### Security: ###
+* Use it only on trusted LAN networks
 * Lantube is limited to LAN, any external IP will not be allowed
 * Lantube is just for fun, don't rely too much on it for serious matters
 
