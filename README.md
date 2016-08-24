@@ -100,7 +100,7 @@ It will run tasks like sass, uglify and start node server with [nodemon](http://
 $ gulp lantube
 ```
 It will also run sass and uglify but will start node server with regular `node` command.  
-Nodemon is disabled, so server won't restart and playback won't stop.
+`nodemon` is disabled, so server won't auto-restart (and playback won't stop, important bit!).
 
 ### Client (Browser): ###
 * Local: Navigate to http://localhost:3000 in any modern browser
