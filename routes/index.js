@@ -29,7 +29,7 @@ function eventStreamResponse(res, stats) {
 	res.setHeader( 'Content-type', 'text/event-stream' );
 	res.setHeader( 'Cache-Control', 'no-cache' );
 	res.setHeader( 'Connection', 'keep-alive' );
-	
+
 	// Message
 	res.write( 'id: ' + ( new Date().getMilliseconds() ) + '\n' );
 	res.write( 'retry: 1000\n' );
@@ -51,10 +51,10 @@ router.route('/api/videos/stats')
 
 	})
 	.patch(function(req, res, next) {
-		
+
 		Server.findOneAndUpdate(
-			{ host: process.env.HOST_NAME }, 
-			{ player_mode: req.body.player_mode }, 
+			{ host: process.env.HOST_NAME },
+			{ player_mode: req.body.player_mode },
 			{ upsert: true }
 		)
 		.exec(function(err, env_player){
@@ -63,7 +63,7 @@ router.route('/api/videos/stats')
 			});
 			res.end();
 		});
-		
+
 	});
 
 
@@ -99,11 +99,11 @@ router.get('/', function(req, res, next) {
 
 	Server.findOneAndUpdate(
 		{ host: process.env.HOST_NAME },
-		{ 
-			player: process.env.PLAYER, 
-			player_mode: process.env.PLAYER_MODE, 
-			player_playlist: process.env.PLAYER_PLAYLIST 
-		}, 
+		{
+			player: process.env.PLAYER,
+			player_mode: process.env.PLAYER_MODE,
+			player_playlist: process.env.PLAYER_PLAYLIST
+		},
 		{ upsert: true }
 	)
 	.exec(function(err, env_player){
@@ -111,7 +111,7 @@ router.get('/', function(req, res, next) {
 		// Render index
 		Videos.find()
 		.exec(function(err, videos) {
-			if (err) { 
+			if (err) {
 				console.log(err);
 			} else {
 				res.render('index', {
@@ -123,7 +123,7 @@ router.get('/', function(req, res, next) {
 			}
 		});
 	});
-	
+
 });
 
 // GET all
@@ -141,7 +141,7 @@ router.route('/api/videos')
 	            res.json(videos);
 	            res.end();
 	        }
-			
+
 	    });
 	})
 
@@ -150,7 +150,7 @@ router.route('/api/videos')
 
 		// Extract Youtube video ID
 		var yt_id = req.body.video.trim().replace(/http(s?):\/\/(w{3}?)(\.?)youtube\.com\/watch\?v=/, '');
-		
+
 		// Check ID
 		if ( yt_id == '' ) {
 			res.json({
@@ -210,7 +210,7 @@ router.param('option', function(req, res, next, option) {
 router.route('/api/videos/:option')
 
 	.get(function(req, res, next) {
-		
+
 		// Filter options
 		if ( req.params.option == 'list' )
 			return next();
@@ -237,17 +237,17 @@ router.route('/api/videos/:option')
 	            res.json(video);
 	            res.end();
 	        }
-			
+
 			next();
-			
+
 	    });
-	
+
 });
 
 // LIST
 router.route('/api/videos/list')
 	.get(function(req, res, next) {
-		
+
 		Videos.find({})
 	    .sort({ 'order': 1 })
 		.exec(function(err, videos) {
@@ -257,7 +257,7 @@ router.route('/api/videos/list')
 	            res.json(videos);
 	            res.end();
 	        }
-			
+
 	    });
 	});
 
@@ -266,9 +266,9 @@ router.route('/api/videos/list')
 router.route('/api/videos/:order/play')
 
 	.get(function(req, res, next) {
-		
+
 		let order = req.params.order == 'last' ? '-order' : req.params.order;
-		
+
 		Videos.findOne(
 			( order == '-order' ? {} : { order: req.params.order } )
 		)
@@ -286,44 +286,43 @@ router.route('/api/videos/:order/play')
 	                });
 					res.end();
 	            } else {
-					
+
 					// Update stats
 					let server_stats = Server.updateStats('playing', video.order, video.title, video.url);
 					Server.findOneAndUpdate(
-						{ host: process.env.HOST_NAME || 'localhost' }, 
-						{ $set: server_stats }, 
+						{ host: process.env.HOST_NAME || 'localhost' },
+						{ $set: server_stats },
 						{ upsert: true, new: true }
 					)
 					.exec(function(err, stats){
-						
+
 						// Play video!
 						video.playThis({
-							player: stats.player, 
-							player_mode: stats.player_mode, 
-							player_playlist: false, 
+							player: stats.player,
+							player_mode: stats.player_mode,
+							player_playlist: '',
 							url: video.url
 						});
-						
+
 						res.json({
 							result: 'playing',
 							playing: video.url,
 							order: video.order
 						});
 						res.end();
-						
+
 					});
-					
-					
+
 	            }
 
 	        }
 	    });
-	
+
 });
 
 router.route('/api/videos/stop')
 	.get(function(req, res, next){
-		
+
 		Videos.stopAll();
 
 		// Update stats
