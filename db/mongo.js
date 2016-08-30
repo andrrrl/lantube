@@ -26,10 +26,10 @@ var MongoDB = mongoose.connect(mongo_conn).connection;
 autoIncrement.initialize(MongoDB);
 
 MongoDB.on('error', function(err) {
-    console.log(err.message);
+    console.log('  ' + err.message);
 });
 MongoDB.once('open', function() {
-    console.log('Connected to MongoDB');
+    console.log('  Connected to MongoDB');
 });
 
 module.exports = mongoose.connection;

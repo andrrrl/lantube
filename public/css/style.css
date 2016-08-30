@@ -13,6 +13,10 @@ body {
 a {
   color: #00B7FF; }
 
+.fa {
+  position: relative;
+  left: -1px; }
+
 .now-playing {
   padding: 15px; }
 

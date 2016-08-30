@@ -29,11 +29,11 @@ var ServerStatsSchema = new mongoose.Schema({
 	player: String,
 	player_mode: String
 }, {
-    collection: process.env.MONGO_STATS_COLL
+	collection: process.env.MONGO_STATS_COLL
 });
 
 ServerStatsSchema.statics.updateStats = function(status, order, title, url) {
-	
+
 	var stats = {
 		type: os.type(),
 		platform: os.platform(),
@@ -50,7 +50,7 @@ ServerStatsSchema.statics.updateStats = function(status, order, title, url) {
 		player: process.env.PLAYER || '',
 		player_playlist: process.env.PLAYER_PLAYLIST || ''
 	}
-	
+
 	return stats;
 };
 
@@ -62,13 +62,13 @@ ServerStatsSchema.statics.getPlayer = function(player) {
 		player_mode: process.env.PLAYER_MODE || 'windowed'
 	}
 	return env;
-	
+
 }
 
 var Server = mongoose.model(process.env.MONGO_STATS_COLL || 'serverStats', ServerStatsSchema);
 
 var serverSchema = {
-    'Server': Server
+	'Server': Server
 }
 
 module.exports = serverSchema;
