@@ -121,7 +121,7 @@ It will also run sass and uglify but will start node server with regular `node` 
 * Lantube is just for fun, don't rely too much on it for serious matters
 
 ### TODOs: ###
-* [ ] Volume controls
+* [x] Volume controls (Alsa only)
 * [ ] Firefox/Chromium extension
 * [ ] API auth with passport?
 * [ ] Make it work use outside LAN?
