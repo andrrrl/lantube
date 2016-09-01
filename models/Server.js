@@ -82,9 +82,9 @@ ServerStatsSchema.statics.configVolume = function(options)
 		player_volume: options.volume,
 		player_is_muted: options.isMuted
 	}
-	
+
 	return volume;
-	
+
 }
 
 // Get Sys Vol
@@ -94,9 +94,9 @@ ServerStatsSchema.statics.getVolume = function(volume_value, cb) {
 		{ player_volume: 1, player_is_muted: 1 }
 	)
 	.exec(function(err, server_volume){
-		
+
 		if (err) console.log(err);
-		
+
 		cb(server_volume[volume_value]);
 	});
 }

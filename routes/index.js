@@ -33,7 +33,7 @@ function eventStreamResponse(type, res, results) {
 	// Message
 	res.write('id: ' + (new Date().getMilliseconds()) + '\n');
 	res.write('retry: 1000\n');
-	
+
 	if ( type === 'stats' ) {
 		res.write('data:' + JSON.stringify(results) + '\n\n'); // Note the extra newline
 	} else if ( type === 'added' ) {
@@ -46,23 +46,23 @@ router.get('/api/player', function(req, res, next){
 	res.json({ api: 'player' });
 	res.end();
 });
-	
+
 
 router.get('/api/player/volume', function(req, res, next){
-	
+
 	Server.getVolume('player_volume', function(vol) {
 		res.json({ serverVol: vol });
 		//res.end();
 	});
-	
+
 	next();
 });
 
 router.get('/api/player/volume/:action', function(req, res, next){
-	
+
 	if ( req.params.action == '' )
 		next();
-	
+
 	Server.setVolume({ action: req.params.action }, function(vol){
 		res.json({
 			player_volume: vol.player_volume,
@@ -71,7 +71,7 @@ router.get('/api/player/volume/:action', function(req, res, next){
 		res.end();
 	});
 
-	
+
 });
 
 // Server stats
@@ -129,10 +129,6 @@ router.route('/api/videos/player')
 // GET and render homepage
 router.get('/', function(req, res, next) {
 
-	// Update stats
-	let server_stats = Server.updateStats('stopped', 0);
-	Server.findOneAndUpdate({ host: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
-		.exec(function(err, stats) {
 
 			Server.findOneAndUpdate(
 				{ host: process.env.HOST_NAME }, 
@@ -155,9 +151,7 @@ router.get('/', function(req, res, next) {
 					}
 				});
 			});
-			
-	});
-	
+
 });
 
 // GET all
@@ -211,10 +205,10 @@ router.route('/api/videos/')
 				if (err) {
 					console.log(err);
 				} else {
-					
+
 					// Send stats to client
 					eventStreamResponse('added', res, result);
-					
+
 					res.json({
 						result: 'ok',
 						_id: result._id,

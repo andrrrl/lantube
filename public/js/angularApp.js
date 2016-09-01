@@ -173,19 +173,18 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 app.controller('MainCtrl', [
 	'$scope',
 	'$rootScope',
-	'$http',
 	'$log',
 	'videos',
-	function($scope, $rootScope, $http, $log, videos) {
+	function($scope, $rootScope, $log, videos) {
 
 		// handles the callback from the received event
 		var handleMsgCallback = function(msg) {
-			
+
 			$scope.$apply(function() {
 				var server_response = JSON.parse(msg.data);
 
-				let vol = parseInt(server_response.player_volume, 16);
-				
+				var vol = parseInt(server_response.player_volume, 16);
+
 				$scope.playerVolume = (100 + vol);
 
 				switch (server_response.status) {

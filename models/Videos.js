@@ -1,11 +1,9 @@
 'use strict';
 
-var request = require('request');
-var mongoose = require('mongoose');
-var autoIncrement = require('mongoose-auto-increment');
-
-const 
-	spawn = require('child_process').spawn;
+const
+    request = require('request'),
+    mongoose = require('mongoose'),
+    spawn = require('child_process').spawn;
 
 // Load Server Model
 var server_schema = require('./Server');
