@@ -33,6 +33,7 @@ if (process.argv.length === 3) {
 		console.log('   > The Lantube server is down.');
 		console.log('   > The Lantube server is running in another computer.\n');
 		console.log(' - Usage examples:'.bold);
+		console.log('   > $ node lantube-offline.js "YOUTUBE_ID"');
 		console.log('   > $ node lantube-offline.js "https://www.youtube.com/watch?v=YOUTUBE_ID"');
 		console.log('   > $ node lantube-offline.js "https://m.youtube.com/watch?v=YOUTUBE_ID&feature=youtu.be"');
 		console.log(' (Other Youtube URL formats should work)\n'.bold);
@@ -63,30 +64,53 @@ if (process.argv.length === 3) {
 		}, function(error, response, body) {
 
 			if (!error && response.statusCode === 200) {
-
+				
 				const
 					db = require(rootDir + 'db/mongo.js'),
 					model = require(rootDir + 'models/Videos.js');
 				
-				var video = new model.Videos({
-					title: body.title,
-					url: v.url
-				});
-
-				video.save(function(err, result) {
+				model.Videos.findOne()
+				.sort('-order')
+				.exec(function(err, result) {
 					if (err) {
 						console.log(err);
 					} else {
-						console.log(
-							'  [OK] Video inserted into Lantube DB!'.green.bold + '\n' +
-							'   Details: '.green.bold + '\n' +
-							'   _id: 	'.green.bold + result._id + '\n' +
-							'   title: '.green.bold + result.title + '\n' +
-							'   url: 	'.green.bold + result.url + '\n' +
-							'   order: '.green.bold + result.order
-						);
+			
+						body.title = body.title.replace( /(^[a-z]|\s[a-z])/g, function(p) { return p.toUpperCase(); } );
+			
+						if ( result.title != body.title ) {
+			
+							let video = new model.Videos({
+								title: body.title,
+								url: v.url,
+								order: parseInt(result.order) + 1
+							});
+							
+							video.save(function(err, result){
+								if (err) {
+									console.log(err);
+								} else {
+									console.log(
+										'  [OK] Video inserted into Lantube DB!'.green.bold + '\n' +
+										'   Details: '.green.bold + '\n' +
+										'   _id: 	'.green.bold + result._id + '\n' +
+										'   title: '.green.bold + result.title + '\n' +
+										'   url: 	'.green.bold + result.url + '\n' +
+										'   order: '.green.bold + (result.order + 1)
+									);
+								}
+								
+								db.close();
+							});
+						
+						} else {
+							console.log('  [ERR] Video already exists'.bold.red);
+							console.log('╰────────────────────────────────────────────────────╯'.bold.yellow);
+							db.close();
+							process.exit();
+						}
+			
 					}
-					db.close();
 				});
 
 			} else {

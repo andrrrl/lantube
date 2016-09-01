@@ -15,7 +15,6 @@
     "ejs": "^2.3.1",
     "express": "^4.13.3",
     "mongoose": "^4.5.8",
-    "mongoose-auto-increment": "^5.0.1",
     "morgan": "^1.6.1",
     "node-notifier": "^4.6.0",
     "pump": "^1.0.1",

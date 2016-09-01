@@ -60,12 +60,22 @@
 						No videos added to Lantube yet!
 					</div>
 					
+					Volume:
+					<button ng-click="setVolume('up')" class="btn btn-primary" type="button" name="volume-up"><fa name="arrow-up"> </fa></button>
+					<button ng-click="setVolume('down')" class="btn btn-primary" type="button" name="volume-down"><fa name="arrow-down"> </fa></button>
+					<span ng-models="volume">{{playerVolume}}%</span>
+					
+					<br>
+					<br>
+					<span ng-hide="showStop() || videos.length == 0">{{playAllText()}}:</span>
 					<button ng-hide="showStop() || videos.length == 0" class="btn btn-success" type="button" name="play" ng-click="play('all', videoModes.selected)">
 						<fa name="{{ isPlaying() != 0 ? 'circle-o-notch' : 'play' }}" alt="Loading" size="1" spin="{{ isPlaying() != 0 }}" ng-style="{'color': spinnerColor}"></fa> 
-					</button> <span ng-hide="showStop() || videos.length == 0">{{playAllText()}}</span>
+					</button>
+					
 					<button ng-show="showStop()" class="btn btn-danger" type="button" ng-click="stop()">
 						<fa name="stop" alt="Stop" size="1" ng-style="{'color': spinnerColor}"></fa> 
 					</button> <span ng-show="showStop()">{{stopText()}}</span>
+					
 					<br>
 					<br>
 					<div class="bg-success now-playing" ng-show="nowPlaying()" ng-style="{'color': playingColor}">
@@ -99,17 +109,17 @@
 			</div>
 			<div class="col-md-10 col-sm-12">
 				<table class="table table-striped lista-videos">
-					<tr ng-repeat="video in videos | orderBy:'order'">
+					<tr ng-repeat="video in videos">
 						<td class="orden">
 							<div class="table-text">
-								{{video.order}}
+								{{$index + 1}}
 							</div>
 						</td>
 						<td>
-							<button class="play btn-sm btn-danger" type="button" ng-click="play(video.order, videoModes.selected)">
-								<fa ng-cloak="{{ isPlaying() == video.order }}" 
-									name="{{ isPlaying() == video.order ? 'circle-o-notch' : 'play' }}" 
-									spin="{{ isPlaying() == video.order }}" 
+							<button class="play btn-sm btn-danger" type="button" ng-click="play(video._id, videoModes.selected)">
+								<fa ng-cloak="{{ isPlaying() == video._id }}" 
+									name="{{ isPlaying() == video._id ? 'circle-o-notch' : 'play' }}" 
+									spin="{{ isPlaying() == video._id }}" 
 									size="1">
 								</fa>
 							</button>

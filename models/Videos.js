@@ -3,8 +3,11 @@
 var request = require('request');
 var mongoose = require('mongoose');
 var autoIncrement = require('mongoose-auto-increment');
-const spawn = require('child_process').spawn;
 
+const 
+	spawn = require('child_process').spawn;
+
+// Load Server Model
 var server_schema = require('./Server');
 var Server = server_schema.Server;
 
@@ -13,14 +16,18 @@ var VideosSchema = new mongoose.Schema({
 		type: String,
 		required: true
 	},
-	title: String,
-	order: Number
+	title: String
 }, {
 	collection: process.env.MONGO_VIDEOS_COLL || 'videos'
 });
 
+
 const EventEmitter = require('events');
 const stopEmitter = new EventEmitter();
+
+VideosSchema.statics.isValid = function(id) {
+	return mongoose.Types.ObjectId.isValid(id);
+}
 
 VideosSchema.statics.stopAll = function(cb) {
 	stopEmitter.emit('stopEvent');
@@ -28,14 +35,13 @@ VideosSchema.statics.stopAll = function(cb) {
 }
 
 // TODO
-// VideosSchema.methods.pause() = function( current_video_order ) {
-//
-// }
-// VideosSchema.methods.volume() = function( current_video_order ) {
-//
+// VideosSchema.methods.togglePause = function(player) {
+//   How the hell am I gonna accomplish this? <_<
 // }
 
 VideosSchema.methods.playThis = function(player_options, cb) {
+
+	stopEmitter.emit('stopEvent');
 
 	let player = player_options.player || process.env.PLAYER;
 	let video_url = player_options.url || '';
@@ -107,7 +113,9 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 		// Update stats
 		let server_stats = Server.updateStats('stopped', 0);
 		Server.findOneAndUpdate({ host: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
-			.exec(function(err, stats) {});
+			.exec(function(err, stats) {
+				console.log('Player closed.');
+			});
 
 	});
 
@@ -115,33 +123,19 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 
 };
 
-var Videos = mongoose.model(process.env.MONGO_VIDEOS_COLL || 'videos', VideosSchema);
 
-// VideosSchema.plugin(autoIncrement.plugin, {
-// 	model: 'Videos',
-// 	field: 'order',
-// 	startAt: 1,
-// 	incrementBy: 1
+// Start reading from stdin so we don't exit.
+// process.stdin.resume();
+// Not wroking yet ¬_¬
+// process.once('SIGINT', function () {
+// 	Videos.stopAll(function(){
+// 		console.log('Server restarting, stopping any playback...');
+// 	});
 // });
 
-VideosSchema.post('save', function(next) {
-	
-	Videos.find({ order: { $gt: 0 } }, { order: 1 }, function(err, videosCount){
-		
-		var i = 1;
-		for ( let vid in videosCount ) {
-			
-			Videos.update( { _id: vid._id}, { $set: { order: i } }, function(err, video){
-				i++;
-			});
-		}
-		
-	});
-	
-	
-		
-	
-});
+
+var Videos = mongoose.model(process.env.MONGO_VIDEOS_COLL || 'videos', VideosSchema);
+
 VideosSchema.post('remove', function(next) {
 	next();
 });

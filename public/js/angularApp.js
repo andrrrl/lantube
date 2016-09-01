@@ -7,19 +7,19 @@ app.config([
 	'$urlRouterProvider', // provides redirecting
 	function($stateProvider, $urlRouterProvider) {
 
-	    $stateProvider
+		$stateProvider
 			.state('home', {
 				url: '/home',
 				controller: 'MainCtrl',
 				resolve: {
 					// Get all saved videos 
 					videoPromise: ['videos', function(videos) {
-						return [ videos.getAll(), videos.player() ];
+						return [videos.getAll(), videos.player()];
 					}]
 				}
 			});
 
-    	// $urlRouterProvider.when('', '/');
+		// $urlRouterProvider.when('', '/');
 		$urlRouterProvider.otherwise('home');
 	}
 ]);
@@ -45,7 +45,9 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 		showStop: false, // Show "Stop" button?
 		playAllText: 'Play All', // Text for "play all" button
 		stopText: 'Stop All', // Text for "stop" button
-		playFullscreenText: 'Play fullscreen'
+		playFullscreenText: 'Play fullscreen',
+		playerVolume: '',
+		playerIsMuted: false
 	};
 
 	// Get all videos
@@ -55,65 +57,68 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 			obj.isPlaying = false;
 			// create a deep copy of the returned data (this way $scope.videos will be keep updated)
 			angular.copy(data, obj.videos);
-			
+
 		});
 	};
 
 	// Get video data (unused for now)
-	obj.get = function(order) {
-		return $http.get('/api/videos/' + order).then(function(res) {
+	obj.get = function(id) {
+		return $http.get('/api/videos/' + id).then(function(res) {
 			return res.data;
 		});
 	};
 
 	// Add a new video to the list
-	obj.add = function(video, order) {
+	obj.add = function(video) {
 		video = video || '';
-		order = order || 1;
 		// Post new video 
-		return $http.post('/api/videos', {video: video, order: order})
+		return $http.post('/api/videos', { video: video })
 			.success(function(data) {
 				obj.videos.push(data);
 			});
 	};
 
-	// Play single video by order or entire list, if order == 0 (default)
-	obj.play = function(order, video_mode) {
-		
-		$log.log(video_mode);
-		
-		// avoid opening player twice
-		if ( order == obj.isPlaying ) {
+	// Play single video by id or entire list, if id == 0 (default)
+	obj.play = function(id, video_mode) {
+
+		$log.log('video_mode: ' + video_mode);
+		$log.log('id: ' + id);
+		$log.log('obj.isPlaying: ' + obj.isPlaying);
+		obj.isPlaying
+			// avoid opening player twice
+		if (id == obj.isPlaying) {
 			return;
 		}
-		
+
 		// avoid undefined video mode
-		if ( video_mode == '' ){
+		if (video_mode == '') {
 			video_mode = 'windowed';
 		}
-		
-		if ( obj.isPlaying ) {
+
+		if (obj.isPlaying) {
 			obj.stop();
 		}
-		
-		order = order || 0;
 
-		if ( order ){
-			obj.isPlaying = order;
+		id = id || 0;
+
+		$log.log('id: ' + id);
+
+		if (id) {
+			obj.isPlaying = id;
 			obj.playAllText = 'Playing...';
 			obj.showStop = true;
 
 			// Set the video mode
-			$http.put('/api/videos/player', { video_mode: video_mode }).success(function(res){
-				
+			$http.put('/api/videos/player', { video_mode: video_mode }).success(function(res) {
+
 				$log.log('Client: ');
 				$log.log(res);
-				
-				if ( order > 0 ) {
+
+				if (typeof id === 'string') {
 					// Play single video
-					return $http.get('/api/videos/' + order + '/play').then(function(res) {
-						if (res.data.next_order < obj.videos.length) {
-							return obj.play(res.data.next_order);
+					return $http.get('/api/videos/' + id + '/play').then(function(res) {
+						if (res.data.next_id < obj.videos.length) {
+							return obj.play(res.data.next_id);
 						}
 					});
 				} else {
@@ -122,7 +127,7 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 						return res.data.playing;
 					});
 				}
-				
+
 			});
 
 		}
@@ -130,29 +135,34 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 
 	// Stop all playback (single or list)
 	obj.stop = function() {
-		return $http.get('/api/videos/stop').then(function(res){
-			if ( res.data.result == 'stopped' )
+		return $http.get('/api/videos/stop').then(function(res) {
+			if (res.data.result == 'stopped')
 				obj.isPlaying = 0;
-				obj.showStop = false;
-				obj.playAllText = 'Play All';
+			obj.showStop = false;
+			obj.playAllText = 'Play All';
 			return res.data;
 		});
 	}
-	
+
 	// Set video mode
 	obj.setVideoMode = function(fs) {
-		return $http.patch('/api/videos/stats', { fs: fs }).then(function(res){
+		return $http.patch('/api/videos/stats', { fs: fs }).then(function(res) {
 			return res;
 		});
 	}
-	
+
 	// Get player config
 	obj.player = function() {
-		return $http.get('/api/videos/player').then(function(res){
+		return $http.get('/api/videos/player').then(function(res) {
 			$log.log(res.data.player_mode);
 			obj.videoModes.selected = res.data.player_mode;
 			return res.data;
 		});
+	}
+
+	// Volume!
+	obj.setVolume = function(action) {
+		return $http.get('/api/player/volume/' + action);
 	}
 
 	return obj;
@@ -163,66 +173,84 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 app.controller('MainCtrl', [
 	'$scope',
 	'$rootScope',
+	'$http',
 	'$log',
 	'videos',
-	function($scope, $rootScope, $log, videos) {
+	function($scope, $rootScope, $http, $log, videos) {
 
-        // handles the callback from the received event
-        var handleCallback = function (msg) {
-            $scope.$apply(function () {
-                var server_stats = JSON.parse(msg.data);
+		// handles the callback from the received event
+		var handleMsgCallback = function(msg) {
+			
+			$scope.$apply(function() {
+				var server_response = JSON.parse(msg.data);
+
+				let vol = parseInt(server_response.player_volume, 16);
 				
-				switch ( server_stats.status ) {
+				$scope.playerVolume = (100 + vol);
+
+				switch (server_response.status) {
 
 					case 'idle':
 						videos.isPlaying = false;
 						videos.nowPlaying = false;
 						videos.showStop = false;
 						videos.playAllText = 'Play All';
-					break;
+						break;
 
 					case 'playing':
-						videos.isPlaying = server_stats.video_order;
-						videos.nowPlaying = server_stats.video_title + ' [' + server_stats.video_url + ']';
+						videos.isPlaying = server_response.video_id;
+						videos.nowPlaying = server_response.video_title + ' [' + server_response.video_url + ']';
 						videos.showStop = true;
 						videos.playAllText = 'Playing...';
-					break;
+						break;
 
 					case 'stopped':
 						videos.isPlaying = false;
 						videos.nowPlaying = false;
 						videos.showStop = false;
 						videos.playAllText = 'Play All';
-					break;
+						break;
+
+					case 'added':
+						videos.videos = server_response.videos;
+						break;
+
+						// TODO:
+						// case 'deleted':
+						// 
+						// break;
 
 				}
-            });
-        }
-
-		// Listen for SSE with stats data 
-		// So the page can update according to server changes
-	    if (typeof(EventSource) !== "undefined") {
-			var source = new EventSource('/api/videos/stats');
-	        	source.addEventListener('message', handleCallback, true);
+			});
 		}
 		
+		// Listen for SSE with stats data 
+		// So the page can update according to server changes
+		if (typeof(EventSource) !== "undefined") {
+			var stats_source = new EventSource('/api/videos/stats');
+			stats_source.addEventListener('message', handleMsgCallback, true);
+		}
+
 		// Init URL
 		$scope.videourl = '';
 
 		// get all videos
 		$scope.videos = videos.videos;
-		
+
 		// video modes
 		$scope.videoModes = videos.videoModes;
-		
+
 		// add
 		$scope.add = videos.add;
-		
+
 		// play
 		$scope.play = videos.play;
-		
+
 		// stop
 		$scope.stop = videos.stop;
+		
+		// volume
+		$scope.playerVolume = videos.playerVolume;
 
 		// "play all" text
 		$scope.playAllText = function() {
@@ -235,19 +263,21 @@ app.controller('MainCtrl', [
 		};
 
 		// is loading?
-		$scope.isPlaying = function(order) { 
-			return videos.isPlaying; 
+		$scope.isPlaying = function(id) {
+			return videos.isPlaying;
 		};
-		
+
 		// is playing?
-		$scope.nowPlaying = function(order) { 
-			return videos.nowPlaying; 
+		$scope.nowPlaying = function(id) {
+			return videos.nowPlaying;
 		};
 
 		// show stop button?
 		$scope.showStop = function() {
 			return videos.showStop;
 		};
+
+		$scope.setVolume = videos.setVolume;
 
 		// Some colors? (just for testing)
 		$scope.logoColor = 'darkorange';
@@ -259,16 +289,16 @@ app.controller('MainCtrl', [
 ]);
 
 // App directive, will focus (higllight) input text
-app.directive('selectOnClick', ['$window', function ($window) {
-    return {
-        restrict: 'A',
-        link: function (scope, element, attrs) {
-            element.on('focus', function () {
-                if (!$window.getSelection().toString()) {
-                    // Required for mobile Safari
-                    this.setSelectionRange(0, this.value.length)
-                }
-            });
-        }
-    };
+app.directive('selectOnClick', ['$window', function($window) {
+	return {
+		restrict: 'A',
+		link: function(scope, element, attrs) {
+			element.on('focus', function() {
+				if (!$window.getSelection().toString()) {
+					// Required for mobile Safari
+					this.setSelectionRange(0, this.value.length)
+				}
+			});
+		}
+	};
 }]);
