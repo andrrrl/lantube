@@ -126,23 +126,28 @@ router.route('/api/videos/player')
 router.get('/', function(req, res, next) {
 
 
-	Server.findOneAndUpdate({ host: process.env.HOST_NAME }, { player: process.env.PLAYER, player_mode: process.env.PLAYER_MODE, player_playlist: process.env.PLAYER_PLAYLIST }, { upsert: true })
-		.exec(function(err, env_player) {
+	Server.findOneAndUpdate(
+		{ host: process.env.HOST_NAME }, 
+		{ player: process.env.PLAYER, player_mode: process.env.PLAYER_MODE, player_playlist: process.env.PLAYER_PLAYLIST }, 
+		{ upsert: true }
+	)
+	.exec(function(err, env_player) {
 
-			// Render index
-			Videos.find().exec(function(err, videos) {
-				if (err) {
-					console.log(err);
-				} else {
-					res.render('index', {
-						title: 'Lantube',
-						lang: req.headers['accept-language'].slice(0, 2) || 'es',
-						player_options: env_player
-					});
-					res.end();
-				}
-			});
+		// Render index
+		Videos.find().exec(function(err, videos) {
+			if (err) {
+				console.log(err);
+			} else {
+				res.render('index', {
+					title: 'Lantube',
+					lang: req.headers['accept-language'].slice(0, 2) || 'es',
+					player_options: env_player
+				});
+				res.end();
+			}
 		});
+
+	});
 
 });
 
