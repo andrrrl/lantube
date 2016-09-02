@@ -14,7 +14,8 @@ var VideosSchema = new mongoose.Schema({
 		type: String,
 		required: true
 	},
-	title: String
+	title: String,
+    order: Number
 }, {
 	collection: process.env.MONGO_VIDEOS_COLL || 'videos'
 });
@@ -122,21 +123,51 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 };
 
 
-// Start reading from stdin so we don't exit.
-// process.stdin.resume();
-// Not wroking yet ¬_¬
-// process.once('SIGINT', function () {
-// 	Videos.stopAll(function(){
-// 		console.log('Server restarting, stopping any playback...');
-// 	});
-// });
+VideosSchema.post('save', function(next) {
+    Videos
+        .find()
+        .sort({ _id: 1 })
+        .exec(function(err, videos){
+            
+            for ( let i = 0; i < videos.length; i++ ) {
+                Videos
+                    .findOneAndUpdate({ id: videos[i]._id })
+                    .set({ order: i+i })
+                    .exec(function(err, video){
+                        
+                        if (err) console.log(err);
+                        
+                        // Reordered ok
+                    });
+            }
+            
+        });
+});
 
+VideosSchema.post('remove', function(next) {
+    Videos
+        .find()
+        .sort({ _id: 1 })
+        .exec(function(err, videos){
+            
+            for ( let i = 0; i < videos.length; i++ ) {
+                Videos
+                    .findOneAndUpdate({ id: videos[i]._id })
+                    .set({ order: i+i })
+                    .exec(function(err, video){
+                        
+                        if (err) console.log(err);
+                        
+                        // Reordered ok
+                    });
+            }
+            
+        });
+        
+});
 
 var Videos = mongoose.model(process.env.MONGO_VIDEOS_COLL || 'videos', VideosSchema);
 
-VideosSchema.post('remove', function(next) {
-	next();
-});
 
 var schemas = {
 	'Videos': Videos

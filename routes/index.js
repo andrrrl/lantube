@@ -34,21 +34,21 @@ function eventStreamResponse(type, res, results) {
 	res.write('id: ' + (new Date().getMilliseconds()) + '\n');
 	res.write('retry: 1000\n');
 
-	if ( type === 'stats' ) {
+	if (type === 'stats') {
 		res.write('data:' + JSON.stringify(results) + '\n\n'); // Note the extra newline
-	} else if ( type === 'added' ) {
+	} else if (type === 'added') {
 		res.write('data:' + JSON.stringify(results) + '\n\n'); // Note the extra newline
 	}
 	res.end();
 }
 
-router.get('/api/player', function(req, res, next){
+router.get('/api/player', function(req, res, next) {
 	res.json({ api: 'player' });
 	res.end();
 });
 
 
-router.get('/api/player/volume', function(req, res, next){
+router.get('/api/player/volume', function(req, res, next) {
 
 	Server.getVolume('player_volume', function(vol) {
 		res.json({ serverVol: vol });
@@ -58,12 +58,12 @@ router.get('/api/player/volume', function(req, res, next){
 	next();
 });
 
-router.get('/api/player/volume/:action', function(req, res, next){
+router.get('/api/player/volume/:action', function(req, res, next) {
 
-	if ( req.params.action == '' )
+	if (req.params.action == '')
 		next();
 
-	Server.setVolume({ action: req.params.action }, function(vol){
+	Server.setVolume({ action: req.params.action }, function(vol) {
 		res.json({
 			player_volume: vol.player_volume,
 			player_is_muted: vol.isMuted
@@ -115,42 +115,34 @@ router.route('/api/videos/player')
 			});
 	})
 	.put(function(req, res, next) {
-		Server.findOneAndUpdate(
-			{ host: process.env.HOST_NAME }, 
-			{ player_mode: req.body.video_mode }, 
-			{ new: true }
-		)
-		.exec(function(err, player) {
-			res.json(player.player_mode);
-			res.end();
-		});
+		Server.findOneAndUpdate({ host: process.env.HOST_NAME }, { player_mode: req.body.video_mode }, { new: true })
+			.exec(function(err, player) {
+				res.json(player.player_mode);
+				res.end();
+			});
 	});
 
 // GET and render homepage
 router.get('/', function(req, res, next) {
 
 
-			Server.findOneAndUpdate(
-				{ host: process.env.HOST_NAME }, 
-				{ player: process.env.PLAYER, player_mode: process.env.PLAYER_MODE,	player_playlist: process.env.PLAYER_PLAYLIST }, 
-				{ upsert: true }
-			)
-			.exec(function(err, env_player) {
+	Server.findOneAndUpdate({ host: process.env.HOST_NAME }, { player: process.env.PLAYER, player_mode: process.env.PLAYER_MODE, player_playlist: process.env.PLAYER_PLAYLIST }, { upsert: true })
+		.exec(function(err, env_player) {
 
-					// Render index
-				Videos.find().exec(function(err, videos) {
-					if (err) {
-						console.log(err);
-					} else {
-						res.render('index', {
-							title: 'Lantube',
-							lang: req.headers['accept-language'].slice(0, 2) || 'es',
-							player_options: env_player
-						});
-						res.end();
-					}
-				});
+			// Render index
+			Videos.find().exec(function(err, videos) {
+				if (err) {
+					console.log(err);
+				} else {
+					res.render('index', {
+						title: 'Lantube',
+						lang: req.headers['accept-language'].slice(0, 2) || 'es',
+						player_options: env_player
+					});
+					res.end();
+				}
 			});
+		});
 
 });
 
@@ -227,17 +219,9 @@ router.route('/api/videos/')
 // parameter middleware that will run before the next routes
 router.param('id', function(req, res, next, option) {
 
-	// check if _id is valid
-	var valid_id = Videos.isValid(option);
+	// TODO: Add some checks
+	req.option = option;
 
-	if ( valid_id ) {
-		// save id to the request
-		req.option = option;
-	} else if ( typeof option == 'string' ) {
-		req.option = option;
-	} else {
-		req.option = false;
-	}
 
 	next();
 });
@@ -303,21 +287,29 @@ router.route('/api/videos/:id/play')
 
 .get(function(req, res, next) {
 
-	let id = req.params.id == 'last' ? '-_id' : req.params.id;
+	let order = typeof ( parseInt(req.params.id) * 1 ) == 'number' ? ( parseInt(req.params.id) * 1 ) : false;
+	let id = Videos.isValid(req.params.id);
+	
+	let query = {};
+	let sort = '-order';
 
-	Videos.findOne(
-			(id == '-_id' ? {} : { _id: req.params.id })
-		)
-		.sort(id)
+	if (order > 0) {
+		query = { order: order };
+	} else if ( Videos.isValid(id) ) {
+		query = { _id: id };
+	}  
+	
+	console.log(query);
+	
+	Videos
+		.findOne(query)
+		.sort(sort)
 		.exec(function(err, video) {
 
 			if (err) {
 				console.log(err);
 				res.end();
 			} else {
-
-
-
 				if (video == null) {
 					res.json({
 						error: 'No hay banda!'
@@ -327,29 +319,25 @@ router.route('/api/videos/:id/play')
 
 					// Update stats
 					let server_stats = Server.updateStats('playing', video._id, video.title, video.url);
-					Server.findOneAndUpdate(
-						{ host: process.env.HOST_NAME || 'localhost' }, 
-						{ $set: server_stats }, 
-						{ upsert: true, new: true }
-					)
-					.exec(function(err, stats) {
+					Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
+						.exec(function(err, stats) {
 
-						// Play video!
-						video.playThis({
-							player: stats.player,
-							player_mode: stats.player_mode,
-							player_playlist: '',
-							url: video.url
+							// Play video!
+							video.playThis({
+								player: stats.player,
+								player_mode: stats.player_mode,
+								player_playlist: '',
+								url: video.url
+							});
+
+							res.json({
+								result: 'playing',
+								playing: video.url,
+								_id: video._id
+							});
+							res.end();
+
 						});
-
-						res.json({
-							result: 'playing',
-							playing: video.url,
-							_id: video._id
-						});
-						res.end();
-
-					});
 
 				}
 
@@ -365,19 +353,15 @@ router.route('/api/videos/stop')
 
 		// Update stats
 		let server_stats = Server.updateStats('stopped', 0, '', '');
-		Server.findOneAndUpdate(
-			{ host: process.env.HOST_NAME || 'localhost' }, 
-			{ $set: server_stats }, 
-			{ upsert: true, new: true }
-		)
-		.exec(function(err, stats) {
+		Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
+			.exec(function(err, stats) {
 
-			res.json({
-				result: 'stopped'
+				res.json({
+					result: 'stopped'
+				});
+				res.end();
+
 			});
-			res.end();
-			
-		});
 
 	});
 
@@ -431,26 +415,22 @@ router.route('/api/videos/playlist')
 
 					// Update stats
 					let server_stats = Server.updateStats('playing', 0, 'Full PLS Playlist', '/api/videos/pls');
-					Server.findOneAndUpdate(
-						{ host: process.env.HOST_NAME || 'localhost' }, 
-						{ $set: server_stats }, 
-						{ upsert: true, new: true }
-					)
-					.exec(function(err, stats) {
+					Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
+						.exec(function(err, stats) {
 
 							// Play PLS playlist!
-						video[0].playThis({
-							player: stats.player,
-							player_mode: stats.player_mode,
-							playlist: true,
-							url: 'http://localhost:3000/api/videos/pls'
-						});
-						res.json({
-							result: 'playlist',
-							_id: req.params.id
-						});
+							video[0].playThis({
+								player: stats.player,
+								player_mode: stats.player_mode,
+								playlist: true,
+								url: 'http://localhost:3000/api/videos/pls'
+							});
+							res.json({
+								result: 'playlist',
+								_id: req.params.id
+							});
 
-					});
+						});
 
 				}
 			}

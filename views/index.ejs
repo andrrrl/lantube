@@ -72,9 +72,10 @@
 						<fa name="{{ isPlaying() != 0 ? 'circle-o-notch' : 'play' }}" alt="Loading" size="1" spin="{{ isPlaying() != 0 }}" ng-style="{'color': spinnerColor}"></fa> 
 					</button>
 					
+					<span ng-show="showStop()">{{stopText()}}</span>
 					<button ng-show="showStop()" class="btn btn-danger" type="button" ng-click="stop()">
 						<fa name="stop" alt="Stop" size="1" ng-style="{'color': spinnerColor}"></fa> 
-					</button> <span ng-show="showStop()">{{stopText()}}</span>
+					</button> 
 					
 					<br>
 					<br>
