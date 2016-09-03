@@ -38,6 +38,9 @@ VideosSchema.statics.stopAll = function(cb) {
 //   How the hell am I gonna accomplish this? <_<
 // }
 
+
+
+
 VideosSchema.methods.playThis = function(player_options, cb) {
 
 	stopEmitter.emit('stopEvent');
@@ -91,6 +94,8 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 				}, 5000);
 			}
 		}
+        
+        return cb;
 
 	});
 
@@ -122,49 +127,27 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 
 };
 
-
-VideosSchema.post('save', function(next) {
+VideosSchema.statics.reorder = function(cb) {
     Videos
         .find()
         .sort({ _id: 1 })
         .exec(function(err, videos){
             
+            console.log('Trying to reorder ' + videos.length + ' videos... ');
             for ( let i = 0; i < videos.length; i++ ) {
                 Videos
-                    .findOneAndUpdate({ id: videos[i]._id })
-                    .set({ order: i+i })
+                    .findOneAndUpdate({ _id: videos[i]._id }, { $set: {order: i+1} })
                     .exec(function(err, video){
-                        
                         if (err) console.log(err);
-                        
-                        // Reordered ok
                     });
             }
+            // Reordering ok
+            console.log('Videos reordered!');
             
         });
-});
-
-VideosSchema.post('remove', function(next) {
-    Videos
-        .find()
-        .sort({ _id: 1 })
-        .exec(function(err, videos){
-            
-            for ( let i = 0; i < videos.length; i++ ) {
-                Videos
-                    .findOneAndUpdate({ id: videos[i]._id })
-                    .set({ order: i+i })
-                    .exec(function(err, video){
-                        
-                        if (err) console.log(err);
-                        
-                        // Reordered ok
-                    });
-            }
-            
-        });
-        
-});
+    
+    return cb;
+};
 
 var Videos = mongoose.model(process.env.MONGO_VIDEOS_COLL || 'videos', VideosSchema);
 

@@ -202,21 +202,23 @@ router.route('/api/videos/')
 				if (err) {
 					console.log(err);
 				} else {
-
-					// Send stats to client
-					eventStreamResponse('added', res, result);
-
-					res.json({
-						result: 'ok',
-						_id: result._id,
-						title: body.title,
-						url: result.url
+					
+					Videos.reorder(function(){
+						res.json({
+							result: 'ok',
+							_id: result._id,
+							title: body.title,
+							url: result.url,
+							order: result.order
+						});
 					});
-					res.end();
+
 				}
 			});
 		}
 	});
+
+	next();
 
 });
 
@@ -250,6 +252,8 @@ router.route('/api/videos/:option')
 		return next();
 	if (req.params.option == 'player')
 		return next();
+	if (req.params.option == 'delete')
+		return next();
 
 	// Default is "_id"
 	Videos.findOne({
@@ -269,6 +273,8 @@ router.route('/api/videos/:option')
 
 });
 
+
+
 // LIST
 router.route('/api/videos/list')
 	.get(function(req, res, next) {
@@ -287,14 +293,14 @@ router.route('/api/videos/list')
 	});
 
 
+
 // PLAY
 router.route('/api/videos/:id/play')
 
 .get(function(req, res, next) {
 
-	let order = typeof ( parseInt(req.params.id) * 1 ) == 'number' ? ( parseInt(req.params.id) * 1 ) : false;
-	let id = Videos.isValid(req.params.id);
-	
+	let order = !req.params.id.match(/[a-zA-Z]/g) ? parseInt(req.params.id) : false;
+	let id = Videos.isValid(req.params.id) ? req.params.id : false;
 	let query = {};
 	let sort = '-order';
 
@@ -302,52 +308,51 @@ router.route('/api/videos/:id/play')
 		query = { order: order };
 	} else if ( Videos.isValid(id) ) {
 		query = { _id: id };
-	}  
+	}
 	
-	console.log(query);
 	
 	Videos
-		.findOne(query)
-		.sort(sort)
-		.exec(function(err, video) {
+	.findOne(query)
+	.sort(sort)
+	.exec(function(err, video) {
 
-			if (err) {
-				console.log(err);
+		if (err) {
+			console.log(err);
+			res.end();
+		} else {
+			if (video == null) {
+				res.json({
+					error: 'No hay banda!'
+				});
 				res.end();
 			} else {
-				if (video == null) {
+
+				// Update stats
+				let server_stats = Server.updateStats('playing', video._id, video.title, video.url);
+				Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
+				.exec(function(err, stats) {
+
+					// Play video!
+					video.playThis({
+						player: stats.player,
+						player_mode: stats.player_mode,
+						player_playlist: '',
+						url: video.url
+					});
+
 					res.json({
-						error: 'No hay banda!'
+						result: 'playing',
+						playing: video.url,
+						_id: video._id
 					});
 					res.end();
-				} else {
 
-					// Update stats
-					let server_stats = Server.updateStats('playing', video._id, video.title, video.url);
-					Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
-						.exec(function(err, stats) {
-
-							// Play video!
-							video.playThis({
-								player: stats.player,
-								player_mode: stats.player_mode,
-								player_playlist: '',
-								url: video.url
-							});
-
-							res.json({
-								result: 'playing',
-								playing: video.url,
-								_id: video._id
-							});
-							res.end();
-
-						});
-
-				}
+				});
 
 			}
-		});
+
+		}
+	});
 
 });
 
@@ -442,5 +447,18 @@ router.route('/api/videos/playlist')
 		});
 	});
 
+// Not implemented yet!
+router.route('/api/videos/delete/:order')
+	.get(function(req, res, next){
+		
+		Videos.remove(req.params).exec(function(err, removed){
+			Videos.reorder(function(next){
+				//res.json(req);
+				res.end();
+				next();
+			});
+		});
+
+	});
 
 module.exports = router;
