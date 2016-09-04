@@ -67,6 +67,25 @@ var
 	options = {},
 	lantube_message = '';
 
+
+function ask(question, format, callback) { 
+	var stdin = process.stdin,
+		stdout = process.stdout;  
+	
+	stdin.resume(); 
+	stdout.write(question + ": ");  
+	
+	stdin.once('data', function(data) {
+		data = data.toString().trim();    
+		if (format.test(data)) {
+			callback(data);
+		} else {
+			stdout.write("It should match: " + format + "\n");     
+			ask(question, format, callback);
+		}
+	});
+}
+
 if (process.argv.length < 2) {
 	options = { action: process.argv[2] };
 } else {
@@ -99,9 +118,9 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 						result = '\n';
 						for (let index in videos) {
 							result +=
-								'  - order: ' + videos[index].order +
-								'  | url: ' + videos[index].url +
-								'  | title: ' + videos[index].title + '\n';
+								'  ' + ( videos[index].order < 10 ? ' ' : '' ) + videos[index].order + 
+								'  "' + videos[index].title + '"' +
+								'  (' + videos[index].url + ')\n';
 						};
 						break;
 					case 'play':
@@ -140,20 +159,39 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 				var lantube_notify = {
 					title: 'Lantube',
 					message: lantube_message,
-					// icon: path.join(__dirname, 'icon.png'),
+					icon: path.join('../../public/favicon.png'),
 					sound: true,
 					wait: false
 				}
 
 				// Show bubble notification
-				//notifier.notify(lantube_notify);
+				// TOO ANNOYING, disabled for now...
+				// notifier.notify(lantube_notify);
 
 				// Show console notification
-				
 				console.log('  ' + TITLE_LANTUBE.green.bold + ': [' + options.action.yellow.bold + ']');
-				console.log('  Result: '.green.bold + '[' + result.yellow.bold + ' ]');
-				console.log('╰───────────────────────────────╯'.bold.yellow);
+				console.log('  Result: '.green.bold + '[' + result.yellow.bold + ']');
+				
+				if ( options.action == 'list' ) {
+					ask('Play a video from the list [1-' + videos.length + ']\n', /[0-9]+/, function(num){
+						
+						request({
+								url: LANTUBE_SERVER + num + '/play',
+								json: true
+							},
+							function(error, response, body) {
+								if (!error && response.statusCode == 200) {
+									var result = response.body;
+									console.log('Playing... "' + result.title + '"');
+									process.exit();
+								}
+							});
+						
+					});
+				}
+				
 			} else {
+				console.log('╰───────────────────────────────╯'.bold.yellow);
 				console.log(TITLE_LANTUBE.green.bold + ': ' + MSG_ERROR.yellow.bold + ' ' + options.action.yellow.bold + ', ' + MSG_SERVER_DOWN.yellow.bold);
 			}
 		});

@@ -47,6 +47,7 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 		stopText: 'Stop All', // Text for "stop" button
 		playFullscreenText: 'Play fullscreen',
 		playerVolume: '',
+		playerVolumeStep: '',
 		playerIsMuted: false
 	};
 
@@ -154,7 +155,6 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 	// Get player config
 	obj.player = function() {
 		return $http.get('/api/videos/player').then(function(res) {
-			$log.log(res.data.player_mode);
 			obj.videoModes.selected = res.data.player_mode;
 			return res.data;
 		});
@@ -162,6 +162,7 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 
 	// Volume!
 	obj.setVolume = function(action) {
+		if ( action == 99 ) action = 100;
 		return $http.get('/api/player/volume/' + action);
 	}
 
@@ -183,9 +184,8 @@ app.controller('MainCtrl', [
 			$scope.$apply(function() {
 				var server_response = JSON.parse(msg.data);
 
-				var vol = parseInt(server_response.player_volume, 16);
-
-				$scope.playerVolume = (100 + vol);
+				$scope.playerVolume = server_response.player_volume;
+				$scope.playerVolumeStep = server_response.player_volume_step;
 
 				switch (server_response.status) {
 
@@ -213,12 +213,6 @@ app.controller('MainCtrl', [
 					case 'added':
 						videos.videos = server_response.videos;
 						break;
-
-						// TODO:
-						// case 'deleted':
-						// 
-						// break;
-
 				}
 			});
 		}
@@ -250,6 +244,8 @@ app.controller('MainCtrl', [
 		
 		// volume
 		$scope.playerVolume = videos.playerVolume;
+		$scope.playerVolumeStep = videos.playerVolumeStep;
+		$scope.setVolume = videos.setVolume;
 
 		// "play all" text
 		$scope.playAllText = function() {
@@ -275,8 +271,6 @@ app.controller('MainCtrl', [
 		$scope.showStop = function() {
 			return videos.showStop;
 		};
-
-		$scope.setVolume = videos.setVolume;
 
 		// Some colors? (just for testing)
 		$scope.logoColor = 'darkorange';

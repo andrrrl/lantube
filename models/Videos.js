@@ -38,9 +38,6 @@ VideosSchema.statics.stopAll = function(cb) {
 //   How the hell am I gonna accomplish this? <_<
 // }
 
-
-
-
 VideosSchema.methods.playThis = function(player_options, cb) {
 
 	stopEmitter.emit('stopEvent');
@@ -70,7 +67,7 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 	var stuck = 0;
 
 	// Play video!
-	playing.stdout.on('data', data => {
+	playing.stdout.once('data', data => {
 		console.log('Starting playback with ' + (JSON.stringify(player_options) || 'no options.'));
 		console.log(`stdout: ${data}`);
 
@@ -99,7 +96,7 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 
 	});
 
-	playing.stderr.on('data', data => {
+	playing.stderr.once('data', data => {
 		// will print stuff continuously...
 		// console.log( `stderr: ${data}` );
 	});
@@ -110,7 +107,7 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 	});
 
 	// Close when video finished (I don't want to generates a playlist, understand?)
-	playing.on('close', code => {
+	playing.once('close', code => {
 		console.log(`Player finshed playing with code ${code}`);
 		playing.kill('SIGINT');
 

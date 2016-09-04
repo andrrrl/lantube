@@ -49,13 +49,13 @@ router.get('/api/player', function(req, res, next) {
 
 
 router.get('/api/player/volume', function(req, res, next) {
-
 	Server.getVolume('player_volume', function(vol) {
-		res.json({ serverVol: vol });
-		//res.end();
+		res.json({
+			serverVol: vol,
+			serverVolStep: process.env.PLAYER_VOLUME_STEP
+		});
+		res.end();
 	});
-
-	next();
 });
 
 router.get('/api/player/volume/:action', function(req, res, next) {
@@ -66,6 +66,7 @@ router.get('/api/player/volume/:action', function(req, res, next) {
 	Server.setVolume({ action: req.params.action }, function(vol) {
 		res.json({
 			player_volume: vol.player_volume,
+			player_volume_step: process.env.PLAYER_VOLUME_STEP,
 			player_is_muted: vol.isMuted
 		});
 		res.end();
@@ -126,28 +127,24 @@ router.route('/api/videos/player')
 router.get('/', function(req, res, next) {
 
 
-	Server.findOneAndUpdate(
-		{ host: process.env.HOST_NAME }, 
-		{ player: process.env.PLAYER, player_mode: process.env.PLAYER_MODE, player_playlist: process.env.PLAYER_PLAYLIST }, 
-		{ upsert: true }
-	)
-	.exec(function(err, env_player) {
+	Server.findOneAndUpdate({ host: process.env.HOST_NAME }, { player: process.env.PLAYER, player_mode: process.env.PLAYER_MODE, player_playlist: process.env.PLAYER_PLAYLIST }, { upsert: true })
+		.exec(function(err, env_player) {
 
-		// Render index
-		Videos.find().exec(function(err, videos) {
-			if (err) {
-				console.log(err);
-			} else {
-				res.render('index', {
-					title: 'Lantube',
-					lang: req.headers['accept-language'].slice(0, 2) || 'es',
-					player_options: env_player
-				});
-				res.end();
-			}
+			// Render index
+			Videos.find().exec(function(err, videos) {
+				if (err) {
+					console.log(err);
+				} else {
+					res.render('index', {
+						title: 'Lantube',
+						lang: req.headers['accept-language'].slice(0, 2) || 'es',
+						player_options: env_player
+					});
+					res.end();
+				}
+			});
+
 		});
-
-	});
 
 });
 
@@ -202,8 +199,8 @@ router.route('/api/videos/')
 				if (err) {
 					console.log(err);
 				} else {
-					
-					Videos.reorder(function(){
+
+					Videos.reorder(function() {
 						res.json({
 							result: 'ok',
 							_id: result._id,
@@ -306,53 +303,54 @@ router.route('/api/videos/:id/play')
 
 	if (order > 0) {
 		query = { order: order };
-	} else if ( Videos.isValid(id) ) {
+	} else if (Videos.isValid(id)) {
 		query = { _id: id };
 	}
-	
-	
-	Videos
-	.findOne(query)
-	.sort(sort)
-	.exec(function(err, video) {
 
-		if (err) {
-			console.log(err);
-			res.end();
-		} else {
-			if (video == null) {
-				res.json({
-					error: 'No hay banda!'
-				});
+
+	Videos
+		.findOne(query)
+		.sort(sort)
+		.exec(function(err, video) {
+
+			if (err) {
+				console.log(err);
 				res.end();
 			} else {
-
-				// Update stats
-				let server_stats = Server.updateStats('playing', video._id, video.title, video.url);
-				Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
-				.exec(function(err, stats) {
-
-					// Play video!
-					video.playThis({
-						player: stats.player,
-						player_mode: stats.player_mode,
-						player_playlist: '',
-						url: video.url
-					});
-
+				if (video == null) {
 					res.json({
-						result: 'playing',
-						playing: video.url,
-						_id: video._id
+						error: 'No hay banda!'
 					});
 					res.end();
+				} else {
 
-				});
+					// Update stats
+					let server_stats = Server.updateStats('playing', video._id, video.title, video.url);
+					Server.findOneAndUpdate({ host: process.env.HOST_NAME || 'localhost' }, { $set: server_stats }, { upsert: true, new: true })
+						.exec(function(err, stats) {
+
+							// Play video!
+							video.playThis({
+								player: stats.player,
+								player_mode: stats.player_mode,
+								player_playlist: '',
+								url: video.url
+							});
+
+							res.json({
+								result: 'playing',
+								playing: video.url,
+								title: video.title,
+								_id: video._id
+							});
+							res.end();
+
+						});
+
+				}
 
 			}
-
-		}
-	});
+		});
 
 });
 
@@ -449,10 +447,10 @@ router.route('/api/videos/playlist')
 
 // Not implemented yet!
 router.route('/api/videos/delete/:order')
-	.get(function(req, res, next){
-		
-		Videos.remove(req.params).exec(function(err, removed){
-			Videos.reorder(function(next){
+	.get(function(req, res, next) {
+
+		Videos.remove(req.params).exec(function(err, removed) {
+			Videos.reorder(function(next) {
 				//res.json(req);
 				res.end();
 				next();
