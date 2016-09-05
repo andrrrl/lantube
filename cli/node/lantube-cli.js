@@ -114,7 +114,7 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 				switch (options.action) {
 					case 'list':
 						lantube_message = 'Listing all videos...';
-						let videos = result;
+						var videos = result;
 						result = '\n';
 						for (let index in videos) {
 							result +=
