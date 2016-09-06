@@ -67,7 +67,7 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 	var stuck = 0;
 
 	// Play video!
-	playing.stdout.once('data', data => {
+	playing.stdout.on('data', data => {
 		console.log('Starting playback with ' + (JSON.stringify(player_options) || 'no options.'));
 		console.log(`stdout: ${data}`);
 
@@ -96,7 +96,7 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 
 	});
 
-	playing.stderr.once('data', data => {
+	playing.stderr.on('data', data => {
 		// will print stuff continuously...
 		// console.log( `stderr: ${data}` );
 	});
@@ -107,7 +107,7 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 	});
 
 	// Close when video finished (I don't want to generates a playlist, understand?)
-	playing.once('close', code => {
+	playing.on('close', code => {
 		console.log(`Player finshed playing with code ${code}`);
 		playing.kill('SIGINT');
 

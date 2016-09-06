@@ -77,21 +77,20 @@
 											<input class="bar form-control" id="volume-range" type="range" ng-model="playerVolume" ng-change="setVolume(playerVolume)" name="volume-range" value="{{playerVolume}}" min="0" max="100" step="{{playerVolumeStep}}">
 											<output ng-hide="true" id="rangevalue" name="result">{{playerVolume}}</output>
 										</div>
+										<br>
 									</div>
 								</div>
 							</div>
 						</div>
 					</div>
-
+					<hr>
 				</div>
 				<div class="col-md-5 col-sm-1">
-
 					<label>Filter: </label>
 					<form ng-hide="videos.length == 0" class="form-inline">
 						<input class="form-control" type="search" ng-model="q" placeholder="Serach video" aria-label="filter videos by title" />
 					</form>
 					<hr>
-
 				</div>
 				<div class="col-md-2 col-sm-1">
 					<button ng-hide="showStop() || videos.length == 0" class="btn btn-success" type="button" name="play" ng-click="play('all', videoModes.selected)">
