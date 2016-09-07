@@ -74,7 +74,7 @@
 										<br>
 										<br>
 										<div ng-hide="false" id="slider">
-											<input class="bar form-control" id="volume-range" type="range" ng-model="playerVolume" ng-change="setVolume(playerVolume)" name="volume-range" value="{{playerVolume}}" min="0" max="100" step="{{playerVolumeStep}}">
+											<input class="bar form-control" id="volume-range" type="range" ng-model="playerVolume" ng-mouseup="setVolume(playerVolume)" name="volume-range" value="{{playerVolume}}" min="0" max="100" step="1">
 											<output ng-hide="true" id="rangevalue" name="result">{{playerVolume}}</output>
 										</div>
 										<br>
