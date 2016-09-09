@@ -102,8 +102,6 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 
 		id = id || 0;
 
-		$log.log('id: ' + id);
-
 		if (id) {
 			obj.isPlaying = id;
 			obj.playAllText = 'Playing...';
@@ -115,7 +113,7 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 				$log.log('Client: ');
 				$log.log(res);
 
-				if (typeof id === 'string') {
+				if (id != 'all') {
 					// Play single video
 					return $http.get('/api/videos/' + id + '/play').then(function(res) {
 						if (res.data.next_id < obj.videos.length) {
