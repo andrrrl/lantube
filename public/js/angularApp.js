@@ -36,7 +36,8 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 			modes: {
 				fullscreen: 'Fullscreen',
 				windowed: 'Windowed',
-				noVideo: 'Audio only'
+				noVideo: 'Audio only',
+				chromecast: 'Chromecast'
 			},
 			selected: 'windowed'
 		},
