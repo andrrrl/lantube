@@ -16,6 +16,7 @@
 ### Supported players ###
 * MPV
 * VLC (fails? see [Updating the VLC YouTube parser](http://askubuntu.com/a/197766/280008))
+* Chromecast
 
 ### Installation ###
 * Clone this repo with: 
@@ -66,7 +67,7 @@ PLAYER_VOLUME_STEP=4
 ## Command that opens the player
 PLAYER=mpv
 
-## Player video modes (windowed:default|fullscreen|audio-only):
+## Player video modes (windowed:default|fullscreen|audio-only|chromecast):
 PLAYER_MODE="fullscreen"
 PLAYER_MODE_FULLSCREEN_ARG="--fs"
 PLAYER_MODE_AUDIO_ONLY_ARG="--no-video"
@@ -79,7 +80,7 @@ PLAYER_NO_PLAYLIST="--terminal"
 ## Command that opens the player:
 # PLAYER=vlc
 # 
-## Player video modes (windowed:default|fullscreen|audio-only):
+## Player video modes (windowed:default|fullscreen|audio-only|chromecast):
 # PLAYER_MODE="fullscreen"
 # PLAYER_MODE_FULLSCREEN_ARG="--fullscreen"
 # PLAYER_MODE_AUDIO_ONLY_ARG="--no-video"
