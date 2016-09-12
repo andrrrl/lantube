@@ -16,6 +16,7 @@ var VideosSchema = new mongoose.Schema({
 		required: true
 	},
 	title: String,
+    img: String,
     order: Number
 }, {
 	collection: process.env.MONGO_VIDEOS_COLL || 'videos'
@@ -130,7 +131,10 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 
     		// Update stats
     		let server_stats = Server.updateStats('stopped', 0);
-    		Server.findOneAndUpdate({ host: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
+    		Server.findOneAndUpdate(
+                { host: process.env.HOST_NAME }, 
+                { $set: server_stats }, 
+                { upsert: true, new: true })
     			.exec(function(err, stats) {
     				console.log('Player closed.');
     			});
@@ -149,11 +153,12 @@ VideosSchema.statics.reorder = function(cb) {
             
             console.log('Trying to reorder ' + videos.length + ' videos... ');
             for ( let i = 0; i < videos.length; i++ ) {
-                Videos
-                    .findOneAndUpdate({ _id: videos[i]._id }, { $set: {order: i+1} })
-                    .exec(function(err, video){
-                        if (err) console.log(err);
-                    });
+                Videos.findOneAndUpdate(
+                    { _id: videos[i]._id }, 
+                    { $set: {order: i+1} })
+                .exec(function(err, video){
+                    if (err) console.log(err);
+                });
             }
             // Reordering ok
             console.log('Videos reordered!');

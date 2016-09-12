@@ -29,9 +29,21 @@ a {
   animation: blink-animation 1s steps(5, start) infinite;
   -webkit-animation: blink-animation 1s steps(5, start) infinite; }
 
-.table-text {
+.table-order {
+  position: relative;
+  top: 8px; }
+
+.table-url {
   position: relative;
   top: 6px; }
+
+.table-button {
+  position: relative;
+  top: 4px; }
+
+.table-img img {
+  width: 50px;
+  height: auto; }
 
 @keyframes blink-animation {
   to {

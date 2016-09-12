@@ -4,7 +4,8 @@ const
 	os = require('os'),
 	request = require('request'),
 	mongoose = require('mongoose'),
-	exec = require('child_process').exec;
+	exec = require('child_process').exec,
+	spawn = require('child_process').spawn;
 
 var ServerStatsSchema = new mongoose.Schema({
 	host: {
@@ -28,6 +29,7 @@ var ServerStatsSchema = new mongoose.Schema({
 	video_id: String,
 	video_title: String,
 	video_url: String,
+	video_img: String,
 	player: String,
 	player_mode: String,
 	player_volume: {
@@ -46,7 +48,18 @@ var ServerStatsSchema = new mongoose.Schema({
 	collection: process.env.MONGO_STATS_COLL
 });
 
-ServerStatsSchema.statics.updateStats = function(status, id, title, url) {
+ServerStatsSchema.statics.getStat = function(stat, cb) {
+	Server.findOne(
+		{ host: process.env.HOST_NAME } )
+		.exec(function(err, server_stat) {
+			if (err) {
+				console.log(err);
+			}
+			return cb(server_stat[stat]);
+		});
+};
+
+ServerStatsSchema.statics.updateStats = function(status, id, title, url, img) {
 
 	let stats = {
 		type: os.type(),
@@ -61,6 +74,7 @@ ServerStatsSchema.statics.updateStats = function(status, id, title, url) {
 		video_id: id || 0,
 		video_title: title,
 		video_url: url,
+		video_img: img,
 		player: process.env.PLAYER || '',
 		player_playlist: process.env.PLAYER_PLAYLIST || ''
 	}
@@ -92,10 +106,14 @@ ServerStatsSchema.statics.configVolume = function(options) {
 
 // Get Sys Vol
 ServerStatsSchema.statics.getVolume = function(volume_value, cb) {
-	Server.findOne({ host: process.env.HOST_NAME }, { player_volume: 1, player_is_muted: 1 })
+	Server.findOne(
+		{ host: process.env.HOST_NAME }, 
+		{ player_volume: 1, player_is_muted: 1 })
 		.exec(function(err, server_volume) {
 
-			if (err) console.log(err);
+			if (err) {
+				console.log(err);
+			}
 
 			return cb(server_volume[volume_value]);
 		});
@@ -107,49 +125,68 @@ ServerStatsSchema.statics.setVolume = function(options, cb) {
 
 	// Get current volume value
 	Server.getVolume('player_volume', function(serverVol) {
-
-		// serverVol = serverVol || 50;
-
+		
 		let stepVol = parseInt(process.env.PLAYER_VOLUME_STEP || 5);
+		
+		let playerMode = Server.getStat('player_mode', function(serverMode) {
 
-		switch (options.action) {
-			case 'up':
-				if (serverVol <= 99) {
-					exec('amixer -c 0 sset Master 1%+');
-					// exec('pactl set-sink-volume 0 +' + stepVol + '%');
-					serverVol += 1;
-				} else {
-					exec('amixer -c 0 sset Master 100%');
-					serverVol = 100;
-				}
-				break;
-			case 'down':
-				if (serverVol >= 1) {
-					exec('amixer -c 0 sset Master 1%-');
-					serverVol -= 1;
-				} else {
-					exec('amixer -c 0 sset Master 0%');
-					serverVol = 0;
-				}
-				break;
-			case 'mute':
-				exec('amixer -c 0 sset Master toggle');
-				break;
-			case 'unmute':
-				exec('amixer -c 0 sset Master toggle')
-				break;
-			default:
-				exec('amixer -c 0 sset Master ' + parseInt(options.action) + '%');
-				serverVol = options.action;
-				break;
-		}
+			switch (options.action) {
+				case 'up':
+					if (serverVol <= 99) {
+						if ( serverMode == 'chromecast' ) {
+							// let chromecast = spawn('castnow');
+							// chromecast.stdin.setEncoding('utf-8');
+							// chromecast.stdout.pipe(process.stdout);
+							// chromecast.stdout.on('data', data => {
+							// 	console.log(serverMode);
+							// 	setTimeout(function(){
+							// 		// "\027[A"
+							// 		chromecast.stdin.write("m\n");
+							// 		chromecast.stdin.pause();
+							// 		chromecast.kill();
+							// 	}, 1000);
+							// });
+						} else {
+							exec('amixer -c 0 sset Master 1%+');
+							// exec('pactl set-sink-volume 0 +' + stepVol + '%');
+						}
+						serverVol += 1;
+					} else {
+						exec('amixer -c 0 sset Master 100%');
+						serverVol = 100;
+					}
+					break;
+				case 'down':
+					if (serverVol >= 1) {
+						exec('amixer -c 0 sset Master 1%-');
+						serverVol -= 1;
+					} else {
+						exec('amixer -c 0 sset Master 0%');
+						serverVol = 0;
+					}
+					break;
+				case 'mute':
+					exec('amixer -c 0 sset Master toggle');
+					break;
+				case 'unmute':
+					exec('amixer -c 0 sset Master toggle')
+					break;
+				default:
+					exec('amixer -c 0 sset Master ' + parseInt(options.action) + '%');
+					serverVol = options.action;
+					break;
+			}
 
-		// Update stats
-		let server_stats = Server.configVolume({ volume: serverVol, isMuted: options.isMuted });
-		Server.findOneAndUpdate({ host: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
-			.exec(function(err, stats) {
-				return cb(stats);
-			});
+			// Update stats
+			let server_stats = Server.configVolume({ volume: serverVol, isMuted: options.isMuted });
+			Server.findOneAndUpdate(
+				{ host: process.env.HOST_NAME }, 
+				{ $set: server_stats }, 
+				{ upsert: true, new: true })
+				.exec(function(err, stats) {
+					return cb(stats);
+				});
+		});
 
 	});
 

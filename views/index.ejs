@@ -137,26 +137,31 @@
 				<table class="table table-striped lista-videos">
 					<tr ng-repeat="video in videos | filter:q">
 						<td class="orden">
-							<div class="table-text">
+							<div class="table-order">
 								{{$index + 1}}
 							</div>
 						</td>
 						<td>
-							<button class="play btn-sm btn-danger" type="button" ng-click="play(video._id, videoModes.selected)">
-								<fa ng-cloak="{{ isPlaying() == video._id }}" 
-									name="{{ isPlaying() == video._id ? 'circle-o-notch' : 'play' }}" 
-									spin="{{ isPlaying() == video._id }}" 
-									size="1">
-								</fa>
-							</button>
-						</td>
-						<td class="titulo">
-							<div class="table-text">
-								{{video.title}}
+							<div class="table-button">
+								<button class="play btn-sm btn-danger" type="button" ng-click="play(video._id, videoModes.selected)">
+									<fa ng-cloak="{{ isPlaying() == video._id }}" 
+										name="{{ isPlaying() == video._id ? 'circle-o-notch' : 'play' }}" 
+										spin="{{ isPlaying() == video._id }}" 
+										size="1">
+									</fa>
+								</button>
 							</div>
 						</td>
+						<td class="titulo">
+							<span class="table-img">
+								<img src="{{video.img}}" alt=""> 
+							</span>
+							<span class="table-text">
+								{{video.title.trim()}}
+							</span>
+						</td>
 						<td class="url">
-							<div class="table-text">
+							<div class="table-url">
 								{{video.url}}
 							</div>
 						</td>
