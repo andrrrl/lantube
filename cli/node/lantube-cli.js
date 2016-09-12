@@ -55,36 +55,23 @@ const
 	request = require('request'),
 	colors = require('colors'),
 	shell = require('shelljs'),
+	readline = require('readline'),
 
 	LANTUBE_SERVER = 'http://localhost:3000/api/videos/',
 	TITLE_LANTUBE = 'Lantube says',
 	MSG_ERROR = 'No',
 	MSG_SERVER_DOWN = 'server down?',
-	MSG_NO_OPTION = '[No option selected]';
+	MSG_NO_OPTION = '[No option selected]',
+
+	rl = readline.createInterface({
+		input: process.stdin,
+		output: process.stdout
+	});
 
 var
 	notifier = require('node-notifier'),
 	options = {},
 	lantube_message = '';
-
-
-function ask(question, format, callback) { 
-	var stdin = process.stdin,
-		stdout = process.stdout;  
-	
-	stdin.resume(); 
-	stdout.write(question + ": ");  
-	
-	stdin.once('data', function(data) {
-		data = data.toString().trim();    
-		if (format.test(data)) {
-			callback(data);
-		} else {
-			stdout.write("It should match: " + format + "\n");     
-			ask(question, format, callback);
-		}
-	});
-}
 
 if (process.argv.length < 2) {
 	options = { action: process.argv[2] };
@@ -173,8 +160,8 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 				console.log('  Result: '.green.bold + '[' + result.yellow.bold + ']');
 				
 				if ( options.action == 'list' ) {
-					ask('Play a video from the list [1-' + videos.length + ']\n', /[0-9]+/, function(num){
-						
+					rl.question('Play a video from the list [1-' + videos.length + ']:\n', (num) => {
+
 						request({
 								url: LANTUBE_SERVER + num + '/play',
 								json: true
@@ -186,13 +173,18 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 									process.exit();
 								}
 							});
-						
+
+						rl.close();
 					});
+				} else {
+					console.log('╰───────────────────────────────╯'.bold.yellow);
+					process.exit();
 				}
-				
+
 			} else {
 				console.log('╰───────────────────────────────╯'.bold.yellow);
 				console.log(TITLE_LANTUBE.green.bold + ': ' + MSG_ERROR.yellow.bold + ' ' + options.action.yellow.bold + ', ' + MSG_SERVER_DOWN.yellow.bold);
+				process.exit();
 			}
 		});
 } else {
@@ -213,8 +205,11 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 
 		console.log(lantube_message.yellow.bold);
 		console.log('╰───────────────────────────────╯'.bold.yellow);
+		process.exit();
 	} else {
 		// Show "no options selected" message
 		console.log(TITLE_LANTUBE.green.bold + ': ' + MSG_NO_OPTION.yellow.bold);
+		console.log('Type ' + ('node lantube-cli.js help').bold + ' for a list of options');
+		process.exit();
 	}
 }

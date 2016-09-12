@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "body-parser": "^1.13.3",
+    "castnow": "^0.4.17",
     "chromecast-js": "^0.1.7",
     "colors": "^1.1.2",
     "cookie-parser": "^1.3.3",
