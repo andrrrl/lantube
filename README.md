@@ -112,7 +112,7 @@ It will also run sass and uglify but will start node server with regular `node` 
 ### Client (Browser): ###
 * Local: Navigate to http://localhost:3000 in any modern browser
 * LAN: Get your server's IP number and navigate to http://YOUR_SERVER_IP:3000 from any modern browser
-* Select playback mode (fullscreen, windowed or audio-only). Deafults to what's defined in the `.env` file.
+* Select playback mode (fullscreen, windowed, audio-only or chromecast). Deafults to what's defined in the `.env` file.
 
 ### Client (CLI): ###
 * Python CLI (full featured):
@@ -129,6 +129,7 @@ It will also run sass and uglify but will start node server with regular `node` 
 
 ### TODOs: ###
 * [x] Volume controls (Alsa only)
-* [ ] Firefox/Chromium extension
-* [ ] API auth with passport?
-* [ ] Make it work use outside LAN?
+* [ ] Firefox/Chromium extension (?)
+* [ ] API auth with passport (?)
+* [ ] Make it work use outside LAN (?)
+* [x] Googlecast support
