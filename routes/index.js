@@ -313,7 +313,6 @@ router.route('/api/videos/:id/play')
 		query = { _id: id };
 	}
 
-
 	Videos
 		.findOne(query)
 		.sort(sort)

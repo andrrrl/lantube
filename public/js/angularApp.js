@@ -87,7 +87,8 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 		$log.log('id: ' + id);
 		$log.log('obj.isPlaying: ' + obj.isPlaying);
 		obj.isPlaying
-			// avoid opening player twice
+		
+		// avoid opening player twice
 		if (id == obj.isPlaying) {
 			return;
 		}

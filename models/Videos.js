@@ -112,7 +112,7 @@ VideosSchema.methods.playThis = function(player_options, cb) {
     	stopEmitter.on('stopEvent', () => {
             
             if ( player_mode == 'chromecast' ) {
-                shell.exec('killall youtube-dl');
+                shell.exec('killall youtube-dl castnow');
             }
             
     		playing.kill('SIGINT');
