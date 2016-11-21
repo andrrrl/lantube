@@ -43,30 +43,14 @@
 						<div class="col-md-4">
 							<label>{{videoModes.title}}</label>
 							<div class="form-group">
-								<div class="radio">
+								
+								<div class="radio" ng-repeat="vm in videoModes.modes">
 									<label>
-										<input ng-model="videoModes.selected" type="radio" name="videoMode" value="{{videoModes.modes.fullscreen.toLowerCase().replace(' ', '-')}}">
-										{{videoModes.modes.fullscreen}}
+										<input ng-model="videoModes.selected" type="radio" name="videoMode" ng-click="" value="{{vm.toLowerCase().replace(' ', '-')}}">
+										{{vm}}
 									</label>
 								</div>
-								<div class="radio">
-									<label>
-										<input ng-model="videoModes.selected" type="radio" name="videoMode" value="{{videoModes.modes.windowed.toLowerCase().replace(' ', '-')}}">
-										{{videoModes.modes.windowed}}
-									</label>
-								</div>
-								<div class="radio">
-									<label>
-										<input ng-model="videoModes.selected" type="radio" name="videoMode" value="{{videoModes.modes.noVideo.toLowerCase().replace(' ', '-')}}">
-										{{videoModes.modes.noVideo}}
-									</label>
-								</div>
-								<div class="radio">
-									<label>
-										<input ng-model="videoModes.selected" type="radio" name="videoMode" value="{{videoModes.modes.chromecast.toLowerCase().replace(' ', '-')}}">
-										{{videoModes.modes.chromecast}}
-									</label>
-								</div>
+						
 							</div>
 						</div>
 						<div class="col-md-8">

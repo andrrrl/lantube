@@ -1,9 +1,9 @@
 #!/usr/bin/node
 
 /**
- * 
+ *
  *  Lantube Node.js OFFLINE mode
- *  
+ *
  *  - Project: https://github.com/andrrrl/lantube
  *  - Author: Andrrr <andresin@gmail.com>
  *  - This little tool let's you add videos to Mongo (locar or remote) if the Lantube server is down.
@@ -83,6 +83,7 @@ if (process.argv.length === 3) {
 							let video = new model.Videos({
 								title: body.title,
 								url: v.url,
+								img: body.thumbnail_url,
 								order: parseInt(result.order) + 1
 							});
 							
@@ -96,6 +97,7 @@ if (process.argv.length === 3) {
 										'   _id: 	'.green.bold + result._id + '\n' +
 										'   title: '.green.bold + result.title + '\n' +
 										'   url: 	'.green.bold + result.url + '\n' +
+										'   img: '.green.bold + result.img +  '\n' +
 										'   order: '.green.bold + (result.order + 1)
 									);
 								}
