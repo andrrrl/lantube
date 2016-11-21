@@ -91,14 +91,14 @@
 					</div>
 					<hr>
 				</div>
-				<div class="col-md-5 col-sm-1">
+				<div class="col-md-5 col-sm-12">
 					<label>Filter: </label>
 					<form ng-hide="videos.length == 0" class="form-inline">
 						<input class="form-control" type="search" ng-model="q" placeholder="Search video" aria-label="filter videos by title" />
 					</form>
 					<hr>
 				</div>
-				<div class="col-md-5 col-sm-1">
+				<div class="col-md-5 col-sm-12">
 					<button ng-hide="showStop() || videos.length == 0" class="btn btn-success" type="button" name="play" ng-click="play('all', videoModes.selected)">
 						<fa name="{{ isPlaying() != 0 ? 'circle-o-notch' : 'play' }}" alt="Loading" size="1" spin="{{ isPlaying() != 0 }}" ng-style="{'color': spinnerColor}"></fa> 
 					</button>

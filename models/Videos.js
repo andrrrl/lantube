@@ -4,7 +4,7 @@ const
     request = require('request'),
     mongoose = require('mongoose'),
     spawn = require('child_process').spawn,
-    shell = require('shelljs');
+    execSync = require('child_process').execSync;
 
 // Load Server Model
 var server_schema = require('./Server');
@@ -64,7 +64,7 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 	}
 	if (player_mode == 'chromecast') {
         
-        var playing = shell.exec('youtube-dl -o - ' + video_url + ' | castnow --quiet -', {async:true});
+        var playing = execSync('youtube-dl -o - ' + video_url + ' | castnow --quiet -');
         
 	} else {
 
@@ -111,9 +111,7 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 
     	stopEmitter.on('stopEvent', () => {
             
-            if ( player_mode == 'chromecast' ) {
-                shell.exec('killall youtube-dl castnow');
-            }
+            // child_process('killall youtube-dl castnow');
             
     		playing.kill('SIGINT');
     		console.log('Playback stopped!');
@@ -123,9 +121,7 @@ VideosSchema.methods.playThis = function(player_options, cb) {
     	playing.on('close', code => {
     		console.log(`Player finshed playing with code ${code}`);
             
-            if ( player_mode == 'chromecast' ) {
-                shell.exec('killall youtube-dl castnow');
-            }
+            // child_process('killall youtube-dl castnow');
             
     		playing.kill('SIGINT');
 
