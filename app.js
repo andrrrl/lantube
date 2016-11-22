@@ -14,8 +14,6 @@ require('./db/mongo');
 // Load DB Models
 require('./models/Videos');
 
-var routes = require('./routes/index');
-
 var app = express();
 
 var env = process.env.NODE_ENV || 'development';
@@ -56,7 +54,16 @@ app.use('/javascripts', express.static(__dirname + '/components/event-source-pol
 app.use('/stylesheets', express.static(__dirname + '/components/font-awesome/css')); // Angular font-awesome CSS
 app.use('/fonts', express.static(__dirname + '/components/font-awesome/fonts')); // Angular font-awesome CSS
 
-app.use('/', routes);
+var 
+    index = require('./routes/index'),
+    stats = require('./routes/stats'),
+    player = require('./routes/player'),
+    videos = require('./routes/videos');
+
+app.use('/', index);
+app.use('/stats', stats);
+app.use('/player', player);
+app.use('/videos', videos);
 
 /// catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -170,7 +170,7 @@ app.factory('videos', ['$http', '$log', function($http, $log) {
 
 }]);
 
-// App contrller
+// App controller
 app.controller('MainCtrl', [
 	'$scope',
 	'$rootScope',

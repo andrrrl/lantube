@@ -1,10 +1,12 @@
 'use strict';
 
 const
-    request = require('request'),
-    mongoose = require('mongoose'),
-    spawn = require('child_process').spawn,
-    execSync = require('child_process').execSync;
+	request = require('request'),
+	mongoose = require('mongoose'),
+	spawn = require('child_process').spawn,
+	execSync = require('child_process').execSync,
+	EventEmitter = require('events'),
+	stopEmitter = new EventEmitter();
 
 // Load Server Model
 var server_schema = require('./Server');
@@ -16,15 +18,12 @@ var VideosSchema = new mongoose.Schema({
 		required: true
 	},
 	title: String,
-    img: String,
-    order: Number
+	img: String,
+	order: Number
 }, {
 	collection: process.env.MONGO_VIDEOS_COLL || 'videos'
 });
 
-
-const EventEmitter = require('events');
-const stopEmitter = new EventEmitter();
 
 VideosSchema.statics.isValid = function(id) {
 	return mongoose.Types.ObjectId.isValid(id);
@@ -63,109 +62,100 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 		player_mode_arg = process.env.PLAYER_MODE_AUDIO_ONLY_ARG;
 	}
 	if (player_mode == 'chromecast') {
-        
-        var playing = execSync('youtube-dl -o - ' + video_url + ' | castnow --quiet -');
-        
+
+		var playing = execSync('youtube-dl -o - ' + video_url + ' | castnow --quiet -');
+
 	} else {
 
-    	var playing = spawn(player, [player_mode_arg, player_playlist, video_url]);
-    }
-    
-    	// Counter for retrying (if slow connection, etc)
-    	var stuck = 0;
+		var playing = spawn(process.env.PLAYER, [player_mode_arg, player_playlist, video_url]);
+	}
 
-    	// Play video!
-    	playing.stdout.on('data', data => {
-    		console.log('Starting playback with ' + (JSON.stringify(player_options) || 'no options.'));
-    		console.log(`stdout: ${data}`);
+	// Counter for retrying (if slow connection, etc)
+	var stuck = 0;
 
-    		// Check if connection is stuck (only mpv / mplayer)
-    		if (data.toString().match(/Cache is not responding/)) {
+	// Play video!
+	playing.stdout.on('data', data => {
+		console.log('Starting playback with ' + (JSON.stringify(player_options) || 'no options.'));
+		console.log(`stdout: ${data}`);
 
-    			stuck++;
+		// Check if connection is stuck (for now only mpv / mplayer)
+		if (data.toString().match(/Cache is not responding/)) {
 
-    			// If video is stuck after 20 retries, stop it and play again
-    			if (stuck == 20) {
-    				setTimeout(function() {
+			stuck++;
 
-    					Videos.stopAll(function() {
+			// If video is stuck after 20 retries, stop it and play again
+			if (stuck == 20) {
+				setTimeout(function() {
 
-    						Videos.playThis(player_options, function() {
-    							console.log('Connection stuck, retrying...');
-    						});
+					Videos.stopAll(function() {
 
-    					});
+						Videos.playThis(player_options, function() {
+							console.log('Connection stuck, retrying...');
+						});
 
-    				}, 5000);
-    			}
-    		}
-            
-            return cb;
+					});
 
-    	});
+				}, 5000);
+			}
+		}
 
-    	playing.stderr.on('data', data => {
-    		// will print stuff continuously...
-    		// console.log( `stderr: ${data}` );
-    	});
+		return cb;
 
-    	stopEmitter.on('stopEvent', () => {
-            
-            // child_process('killall youtube-dl castnow');
-            
-    		playing.kill('SIGINT');
-    		console.log('Playback stopped!');
-    	});
+	});
 
-    	// Close when video finished (I don't want to generates a playlist, understand?)
-    	playing.on('close', code => {
-    		console.log(`Player finshed playing with code ${code}`);
-            
-            // child_process('killall youtube-dl castnow');
-            
-    		playing.kill('SIGINT');
+	playing.stderr.on('data', data => {
+		// uncomment for debugging (will print stuff continuously...)
+		// console.log( `stderr: ${data}` );
+	});
 
-    		// Update stats
-    		let server_stats = Server.updateStats('stopped', 0);
-    		Server.findOneAndUpdate(
-                { host: process.env.HOST_NAME }, 
-                { $set: server_stats }, 
-                { upsert: true, new: true })
-    			.exec(function(err, stats) {
-    				console.log('Player closed.');
-    			});
+	stopEmitter.on('stopEvent', () => {
+		playing.kill('SIGINT');
+		console.log('Playback stopped!');
+	});
 
-    	});
-        
-    return cb;
+	// Close when video finished (I don't want to generates a playlist, understand?)
+	playing.on('close', code => {
+		console.log(`Player finshed playing with code ${code}`);
+
+		// child_process('killall youtube-dl castnow');
+
+		playing.kill('SIGINT');
+
+		// Update stats
+		let server_stats = Server.updateStats('stopped', 0);
+		Server.findOneAndUpdate({ host: process.env.HOST_NAME }, { $set: server_stats }, { upsert: true, new: true })
+			.exec(function(err, stats) {
+				console.log('Player closed.');
+			});
+
+	});
+
+	return cb;
 
 };
 
 VideosSchema.statics.reorder = function(cb) {
-    Videos
-        .find()
-        .sort({ _id: 1 })
-        .exec(function(err, videos){
-            
-            console.log('Trying to reorder ' + videos.length + ' videos... ');
-            for ( let i = 0; i < videos.length; i++ ) {
-                Videos.findOneAndUpdate(
-                    { _id: videos[i]._id }, 
-                    { $set: {order: i+1} })
-                .exec(function(err, video){
-                    if (err) console.log(err);
-                });
-            }
-            // Reordering ok
-            console.log('Videos reordered!');
-            
-        });
-    
-    return cb;
+	Videos
+		.find()
+		.sort({ _id: 1 })
+		.exec(function(err, videos) {
+
+			console.log('Trying to reorder ' + videos.length + ' videos... ');
+			for (let i = 0; i < videos.length; i++) {
+				Videos.findOneAndUpdate({ _id: videos[i]._id }, { $set: { order: i + 1 } })
+					.exec(function(err, video) {
+						if (err) console.log(err);
+					});
+			}
+			// Reordering ok
+			console.log('Videos reordered!');
+
+		});
+
+	return cb;
 };
 
 var Videos = mongoose.model(process.env.MONGO_VIDEOS_COLL || 'videos', VideosSchema);
-
 
 var schemas = {
 	'Videos': Videos
