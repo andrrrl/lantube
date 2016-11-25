@@ -6,7 +6,7 @@
  *
  *  - Project: https://github.com/andrrrl/lantube
  *  - Author: Andrrr <andresin@gmail.com>
- *  - This little tool let's you add videos to Mongo (locar or remote) if the Lantube server is down.
+ *  - This little tool let's you add videos to Mongo (locar or remote) when the Lantube server is down.
  *
  */
 
@@ -27,7 +27,7 @@ if (process.argv.length === 3) {
 
 	if (process.argv[2] == 'help') {
 
-		console.log('  Lantube offline add tool'.bold);
+		console.log('  Lantube offline tool'.bold);
 		console.log(' - This tool will add Youtube videos to the playlist directly into MongoDB (no API)'.bold);
 		console.log(' - Use cases: '.bold);
 		console.log('   > The Lantube server is down.');
@@ -41,6 +41,7 @@ if (process.argv.length === 3) {
 		process.exit();
 	}
 
+	// Passed video
 	let v = {
 		url: process.argv[2].toString()
 	};
