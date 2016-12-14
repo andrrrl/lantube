@@ -63,18 +63,22 @@ VideosSchema.methods.playThis = function(player_options, cb) {
 	}
 	if (player_mode == 'chromecast') {
 
-		var playing = execSync('youtube-dl -o - ' + video_url + ' | castnow --quiet -');
+		var playing = execSync( process.env.YOUTUBE_DL + ' -o - ' + video_url + ' | castnow --quiet -' );
 
 	} else {
 
-		var playing = spawn(process.env.PLAYER, [player_mode_arg, player_playlist, video_url]);
+		var playing = execSync( process.env.YOUTUBE_DL + ' -o - ' + video_url + ' | ' + process.env.PLAYER + ' -' );
+		// var playing = spawn( process.env.PLAYER, [player_mode_arg, player_playlist, video_url] );
+		// var playing = spawn( process.env.YOUTUBE_DL, [' -o - ' + video_url + ' | ' + process.env.PLAYER + ' -'], { stdio: 'inherit' } );
 	}
 
 	// Counter for retrying (if slow connection, etc)
 	var stuck = 0;
 
+	
 	// Play video!
 	playing.stdout.on('data', data => {
+		
 		console.log('Starting playback with ' + (JSON.stringify(player_options) || 'no options.'));
 		console.log(`stdout: ${data}`);
 

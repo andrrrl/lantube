@@ -30,10 +30,13 @@ router.route('/api/videos/player')
 			});
 	})
 	.put(function(req, res, next) {
-		Player.findOneAndUpdate({ host: process.env.HOST_NAME }, 
+		Player.findOneAndUpdate({ player: process.env.PLAYER }, 
 			{ player_mode: req.body.video_mode }, { new: true })
 			.exec(function(err, player) {
-				res.json(player.player_mode);
+				
+				console.log(player);
+				
+				//res.json(player.player_mode);
 				res.end();
 			});
 	});
