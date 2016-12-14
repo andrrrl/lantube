@@ -89,6 +89,8 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 	console.log('╭──────┤  ▶ Lantube CLI  ├──────╮'.bold.yellow);
 	console.log('│      ╰─────────────────╯      │'.bold.yellow);
 
+	console.log(LANTUBE_SERVER + (options.order ? options.order + '/' : '') + (options.action));
+
 	request({
 			url: LANTUBE_SERVER + (options.order ? options.order + '/' : '') + (options.action),
 			json: true
@@ -135,6 +137,22 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 						for (let stat in stats) {
 							stats[stat] = stat.length <= 9 ? '        ' + stats[stat] : stats[stat] + '';
 							result += ('  - ' + stat).bold.yellow + ': \t' + ('' + stats[stat]).bold.white + '\n';
+						};
+					break;
+					case 'player':
+						lantube_message = 'Current player stats...';
+						
+						let unordered_player_stats = JSON.parse(response.body);
+
+						var player = {};
+						Object.keys(unordered_player_stats).s ort().forEach(function(key) {
+							player[key] = unordered_player_stats[key];
+						});
+
+						result = '\n';
+						for (let stat in player) {
+							player[stat] = stat.length <= 9 ? '        ' + player[stat] : player[stat] + '';
+							result += ('  - ' + stat).bold.yellow + ': \t' + ('' + player[stat]).bold.white + '\n';
 						};
 						break;
 					default:
@@ -199,9 +217,9 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 			'    Show this help:  	help\n' +
 			'    List all videos: 	list\n' +
 			'    Play all videos: 	playlist\n' +
-			'    Play single video: 	play [N]\n' +
-			'    Stop any playback: 	stop\n' +
-			'    Show server stats: 	stats\n';
+			'    Play single video: play [N]\n' +
+			'    Stop any playback: stop\n' +
+			'    Show server stats: stats\n';
 
 		console.log(lantube_message.yellow.bold);
 		console.log('╰───────────────────────────────╯'.bold.yellow);

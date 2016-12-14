@@ -3,11 +3,14 @@
 var express = require('express');
 var router = express.Router();
 var request = require('request');
-var schema = require('../models/Videos');
-var server_schema = require('../models/Server');
 
+var schema = require('../models/Videos');
 var Videos = schema.Videos;
+
+var server_schema = require('../models/Server');
 var Server = server_schema.Server;
+
+var player = require('./player');
 
 // Disallow non-LAN or Local IPs
 router.use(function(req, res, next) {
@@ -66,30 +69,6 @@ router.route('/api/videos/stats')
 				res.end();
 			});
 
-	});
-
-
-// Get player options
-router.route('/api/videos/player')
-	.get(function(req, res, next) {
-		Server.findOne({ host: process.env.HOST_NAME || 'localhost' })
-			.exec(function(err, player) {
-
-				if (err) {
-					console.log(err);
-				} else {
-					res.json(player);
-					res.end();
-				}
-
-			});
-	})
-	.put(function(req, res, next) {
-		Server.findOneAndUpdate({ host: process.env.HOST_NAME }, { player_mode: req.body.video_mode }, { new: true })
-			.exec(function(err, player) {
-				res.json(player.player_mode);
-				res.end();
-			});
 	});
 
 // GET and render homepage

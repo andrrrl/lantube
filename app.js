@@ -61,9 +61,9 @@ var
     videos = require('./routes/videos');
 
 app.use('/', index);
-app.use('/stats', stats);
-app.use('/player', player);
-app.use('/videos', videos);
+app.use('/', stats);
+app.use('/', player);
+app.use('/', videos);
 
 /// catch 404 and forward to error handler
 app.use(function(req, res, next) {

@@ -2,21 +2,47 @@
 
 var express = require('express');
 var router = express.Router();
-var request = require('request');
-var server_schema = require('../models/Server');
 
-var Server = server_schema.Server;
+var player_schema = require('../models/Player');
+var Player = player_schema.Player;
 
 router.get('/api/player', function(req, res, next) {
-	res.json({ api: 'player' });
-	res.end();
+	Player.findOne({})
+		.exec( (err, player_stats) => {
+			res.json(player_stats);
+			res.end();
+		});
 });
+
+// Get player options
+router.route('/api/videos/player')
+	.get(function(req, res, next) {
+		Player.findOne({})
+			.exec(function(err, player) {
+
+				if (err) {
+					console.log(err);
+				} else {
+					res.json(player);
+					res.end();
+				}
+
+			});
+	})
+	.put(function(req, res, next) {
+		Player.findOneAndUpdate({ host: process.env.HOST_NAME }, 
+			{ player_mode: req.body.video_mode }, { new: true })
+			.exec(function(err, player) {
+				res.json(player.player_mode);
+				res.end();
+			});
+	});
 
 /**
  * VOLUME
  */
 router.get('/api/player/volume', function(req, res, next) {
-	Server.getVolume('player_volume', function(vol) {
+	Player.getVolume('player_volume', function(vol) {
 		res.json({
 			serverVol: vol,
 			serverVolStep: process.env.PLAYER_VOLUME_STEP
@@ -28,9 +54,15 @@ router.get('/api/player/volume', function(req, res, next) {
 router.get('/api/player/volume/:action', function(req, res, next) {
 
 	if (req.params.action == '')
-		next();
+		Player.getVolume('player_volume', function(vol) {
+			res.json({
+				serverVol: vol,
+				serverVolStep: process.env.PLAYER_VOLUME_STEP
+			});
+			res.end();
+		});
 
-	Server.setVolume({ action: req.params.action }, function(vol) {
+	Player.setVolume({ action: req.params.action }, function(vol) {
 		res.json({
 			player_volume: vol.player_volume,
 			player_volume_step: process.env.PLAYER_VOLUME_STEP,

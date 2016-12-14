@@ -28,12 +28,16 @@ var PlayerSchema = new mongoose.Schema({
 
 PlayerSchema.statics.getPlayer = function(player) {
 
-	let env = {
-		player: process.env.PLAYER || false,
-		player_playlist: process.env.PLAYER_PLAYLIST || false,
-		player_mode: process.env.PLAYER_MODE || 'windowed'
-	}
-	return env;
+	Player.findOne({})
+		.exec( (err, player_stats) => {
+			// env
+			return {
+				player: player_stats.player || process.env.PLAYER || false,
+				player_playlist: player_stats.player_playlist || process.env.PLAYER_PLAYLIST || false,
+				player_mode: player_stats.player_mode || process.env.PLAYER_MODE || 'windowed'
+			}
+		});
+
 
 }
 
@@ -50,16 +54,17 @@ PlayerSchema.statics.configVolume = function(options) {
 
 // Get Sys Vol
 PlayerSchema.statics.getVolume = function(volume_value, cb) {
+	
 	Player.findOne(
 		{ host: process.env.HOST_NAME }, 
 		{ player_volume: 1, player_is_muted: 1 })
-		.exec(function(err, Player_volume) {
+		.exec(function(err, pv) {
 
 			if (err) {
 				console.log(err);
 			}
 
-			return cb(Player_volume[volume_value]);
+			return cb(pv[volume_value || 50]);
 		});
 }
 
