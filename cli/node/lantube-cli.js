@@ -145,7 +145,7 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 						let unordered_player_stats = JSON.parse(response.body);
 
 						var player = {};
-						Object.keys(unordered_player_stats).s ort().forEach(function(key) {
+						Object.keys(unordered_player_stats).sort().forEach(function(key) {
 							player[key] = unordered_player_stats[key];
 						});
 
