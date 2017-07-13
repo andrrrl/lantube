@@ -123,6 +123,9 @@ router.route('/api/videos/')
       }
       res.json(videos);
     });
+
+    next();
+
   })
 
   // POST (insert)
@@ -137,7 +140,6 @@ router.route('/api/videos/')
         result: 'error',
         error: 'No video.'
       });
-      res.end();
     }
 
     // Get video data from Youtube embed API
@@ -148,35 +150,38 @@ router.route('/api/videos/')
 
       if (!error && response.statusCode === 200) {
 
-        var video = new Videos({
-          title: body.title,
-          url: req.body.video,
-          img: body.thumbnail_url
-        });
-
-        video.save(function (err, result) {
+        redis.hlen('videos', (err, videos_count) => {
           if (err) {
             console.log(err);
-          } else {
-
-            Videos.reorder(function () {
+          }
+          let video_id = 'video' + Number(videos_count + 1);
+          redis.hmset('videos', video_id, {
+            _id: video_id,
+            title: body.title,
+            url: req.body.video,
+            img: body.thumbnail_url,
+            order: videos_count + 1
+          }, (err) => {
+            redis.hget('videos', video_id, (err, v) => {
+              let video = JSON.parse(v);
               res.json({
                 result: 'ok',
-                _id: result._id,
-                title: body.title,
-                url: result.url,
-                img: result.img,
-                order: result.order
+                _id: video[video_id]._id,
+                title: video[video_id].title,
+                url: video[video_id].url,
+                img: video[video_id].img,
+                order: video[video_id].order
               });
-            });
 
-          }
+            });
+          });
+
+
         });
       }
+
+
     });
-
-    next();
-
   });
 
 
