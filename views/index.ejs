@@ -47,9 +47,9 @@
 
                 <div class="radio" ng-repeat="vm in videoModes.modes">
                   <label>
-										<input ng-model="videoModes.selected" type="radio" name="videoMode" ng-click="" value="{{vm.toLowerCase().replace(' ', '-')}}">
-										{{vm}}
-									</label>
+<input ng-model="videoModes.selected" type="radio" name="videoMode" ng-click="" value="{{vm.toLowerCase().replace(' ', '-')}}">{{vm}}
+</label>
+
                 </div>
 
               </div>
@@ -130,21 +130,19 @@
             <td>
               <div class="table-button">
                 <button class="play btn-sm btn-danger" type="button" ng-click="play(video._id, videoModes.selected)">
-									<fa ng-cloak="{{ isPlaying() == video._id }}" 
-										name="{{ isPlaying() == video._id ? 'circle-o-notch' : 'play' }}" 
-										spin="{{ isPlaying() == video._id }}" 
-										size="1">
-									</fa>
-								</button>
+                    <fa ng-cloak="{{ isPlaying() == video._id }}" 
+                        name="{{ isPlaying() == video._id ? 'circle-o-notch' : 'play' }}" 
+                        spin="{{ isPlaying() == video._id }}" 
+                        size="1">
+                    </fa>
+                </button>
               </div>
             </td>
             <td class="titulo">
               <span class="table-img">
                 <img src="{{video.img}}" alt=""> 
             </span>
-              <span class="table-text">
-								{{video.title.trim()}}
-							</span>
+              <span class="table-text">{{video.title.trim()}}</span>
             </td>
             <td class="url">
               <div class="table-url">

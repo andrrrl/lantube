@@ -136,11 +136,18 @@ router.route('/api/videos/')
     var yt_id = req.body.video.trim().replace(/http(s?):\/\/(w{3}?)(\.?)youtube\.com\/watch\?v=/, '');
 
     // Check ID
-    if (yt_id == '') {
+    if (yt_id === '') {
       res.json({
         result: 'error',
         error: 'No video.'
       });
+    } else {
+      if (yt_id.indexOf('http') === -1 && yt_id.indexOf('youtube') > -1) {
+        yt_id = 'https://www.' + yt_id;
+
+      } else if (yt_id.indexOf('youtube') === -1) {
+        yt_id = 'https://www.youtube.com/watch?v=' + yt_id;
+      }
     }
 
     // Get video data from Youtube embed API
@@ -156,6 +163,7 @@ router.route('/api/videos/')
             console.log(err);
           }
           let video_id = 'video' + Number(videos_count + 1);
+          let title = body.title.replace(/"/g, '');
 
           //   console.log({
           //     _id: video_id,
@@ -166,10 +174,12 @@ router.route('/api/videos/')
           //   });
           //   res.end();
 
+
+
           // Redis no acepta objetos JSON aun... ¬_¬
           let video_string = '{ "_id": "' + video_id + '",' +
-            '"title": "' + body.title + '" ,' +
-            '"url": "https://www.' + yt_id + '",' +
+            '"title": "' + title + '" ,' +
+            '"url": "' + yt_id + '",' +
             '"img": "' + body.thumbnail_url + '",' +
             '"order": ' + String(videos_count + 1) + '}';
 
@@ -278,49 +288,57 @@ router.route('/api/videos/:id/play')
 
     let order = !req.params.id.match(/[a-zA-Z]/g) ? parseInt(req.params.id) : false;
     let id = req.params.id;
-    let query = {};
-    let sort = '-order';
 
-    redis.hget('videos', id, function (err, video) {
-
-      video = JSON.parse(video);
-
+    redis.hlen('videos', (err, videos_count) => {
       if (err) {
         console.log(err);
-        res.end();
-      } else {
-        if (video == null) {
-          res.json({
-            error: 'No hay banda!'
-          });
+      }
+      if (id === 'last') {
+        id = 'video' + videos_count;
+      }
+      redis.hget('videos', id, function (err, video) {
+
+        video = JSON.parse(video);
+
+        if (err) {
+          console.log(err);
           res.end();
         } else {
+          if (video == null) {
+            res.json({
+              error: 'No hay banda!'
+            });
+            res.end();
+          } else {
 
-          // Update stats
-          //   let server_stats = Server.updateStats('playing', video._id, video.title, video.url, video.img);
+            // Update stats
+            //   let server_stats = Server.updateStats('playing', video._id, video.title, video.url, video.img);
 
-          // Play video!
-          Videos.playThis({
-            player: process.env.PLAYER,
-            player_mode: process.env.PLAYER_MODE,
-            player_playlist: '',
-            url: video.url,
-            img: video.img
-          });
+            // Play video!
+            Videos.playThis({
+              player: process.env.PLAYER,
+              player_mode: process.env.PLAYER_MODE,
+              player_playlist: '',
+              url: video.url,
+              img: video.img
+            });
 
-          res.json({
-            result: 'playing',
-            playing: video.url,
-            title: video.title,
-            _id: video._id
-          });
-          res.end();
+            res.json({
+              result: 'playing',
+              playing: video.url,
+              title: video.title,
+              _id: video._id
+            });
+            res.end();
 
+
+          }
 
         }
-
-      }
+      });
     });
+
+
 
   });
 
