@@ -118,13 +118,14 @@ router.route('/api/videos/')
 
     redis.hgetall('videos', function (err, videos_redis) {
       let videos = [];
+      let i = 1;
       for (let video in videos_redis) {
-        videos.push(JSON.parse(videos_redis[video]));
+        videos.push(JSON.parse(videos_redis[String('video' + i)]));
+        i++;
       }
       res.json(videos);
+      res.end();
     });
-
-    next();
 
   })
 
@@ -155,22 +156,38 @@ router.route('/api/videos/')
             console.log(err);
           }
           let video_id = 'video' + Number(videos_count + 1);
-          redis.hmset('videos', video_id, {
-            _id: video_id,
-            title: body.title,
-            url: req.body.video,
-            img: body.thumbnail_url,
-            order: videos_count + 1
-          }, (err) => {
-            redis.hget('videos', video_id, (err, v) => {
-              let video = JSON.parse(v);
+
+          //   console.log({
+          //     _id: video_id,
+          //     title: body.title,
+          //     url: req.body.video,
+          //     img: body.thumbnail_url,
+          //     order: videos_count + 1
+          //   });
+          //   res.end();
+
+          // Redis no acepta objetos JSON aun... ¬_¬
+          let video_string = '{ "_id": "' + video_id + '",' +
+            '"title": "' + body.title + '" ,' +
+            '"url": "https://www.' + yt_id + '",' +
+            '"img": "' + body.thumbnail_url + '",' +
+            '"order": ' + String(videos_count + 1) + '}';
+
+          redis.hmset('videos', String(video_id), video_string, (err) => {
+            redis.hget('videos', video_id, (err, video) => {
+
+              // console.log(JSON.parse(video));
+
+              // res.end(JSON.parse(video));
+
+              let vid = JSON.parse(video);
               res.json({
                 result: 'ok',
-                _id: video[video_id]._id,
-                title: video[video_id].title,
-                url: video[video_id].url,
-                img: video[video_id].img,
-                order: video[video_id].order
+                _id: vid._id,
+                title: vid.title,
+                url: vid.url,
+                img: vid.img,
+                order: vid.order
               });
 
             });
