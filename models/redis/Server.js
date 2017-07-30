@@ -8,11 +8,40 @@ const redis = require('../../db/redis');
 
 require('./Player');
 
-
 let Server = {};
 
-Server.updateStats = function (status, video_id, video_title, video_url, video_img) {
-  let stats = {
+// Player
+Server.getPlayerStats = (status, video_id, video_title) => {
+  let player_stats = {
+    player: 'mpv',
+    status: status,
+    video_id: video_id,
+    video_title: video_title,
+    last_updated: new Date(),
+  }
+
+  return player_stats;
+}
+
+Server.setPlayerStats = (status, video_id, video_title) => {
+  let pstats = Server.getPlayerStats(status, video_id, video_title);
+  redis.set('player_stats', JSON.stringify(pstats), () => {
+    redis.get('player_stats', (err, stats) => {
+      return stats;
+    });
+  });
+
+}
+
+Server.playerStats = (cb) => {
+  redis.get('player_stats', (err, stats) => {
+    return cb(stats);
+  });
+}
+////
+
+Server.getServerStats = () => {
+  let server_stats = {
     host: process.env.HOST_NAME,
     type: os.type(),
     platform: os.platform(),
@@ -22,20 +51,23 @@ Server.updateStats = function (status, video_id, video_title, video_url, video_i
     loadaverage: os.loadavg(),
     totalmem: os.totalmem(),
     freemem: os.freemem(),
-    status: status,
-    video_id: video_id || 0,
-    video_title: video_title,
-    video_url: video_url,
-    video_img: video_img
+    last_updated: new Date()
   }
-  redis.hmset(['stats', process.env.HOST_NAME, JSON.stringify(stats)]);
+  return server_stats;
 }
 
-Server.getStats = function () {
-  redis.hgetall('stats', process.env.HOST_NAME, function (err, stats) {
-    return JSON.parse(stats);
+Server.setServerStats = () => {
+  let sstats = Server.getServerStats();
+  redis.set('server_stats', JSON.stringify(sstats));
+  return sstats;
+}
+
+Server.serverStats = (cb) => {
+  redis.get('server_stats', (err, stats) => {
+    return cb(stats);
   });
 }
+
 
 var serverSchema = {
   'Server': Server

@@ -116,7 +116,7 @@ VideosSchema.playThis = function (player_options, cb) {
     playing.kill('SIGINT');
 
     // Update stats
-    let server_stats = Server.updateStats('stopped', 0);
+    let server_stats = Server.setPlayerStats('stopped', 0);
     // Server.findOneAndUpdate({
     //     host: process.env.HOST_NAME
     //   }, {
@@ -133,35 +133,6 @@ VideosSchema.playThis = function (player_options, cb) {
 
   return cb;
 
-};
-
-VideosSchema.reorder = function (cb) {
-  Videos
-    .find()
-    .sort({
-      _id: 1
-    })
-    .exec(function (err, videos) {
-
-      console.log('Trying to reorder ' + videos.length + ' videos... ');
-      for (let i = 0; i < videos.length; i++) {
-        Videos.findOneAndUpdate({
-            _id: videos[i]._id
-          }, {
-            $set: {
-              order: i + 1
-            }
-          })
-          .exec(function (err, video) {
-            if (err) console.log(err);
-          });
-      }
-      // Reordering ok
-      console.log('Videos reordered!');
-
-    });
-
-  return cb;
 };
 
 module.exports = VideosSchema;

@@ -4,26 +4,36 @@ var express = require('express');
 var router = express.Router();
 const redis = require('../../db/redis');
 
-router.get('/api/player', function (req, res, next) {
-  redis.hgetall('player_stats', function (err, player_stats) {
-    res.json(player_stats);
-  });
-});
-
-// Get player options
-router.route('/api/videos/player')
+router.route('/api/player/:player?')
   .get(function (req, res, next) {
-    redis.hgetall('player', function (err, player_stats) {
-      res.json(player_stats);
+    redis.hget('players', req.params.player, function (err, redis_player) {
+      res.json(JSON.parse(redis_player));
     });
   })
   .put(function (req, res, next) {
 
-    redis.hset(['player', 'player', process.env.PLAYER]);
-    redis.hset(['player', 'player_mode', req.body.video_mode], function (err, player) {
-      res.json(player);
+    // let player = JSON.stringify(req.body);
+    let player = {
+      player: req.body.player,
+      player_mode: req.body.player_mode,
+      player_volume: req.body.player_volume,
+      player_volume_step: req.body.player_volume_step,
+      player_is_muted: req.body.player_is_muted
+    };
+
+    redis.hmset('players', req.body.player, JSON.stringify(player), (err) => {
+      redis.hget('player', req.body.player, (err, redis_player) => {
+        res.json(JSON.parse(redis_player));
+      });
     });
   });
 
+// Get all players
+router.route('/api/players')
+  .get(function (req, res, next) {
+    redis.hgetall('players', function (err, players) {
+      res.json(players);
+    });
+  });
 
 module.exports = router;

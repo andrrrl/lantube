@@ -33,10 +33,14 @@ angular.module('lantubeApp')
     	// Get all videos
     	obj.getAll = function() {
     		return $http.get('/api/videos').success(function(data) {
-    			// Don't autoplay
-    			obj.isPlaying = false;
-    			// create a deep copy of the returned data (this way $scope.videos will be keep updated)
-    			angular.copy(data, obj.videos);
+				if ( data.length > 0 ) {
+					// Don't autoplay
+					obj.isPlaying = false;
+					// create a deep copy of the returned data (this way $scope.videos will be keep updated)
+					angular.copy(data, obj.videos);
+				} else {
+					return;
+				}
 
     		});
     	};
