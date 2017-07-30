@@ -1,6 +1,7 @@
 'use strict';
 
-var express = require('express');
+const cors = require('cors');
+const express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
@@ -15,6 +16,8 @@ require('./db/' + process.env.DB_TYPE);
 require('./models/' + process.env.DB_TYPE + '/Videos');
 
 var app = express();
+app.use(cors());
+app.options('*', cors());
 
 var env = process.env.NODE_ENV || 'development';
 app.locals.ENV = env;
