@@ -263,6 +263,25 @@ router.route('/api/videos/:option')
   });
 
 
+router.route('/api/videos/list').get((req, res, next) => {
+  redis.hgetall('videos', (err, videos_redis) => {
+    let videos = [];
+
+    // console.log(JSON.stringify(videos_redis));
+    Object.keys(videos_redis).forEach(video => {
+      videos.push(JSON.parse(videos_redis[video]));
+    });
+
+    videos.sort(function (a, b) {
+      return parseInt(a._id.replace(/video/, '')) - parseInt(b._id.replace(/video/, ''));
+    });
+
+    res.json(videos);
+    res.end();
+  });
+});
+
+
 // PLAY
 router.route('/api/videos/:id/play')
 
@@ -270,6 +289,10 @@ router.route('/api/videos/:id/play')
 
     let order = !req.params.id.match(/[a-zA-Z]/g) ? parseInt(req.params.id) : false;
     let id = req.params.id;
+
+    if (!isNaN(parseInt(id))) {
+      id = 'video' + id;
+    }
 
     redis.hlen('videos', (err, videos_count) => {
       if (err) {
