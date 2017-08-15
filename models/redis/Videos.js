@@ -57,9 +57,14 @@ VideosSchema.playThis = function (player_options, cb) {
 
   } else {
 
-    // var playing = execSync(process.env.YOUTUBE_DL + ' -o - ' + video_url + ' | ' + process.env.PLAYER + ' -');
-    var playing = spawn(process.env.PLAYER, [player_mode_arg, player_playlist, video_url]);
-    // var playing = spawn( process.env.YOUTUBE_DL, [' -o - ' + video_url + ' | ' + process.env.PLAYER + ' -'], { stdio: 'inherit' } );
+	if (process.env.PLAYER === 'omxplayer') {
+		//var playing = spawn(process.env.PLAYER, ['-o', 'hdmi', video_url]);
+		var playing = execSync(process.env.PLAYER + ' -o hdmi -p $(' + process.env.YOUTUBE_DL + ' -g ' + video_url + ')');
+	} else {
+		// var playing = execSync(process.env.YOUTUBE_DL + ' -o - ' + video_url + ' | ' + process.env.PLAYER + ' -');
+		var playing = spawn(process.env.PLAYER, [player_mode_arg, player_playlist, video_url]);
+		// var playing = spawn( process.env.YOUTUBE_DL, [' -o - ' + video_url + ' | ' + process.env.PLAYER + ' -'], { stdio: 'inherit' } );
+	}
   }
 
   // Counter for retrying (if slow connection, etc)

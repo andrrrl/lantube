@@ -61,8 +61,8 @@ gulp.task('run', function(cb) {
 // nodemon: YES, livereload: YES
 // Notice: nodemon will stop any Lantube playback
 gulp.task('default', [
-  'compress',
-  'sass',
+  //'compress',
+  //'sass',
   'develop',
   'watch'
 ]);
