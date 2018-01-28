@@ -3,6 +3,8 @@
 var express = require('express');
 var router = express.Router();
 var request = require('request');
+var ip = require('ip');
+var server_ip = ip.address();
 
 var schema = require('../../models/' + process.env.DB_TYPE + '/Videos');
 var Videos = schema.Videos;
@@ -423,7 +425,7 @@ router.route('/api/videos/playlist')
                 player: stats.player,
                 player_mode: stats.player_mode,
                 playlist: true,
-                url: 'http://localhost:3000/api/videos/pls'
+                url: 'http://' + server_ip + ':3000/api/videos/pls'
               });
               res.json({
                 result: 'playlist',
