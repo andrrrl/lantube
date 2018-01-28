@@ -18,22 +18,38 @@ import os
 import re
 import urllib2
 import json
+import socket
+
 from youtube import YTSearch
 
 
 class Lantube():
 
+	def get_ip():
+		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		try:
+			# doesn't even have to be reachable
+			s.connect(('10.255.255.255', 1))
+			IP = s.getsockname()[0]
+		except:
+			IP = '127.0.0.1'
+		finally:
+			s.close()
+		return IP
+
 	# Version
 	LANTUBE_VERSION = '0.1.2'
 
 	# Config Lantube server
-	LANTUBE_SERVER = 'http://localhost:3000/api/videos'
+	LANTUBE_SERVER = 'http://' + get_ip() + ':3000/api/videos'
 
 	# use this to pipe all output to dev/null
 	FNULL = open(os.devnull, 'w')
 
 	# opener
 	caller = urllib2.build_opener()
+
+	
 
 	def welcome(self):
 		print '+----------------------+'

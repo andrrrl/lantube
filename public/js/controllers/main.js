@@ -60,7 +60,7 @@ angular.module('lantubeApp')
     		$scope.videourl = '';
 
     		// get all videos
-    		$scope.videos = videos.videos;
+    		$scope.videos = videos.videos || [];
 
     		// video modes
     		$scope.videoModes = videos.videoModes;

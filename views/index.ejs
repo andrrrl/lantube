@@ -1,172 +1,172 @@
 <% include header %>
 
-	<div class="container-fluid" ng-controller="MainCtrl">
-		<div class="row">
-			<div class="col-md-1 col-sm-0">
+  <div class="container-fluid" ng-controller="MainCtrl">
+    <div class="row">
+      <div class="col-md-1 col-sm-0">
 
-			</div>
-			<div class="col-md-10 col-sm-12">
-				<div class="page-header">
-					<h1>
-						<fa name="youtube-play" aria-hidden="true" ng-style="{'color': logoColor}"></fa> <%- title %>
-						<small>LAN Youtube player</small>
-					</h1>
-				</div>
-			</div>
-			<div class="col-md-1 col-sm-0">
+      </div>
+      <div class="col-md-10 col-sm-12">
+        <div class="page-header">
+          <h1>
+            <fa name="youtube-play" aria-hidden="true" ng-style="{'color': logoColor}"></fa>
+            <%- title %>
+              <small>LAN Youtube player</small>
+          </h1>
+        </div>
+      </div>
+      <div class="col-md-1 col-sm-0">
 
-			</div>
-		</div>
-		<div class="row">
+      </div>
+    </div>
+    <div class="row">
 
-			<form class="form">
+      <form class="form">
 
-				<div class="col-md-1 col-sm-0"></div>
+        <div class="col-md-1 col-sm-0"></div>
 
-				<div class="col-md-5 col-sm-12">
-					<label>Append any Youtube video to the list</label>
-					<div class="input-group">
-						<input id="video" type="text" class="form-control" placeholder="Youtube URL" ng-model="videourl" value="" select-on-click>
-						<span class="input-group-btn">
+        <div class="col-md-5 col-sm-12">
+          <label>Append any Youtube video to the list</label>
+          <div class="input-group">
+            <input id="video" type="text" class="form-control" placeholder="Youtube URL" ng-model="videourl" value="" select-on-click>
+            <span class="input-group-btn">
 							<button id="add" class="btn btn-primary" type="button" ng-click="add(videourl, videos.length + 1)">Add</button>
 						</span>
-					</div>
-					<!-- /input-group -->
-					<hr>
+          </div>
+          <!-- /input-group -->
+          <hr>
 
-					<div class="row">
+          <div class="row">
 
-						<div class="text-warning" ng-show="videos.length == 0">
-							No videos added to Lantube yet!
-						</div>
+            <div class="text-warning" ng-show="videos.length == 0">
+              No videos added to Lantube yet!
+            </div>
 
-						<div class="col-md-4">
-							<label>{{videoModes.title}}</label>
-							<div class="form-group">
-								
-								<div class="radio" ng-repeat="vm in videoModes.modes">
-									<label>
-										<input ng-model="videoModes.selected" type="radio" name="videoMode" ng-click="" value="{{vm.toLowerCase().replace(' ', '-')}}">
-										{{vm}}
-									</label>
-								</div>
-						
-							</div>
-						</div>
-						<div class="col-md-8">
-							<div class="row">
-								<div class="col-md-12">
-									<label>Volume: </label>
-									<div class="form-group">
-										<button ng-click="setVolume('up')" class="btn btn-primary" type="button" name="volume-up"><fa name="arrow-up"> </fa></button>
-										<button ng-click="setVolume('down')" class="btn btn-primary" type="button" name="volume-down"><fa name="arrow-down"> </fa></button>
-										<span ng-models="volume">{{playerVolume}}%</span>
-										<br>
-										<br>
-										<div ng-hide="false" id="slider">
-											<input class="bar form-control" id="volume-range" type="range" ng-model="playerVolume" ng-mouseup="setVolume(playerVolume)" name="volume-range" value="{{playerVolume}}" min="0" max="100" step="1">
-											<output ng-hide="true" id="rangevalue" name="result">{{playerVolume}}</output>
-										</div>
-										<br>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-					<hr>
-				</div>
-				<div class="col-md-5 col-sm-12">
-					<label>Filter: </label>
-					<form ng-hide="videos.length == 0" class="form-inline">
-						<input class="form-control" type="search" ng-model="q" placeholder="Search video" aria-label="filter videos by title" />
-					</form>
-					<hr>
-				</div>
-				<div class="col-md-5 col-sm-12">
-					<button ng-hide="showStop() || videos.length == 0" class="btn btn-success" type="button" name="play" ng-click="play('all', videoModes.selected)">
+            <div class="col-md-4">
+              <label>{{videoModes.title}}</label>
+              <div class="form-group">
+
+                <div class="radio" ng-repeat="vm in videoModes.modes">
+                  <label>
+<input ng-model="videoModes.selected" type="radio" name="videoMode" ng-click="" value="{{vm.toLowerCase().replace(' ', '-')}}">{{vm}}
+</label>
+
+                </div>
+
+              </div>
+            </div>
+            <div class="col-md-8">
+              <div class="row">
+                <div class="col-md-12">
+                  <label>Volume: </label>
+                  <div class="form-group">
+                    <button ng-click="setVolume('up')" class="btn btn-primary" type="button" name="volume-up"><fa name="arrow-up"> </fa></button>
+                    <button ng-click="setVolume('down')" class="btn btn-primary" type="button" name="volume-down"><fa name="arrow-down"> </fa></button>
+                    <span ng-models="volume">{{playerVolume}}%</span>
+                    <br>
+                    <br>
+                    <div ng-hide="false" id="slider">
+                      <input class="bar form-control" id="volume-range" type="range" ng-model="playerVolume" ng-mouseup="setVolume(playerVolume)"
+                        name="volume-range" value="{{playerVolume}}" min="0" max="100" step="1">
+                      <output ng-hide="true" id="rangevalue" name="result">{{playerVolume}}</output>
+                    </div>
+                    <br>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <hr>
+        </div>
+        <div class="col-md-5 col-sm-12">
+          <label>Filter: </label>
+          <form ng-hide="videos.length == 0" class="form-inline">
+            <input class="form-control" type="search" ng-model="q" placeholder="Search video" aria-label="filter videos by title" />
+          </form>
+          <hr>
+        </div>
+        <div class="col-md-5 col-sm-12">
+          <button ng-hide="showStop() || videos.length == 0" class="btn btn-success" type="button" name="play" ng-click="play('all', videoModes.selected)">
 						<fa name="{{ isPlaying() != 0 ? 'circle-o-notch' : 'play' }}" alt="Loading" size="1" spin="{{ isPlaying() != 0 }}" ng-style="{'color': spinnerColor}"></fa> 
 					</button>
-					<label ng-hide="showStop() || videos.length == 0"> {{playAllText()}}</label>
+          <label ng-hide="showStop() || videos.length == 0"> {{playAllText()}}</label>
 
-					<button ng-show="showStop()" class="btn btn-danger" type="button" ng-click="stop()">
+          <button ng-show="showStop()" class="btn btn-danger" type="button" ng-click="stop()">
 						<fa name="stop" alt="Stop" size="1" ng-style="{'color': spinnerColor}"></fa> 
 					</button>
-					<label ng-show="showStop()"> {{stopText()}}</label>
+          <label ng-show="showStop()"> {{stopText()}}</label>
 
-					<div class="bg-success now-playing" ng-show="nowPlaying()" ng-style="{'color': playingColor}">
-						<fa name="volume-up" alt="Playing..." size="1" ng-class="nowPlaying() && 'blink'" ng-style="{'color': speakerColor}"></fa>
-						<b>Now playing:</b> {{ nowPlaying() }}
-					</div>
-				</div>
-			</form>
-		</div>
+          <div class="bg-success now-playing" ng-show="nowPlaying()" ng-style="{'color': playingColor}">
+            <fa name="volume-up" alt="Playing..." size="1" ng-class="nowPlaying() && 'blink'" ng-style="{'color': speakerColor}"></fa>
+            <b>Now playing:</b> {{ nowPlaying() }}
+          </div>
+        </div>
+      </form>
+    </div>
 
-		<div class="row">
-			<div class="col-md-1 col-sm-0">
+    <div class="row">
+      <div class="col-md-1 col-sm-0">
 
-			</div>
-			<div class="col-md-10 col-sm-12">
+      </div>
+      <div class="col-md-10 col-sm-12">
 
-			</div>
-			<div class="col-md-1 col-sm-0">
+      </div>
+      <div class="col-md-1 col-sm-0">
 
-			</div>
-		</div>
+      </div>
+    </div>
 
-		<div class="row">
-			<div class="col-md-1 col-sm-0">
+    <div class="row">
+      <div class="col-md-1 col-sm-0">
 
-			</div>
-			<div class="col-md-10 col-sm-12">
-				<table class="table table-striped lista-videos">
-					<tr ng-repeat="video in videos | filter:q">
-						<td class="orden">
-							<div class="table-order">
-								{{$index + 1}}
-							</div>
-						</td>
-						<td>
-							<div class="table-button">
-								<button class="play btn-sm btn-danger" type="button" ng-click="play(video._id, videoModes.selected)">
-									<fa ng-cloak="{{ isPlaying() == video._id }}" 
-										name="{{ isPlaying() == video._id ? 'circle-o-notch' : 'play' }}" 
-										spin="{{ isPlaying() == video._id }}" 
-										size="1">
-									</fa>
-								</button>
-							</div>
-						</td>
-						<td class="titulo">
-							<span class="table-img">
-								<img src="{{video.img}}" alt=""> 
-							</span>
-							<span class="table-text">
-								{{video.title.trim()}}
-							</span>
-						</td>
-						<td class="url">
-							<div class="table-url">
-								{{video.url}}
-							</div>
-						</td>
-					</tr>
-				</table>
-			</div>
-			<div class="col-md-1 col-sm-0">
+      </div>
+      <div class="col-md-10 col-sm-12">
+        <table class="table table-striped lista-videos">
+          <tr ng-repeat="video in videos | filter:q">
+            <td class="orden">
+              <div class="table-order">
+                {{$index + 1}}
+              </div>
+            </td>
+            <td>
+              <div class="table-button">
+                <button class="play btn-sm btn-danger" type="button" ng-click="play(video._id, videoModes.selected)">
+                    <fa ng-cloak="{{ isPlaying() == video._id }}" 
+                        name="{{ isPlaying() == video._id ? 'circle-o-notch' : 'play' }}" 
+                        spin="{{ isPlaying() == video._id }}" 
+                        size="1">
+                    </fa>
+                </button>
+              </div>
+            </td>
+            <td class="titulo">
+              <span class="table-img">
+                <img src="{{video.img}}" alt=""> 
+            </span>
+              <span class="table-text">{{video.title.trim()}}</span>
+            </td>
+            <td class="url">
+              <div class="table-url">
+                {{video.url}}
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div class="col-md-1 col-sm-0">
 
-			</div>
-		</div>
-		<div class="row">
-			<div class="col-md-1">
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-1">
 
-			</div>
-			<div class="col-md-10">
-			</div>
-			<div class="col-md-1">
+      </div>
+      <div class="col-md-10">
+      </div>
+      <div class="col-md-1">
 
-			</div>
-		</div>
-	</div>
+      </div>
+    </div>
+  </div>
 
 
-	<% include footer %>
+  <% include footer %>

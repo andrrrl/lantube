@@ -1,6 +1,7 @@
 'use strict';
 
-var express = require('express');
+const cors = require('cors');
+const express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
 var logger = require('morgan');
@@ -9,12 +10,14 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 
 // Connect to DB
-require('./db/mongo');
+require('./db/' + process.env.DB_TYPE);
 
 // Load DB Models
-require('./models/Videos');
+require('./models/' + process.env.DB_TYPE + '/Videos');
 
 var app = express();
+app.use(cors());
+app.options('*', cors());
 
 var env = process.env.NODE_ENV || 'development';
 app.locals.ENV = env;
@@ -54,11 +57,11 @@ app.use('/javascripts', express.static(__dirname + '/components/event-source-pol
 app.use('/stylesheets', express.static(__dirname + '/components/font-awesome/css')); // Angular font-awesome CSS
 app.use('/fonts', express.static(__dirname + '/components/font-awesome/fonts')); // Angular font-awesome CSS
 
-var 
-    index = require('./routes/index'),
-    stats = require('./routes/stats'),
-    player = require('./routes/player'),
-    videos = require('./routes/videos');
+var
+  index = require('./routes/' + process.env.DB_TYPE + '/index'),
+  stats = require('./routes/' + process.env.DB_TYPE + '/stats'),
+  player = require('./routes/' + process.env.DB_TYPE + '/player'),
+  videos = require('./routes/' + process.env.DB_TYPE + '/videos');
 
 app.use('/', index);
 app.use('/', stats);
@@ -66,10 +69,10 @@ app.use('/', player);
 app.use('/', videos);
 
 /// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-    var err = new Error('  Not Found');
-    err.status = 404;
-    next(err);
+app.use(function (req, res, next) {
+  var err = new Error('  Not Found');
+  err.status = 404;
+  next(err);
 });
 
 /// error handlers
@@ -77,27 +80,27 @@ app.use(function(req, res, next) {
 // development error handler
 // will print stacktrace
 if (app.get('env') === 'development') {
-    app.use(function(err, req, res, next) {
-		res.status(err.status || 500);
-        res.render('error', {
-            message: err.message,
-            error: err,
-            title: 'error',
-			lang: 'en'
-        });
+  app.use(function (err, req, res, next) {
+    res.status(err.status || 500);
+    res.render('error', {
+      message: err.message,
+      error: err,
+      title: 'error',
+      lang: 'en'
     });
+  });
 }
 
 // production error handler
 // no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-    res.status(err.status || 500);
-    res.render('error', {
-        message: err.message,
-        error: {},
-        title: 'error',
-		lang: 'en'
-    });
+app.use(function (err, req, res, next) {
+  res.status(err.status || 500);
+  res.render('error', {
+    message: err.message,
+    error: {},
+    title: 'error',
+    lang: 'en'
+  });
 });
 
 

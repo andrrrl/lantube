@@ -8,7 +8,10 @@ const
 
 var PlayerSchema = new mongoose.Schema({
     player: String,
-    player_mode: String,
+    player_mode: {
+		type: String,
+		enum: ['windowed', 'fullscreen', 'audio only', 'chromecast']
+	},
 	player_volume: {
 		type: Number,
 		default: 50
