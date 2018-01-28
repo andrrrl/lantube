@@ -64,7 +64,11 @@ Server.setServerStats = () => {
 
 Server.serverStats = (cb) => {
   redis.get('server_stats', (err, stats) => {
-    return cb(stats);
+	if (stats) {
+		return cb(stats);
+	} else {
+		return cb(JSON.stringify(Server.getServerStats()));
+	}
   });
 }
 
