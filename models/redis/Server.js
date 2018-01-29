@@ -10,16 +10,23 @@ require('./Player');
 
 let Server = {};
 
-// Player
-Server.getPlayerStats = (status, video_id, video_title) => {
-  let player_stats = {
-    player: 'mpv',
-    status: status,
-    video_id: video_id,
-    video_title: video_title,
+let player_stats = {
+    player: process.env.PLAYER,
+    status: 'idle',
+    video_id: 0,
+    video_title: '',
     last_updated: new Date(),
   }
 
+// Player
+Server.getPlayerStats = (status, video_id, video_title) => {
+  player_stats = {
+    player: process.env.PLAYER,
+    status: status || 'idle',
+    video_id: video_id || 0,
+    video_title: video_title || '',
+    last_updated: new Date(),
+  }
   return player_stats;
 }
 
@@ -35,7 +42,7 @@ Server.setPlayerStats = (status, video_id, video_title) => {
 
 Server.playerStats = (cb) => {
   redis.get('player_stats', (err, stats) => {
-    return cb(stats);
+    return cb(stats || JSON.stringify(player_stats));
   });
 }
 ////

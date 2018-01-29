@@ -343,8 +343,6 @@ router.route('/api/videos/:id/play')
       });
     });
 
-
-
   });
 
 router.route('/api/videos/stop')
@@ -357,6 +355,32 @@ router.route('/api/videos/stop')
 
     res.json({
       result: 'stopped'
+    });
+
+  });
+  
+router.route('/api/videos/pause')
+  .get(function (req, res, next) {
+
+    Videos.pause();
+
+    // Update stats
+    Server.setPlayerStats('paused', '0', '');
+
+    res.json({
+      result: 'paused'
+    });
+
+  });
+  
+  
+router.route('/api/videos/volume/:volume')
+  .get(function (req, res, next) {
+ 
+    Videos.volume(req.params.volume);
+
+    res.json({
+      result: 'volume ' + req.params.volume
     });
 
   });

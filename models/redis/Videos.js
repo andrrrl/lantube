@@ -4,9 +4,11 @@ const
   request = require('request'),
   mongoose = require('mongoose'),
   spawn = require('child_process').spawn,
-  execSync = require('child_process').execSync,
+  exec = require('child_process').exec,
   EventEmitter = require('events'),
-  stopEmitter = new EventEmitter();
+  stopEmitter = new EventEmitter(),
+  volumeEmitter = new EventEmitter(),
+  pauseEmitter = new EventEmitter();
 
 // Load Server Model
 var server_schema = require('./Server');
@@ -14,23 +16,32 @@ var Server = server_schema.Server;
 
 var VideosSchema = {};
 
+var volumeChange = '';
+
 
 VideosSchema.isValid = function (id) {
-  return mongoose.Types.ObjectId.isValid(id);
+	return mongoose.Types.ObjectId.isValid(id);
 }
 
 VideosSchema.stopAll = function (cb) {
-  stopEmitter.emit('stopEvent');
-  return cb;
+	stopEmitter.emit('stopEvent');
+	return cb;
 }
 
-// TODO
-// VideosSchema.methods.togglePause = function(player) {
-//   How the hell am I gonna accomplish this? <_<
-// }
+VideosSchema.pause = function (cb) {
+	pauseEmitter.emit('pauseEvent');
+	return cb;
+}
+
+VideosSchema.volume = function (volume, cb) {
+	volumeChange = volume;
+	volumeEmitter.emit('volumeEvent');
+	return cb;
+}
 
 VideosSchema.playThis = function (player_options, cb) {
 
+  console.log('PLAY!');
   stopEmitter.emit('stopEvent');
 
   let player = player_options.player || process.env.PLAYER;
@@ -59,7 +70,9 @@ VideosSchema.playThis = function (player_options, cb) {
 
 	if (process.env.PLAYER === 'omxplayer') {
 		//var playing = spawn(process.env.PLAYER, ['-o', 'hdmi', video_url]);
-		var playing = execSync(process.env.PLAYER + ' -o hdmi -p $(' + process.env.YOUTUBE_DL + ' -g ' + video_url + ')');
+		var playing = exec(process.env.PLAYER + ' -b -o both $(' + process.env.YOUTUBE_DL + ' -g ' + video_url + ')');
+		
+		//var playing = spawn(process.env.PLAYER, ['-o', 'both', '-b', '$(' + process.env.YOUTUBE_DL + ' -g ' + video_url + ')']);
 	} else {
 		// var playing = execSync(process.env.YOUTUBE_DL + ' -o - ' + video_url + ' | ' + process.env.PLAYER + ' -');
 		var playing = spawn(process.env.PLAYER, [player_mode_arg, player_playlist, video_url]);
@@ -108,8 +121,26 @@ VideosSchema.playThis = function (player_options, cb) {
   });
 
   stopEmitter.on('stopEvent', () => {
-    playing.kill('SIGINT');
+    
+    if (process.env.PLAYER !== 'omxplayer') {
+		playing.kill('SIGINT');
+	} else {
+		playing.stdin.write("q");
+	}
+    
     console.log('Playback stopped!');
+  });
+
+  pauseEmitter.on('pauseEvent', () => {
+    playing.stdin.write("p");
+    
+    console.log('Playback paused!');
+  });
+
+  volumeEmitter.on('volumeEvent', () => {
+    playing.stdin.write(volumeChange);
+    
+    console.log('Volume: ' + volumeChange);
   });
 
   // Close when video finished (I don't want to generates a playlist, understand?)
