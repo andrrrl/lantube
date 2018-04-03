@@ -2,12 +2,14 @@ import * as cors from 'cors';
 import * as helmet from 'helmet';
 import * as express from 'express';
 import * as HttpStatus from 'http-status-codes';
+import * as socketio from 'socket.io';
 
 require('dotenv').config({
     path: '.env'
 });
 
 let app = express();
+
 app.set('port', 3000);
 app.use(cors());
 app.use(helmet());
@@ -17,18 +19,32 @@ var env = 'development';
 app.locals.ENV = env;
 app.locals.ENV_DEVELOPMENT = env === 'development';
 
+let server = app.listen(app.get('port'), () => {
+    console.log('  Lantube server listening on port ' + server.address().port);
+    if (cors) {
+        console.info('   > CORS enabled!');
+    }
+});
+
+let io = socketio(server);
+
+io.on('connection', (socket) => {
+    console.log("SOCKET SERVER CONNECTION");
+    socket.emit('USER_MESSAGE', { signal: 'connected' });
+});
+
 let index = require('./api/routes/redis/index');
 let stats = require('./api/routes/redis/stats');
 let player = require('./api/routes/redis/player');
 let videos = require('./api/routes/redis/videos');
 
-app.use('/', index);
-app.use('/', stats);
-app.use('/', player);
-app.use('/', videos);
+// app.use('/', index);
+// app.use('/', stats);
+app.use('/', player(io));
+app.use('/', videos(io));
 
 // Error handler
-app.use(function (err: any, req, res, next) {
+app.use((err: any, req, res, next) => {
     if (err) {
         // Parse err
         let e: Error;
@@ -58,7 +74,7 @@ app.use(function (err: any, req, res, next) {
     }
 });
 
-app.all('*', function (req, res, next) {
+app.all('*', (req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
@@ -71,10 +87,5 @@ app.all('*', function (req, res, next) {
         next();
     }
 });
-
-let server = app.listen(app.get('port'), function () {
-    console.log('  Lantube server listening on port ' + server.address().port);
-});
-
 
 export = app;
