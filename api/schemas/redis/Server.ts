@@ -1,9 +1,8 @@
 import * as os from 'os';
-import * as request from 'request';
 let redis = require('../../connections/redis');
 
 
-class Server {
+export class Server {
 
     constructor() {
 
@@ -31,22 +30,22 @@ class Server {
     };
 
     // Player
-    getPlayerStats(status, video_id, video_title) {
-        this.playerStats = {
-            player: process.env.PLAYER || 'mpv',
-            status: status || 'idle',
-            video_id: video_id || 0,
-            video_title: video_title || '',
-            last_updated: new Date(),
-        }
+    // status, video_id, video_title
+    public getPlayerStats(cb) {
+        // this.playerStats = {
+        //     player: process.env.PLAYER || 'mpv',
+        //     status: status || 'idle',
+        //     video_id: video_id || 0,
+        //     video_title: video_title || '',
+        //     last_updated: new Date(),
+        // }
         redis.get('playerStats', (err, stats) => {
-            return JSON.stringify(this.playerStats);
+            return cb(JSON.stringify(this.playerStats));
         });
     }
 
-    setPlayerStatss(status, video_id, video_title) {
-        let pstats = this.getPlayerStats(status, video_id, video_title);
-        redis.set('playerStats', JSON.stringify(pstats), () => {
+    setPlayerStats(stats) {
+        redis.set('playerStats', JSON.stringify(stats), () => {
             redis.get('playerStats', (err, stats) => {
                 return stats;
             });
@@ -70,5 +69,3 @@ class Server {
     }
 
 }
-
-module.exports = Server;
