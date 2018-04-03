@@ -106,7 +106,8 @@ export class Player {
 
         // Player type?
         if (process.env.PLAYER === 'omxplayer') {
-            this.playing = exec(process.env.PLAYER + ' -b -o both $(' + process.env.YOUTUBE_DL + ' -g ' + video_url + ')');
+            let formats = ' -f 34/18/43/35/44/22/45/37/46';
+            this.playing = exec(process.env.PLAYER + ' -b -o both $(' + process.env.YOUTUBE_DL + formats + ' -g ' + video_url + ')');
         } else {
             if (player_playlist) {
                 this.playlist(this.playerOptions.list);
