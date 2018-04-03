@@ -6,8 +6,11 @@ let router = express.Router();
 let schema = require('../../schemas/redis/Videos');
 let Videos = schema;
 
-let serverSchema = require('../../schemas/redis/Server');
-let Server = new serverSchema();
+// let serverSchema = require('../../schemas/redis/Server');
+// let Server = serverSchema;
+import * as ServerCtrl from '../../schemas/redis/Server';
+
+let Server = new ServerCtrl.Server();
 
 import * as redis from '../../connections/redis';
 
@@ -63,26 +66,22 @@ function eventStreamResponse(type, req, res, results) {
 }
 
 /**
- * Server status
+ * Server ans Player status
  */
 router.route('/api/status')
     .get(function (req, res, next) {
 
-        let stats = {};
-
         switch (req.query.type) {
-            case 'server':
-                Server.serverStats(server_stats => {
-                    res.json(JSON.parse(server_stats));
-                });
-                break;
             case 'player':
-                Server.playerStats(player_stats => {
+                Server.getPlayerStats(player_stats => {
                     res.json(JSON.parse(player_stats));
                 });
                 break;
+            case 'server':
             default:
-                stats = {};
+                Server.getServerStats(server_stats => {
+                    res.json(JSON.parse(server_stats));
+                });
                 break;
         }
 
@@ -91,7 +90,7 @@ router.route('/api/status')
 /**
  * Server stats
  */
-router.route('/api/status')
+router.route('/api/stats')
     .get(function (req, res, next) {
 
         let stats = {};
@@ -104,7 +103,7 @@ router.route('/api/status')
                 });
                 break;
             case 'player':
-                Server.playerStats(player_stats => {
+                Server.getServerStats(player_stats => {
                     // Poll status to client
                     eventStreamResponse('status', req, res, player_stats);
                 });
@@ -198,7 +197,7 @@ router.route('/api/videos')
                     redis.hmset('videos', String(video_id), video_string, (err) => {
                         redis.hget('videos', video_id, (err, video) => {
 
-                            Server.setPlayerStats('playing', video_id, title);
+                            // Server.setPlayerStats('playing', video_id, title);
 
                             let vid = JSON.parse(video);
                             res.json({
@@ -290,188 +289,7 @@ router.route('/api/videos/list').get((req, res, next) => {
 });
 
 
-// PLAY
-router.route('/api/videos/:id/play')
 
-    .get(function (req, res, next) {
-
-        let order = !req.params.id.match(/[a-zA-Z]/g) ? parseInt(req.params.id) : false;
-        let id = req.params.id;
-
-        if (!isNaN(parseInt(id))) {
-            id = 'video' + id;
-        }
-
-        redis.hlen('videos', (err, videos_count) => {
-            if (err) {
-                console.log(err);
-            }
-            if (id === 'last') {
-                id = 'video' + videos_count;
-            }
-            redis.hget('videos', id, function (err, video: any) {
-
-                video = JSON.parse(video);
-
-                if (err) {
-                    console.log(err);
-                    res.end();
-                } else {
-                    if (video == null) {
-                        res.json({
-                            error: 'No hay banda!'
-                        });
-                        res.end();
-                    } else {
-
-                        Server.setPlayerStats('playing', id, video.title);
-
-                        // Play video!
-                        Videos.playThis({
-                            player: process.env.PLAYER,
-                            player_mode: process.env.PLAYER_MODE,
-                            player_playlist: '',
-                            url: video.url,
-                            img: video.img
-                        });
-
-
-                        res.json({
-                            result: 'playing',
-                            playing: video.url,
-                            title: video.title,
-                            _id: video._id
-                        });
-                        res.end();
-
-
-                    }
-
-                }
-            });
-        });
-
-    });
-
-router.route('/api/videos/stop')
-    .get(function (req, res, next) {
-
-        Videos.stopAll();
-
-        // Update stats
-        Server.setPlayerStats('stopped', '0', '');
-
-        res.json({
-            result: 'stopped'
-        });
-
-    });
-
-router.route('/api/videos/pause')
-    .get(function (req, res, next) {
-
-        Videos.pause();
-
-        // Update stats
-        Server.setPlayerStats('paused', '0', '');
-
-        res.json({
-            result: 'paused'
-        });
-
-    });
-
-
-router.route('/api/videos/volume/:volume')
-    .get(function (req, res, next) {
-
-        Videos.volume(req.params.volume);
-
-        res.json({
-            result: 'volume ' + req.params.volume
-        });
-
-    });
-
-
-router.route('/api/videos/pls')
-    .get(function (req, res, next) {
-
-        redis.hgetall('videos', function (err, videos_redis) {
-
-            if (err) {
-                console.log(err);
-                res.end();
-            }
-
-            // Generate and serve PLS playlist
-            let playlist = '[playlist]\n\n';
-            let i = 1;
-
-            let videos = [];
-            for (let video in videos_redis) {
-                videos.push(JSON.parse(videos_redis[video]));
-            }
-
-            videos.forEach(function (video, index) {
-                playlist += 'Title' + i + '=' + video.title + '\n';
-                playlist += 'File' + i + '=' + video.url + '\n\n';
-                i++;
-            });
-
-            playlist += 'NumberOfEntries=' + videos.length;
-
-            res.setHeader('Accept-charset', 'utf-8');
-            res.setHeader('Content-type', 'audio/x-scpls');
-            res.setHeader('Media-type', 'audio/x-scpls');
-            res.send(playlist);
-            res.end();
-
-        });
-
-    });
-
-router.route('/api/videos/playlist')
-    .get(function (req, res, next) {
-
-        redis.hgetall('videos', function (err, videos_redis) {
-            if (err) {
-                console.log(err);
-                res.end();
-            } else {
-
-                let videos = [];
-                for (let video in videos_redis) {
-                    videos.push(JSON.parse(videos_redis[video]));
-                }
-
-                if (videos == null) {
-                    res.json({
-                        result: 'error',
-                        error: 'No hay nada en la lista!'
-                    });
-                } else {
-
-                    // Update stats
-                    Server.setPlayerStats('playlist', '0', '');
-
-                    // Play PLS playlist!
-                    Videos.playThis({
-                        player: process.env.PLAYER,
-                        player_mode: process.env.PLAYER_MODE,
-                        playlist: true,
-                        url: 'http://localhost:3000/api/videos/pls'
-                    });
-                    res.json({
-                        result: 'playlist',
-                        _id: req.params.id
-                    });
-
-
-                }
-            }
-        });
-    });
 
 // Not implemented yet!
 router.route('/api/videos/delete/:order')
