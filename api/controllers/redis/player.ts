@@ -259,6 +259,10 @@ export class Player {
     }
 
     deletePlaylist() {
-        fs.unlinkSync('/tmp/playlist.pls');
+        fs.stat('/tmp/playlist.pls', (exists) => {
+            if (exists) {
+                fs.unlinkSync('/tmp/playlist.pls');
+            }
+        });
     }
 }
