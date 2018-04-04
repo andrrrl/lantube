@@ -11,7 +11,7 @@
  */
 
 let rootDir = '../../';
-import * as colors from 'colors/safe';
+import { colors } from 'colors/safe';
 require('dotenv').config({
     path: rootDir + '.env'
 });
