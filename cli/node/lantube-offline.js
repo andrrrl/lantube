@@ -68,8 +68,58 @@ if (process.argv.length === 3) {
             if (!error && response.statusCode === 200) {
 
                 const
-                    db = require(rootDir + 'db/mongo.js'),
-                    model = require(rootDir + 'models/' + process.env.DB_TYPE + '/Videos.js');
+                    conn = require(rootDir + 'connections/' + process.env.DB_TYPE + '.js');
+                // model = require(rootDir + 'models/' + process.env.DB_TYPE + '/Videos.js');
+
+
+                conn.hlen('videos', (err, videos_count) => {
+                    if (err) {
+                        console.log(err);
+                    }
+                    let video_id = 'video' + Number(videos_count + 1);
+                    // let title = body.title.replace(/"/g, '');
+
+                    let title = body.title.replace(/(^[a-z]|\s[a-z])/g, (p) => {
+                        return p.toUpperCase();
+                    });
+
+                    // Redis no acepta objetos JSON aun... ¬_¬
+                    let video_string = '{ "_id": "' + video_id + '",' +
+                        '"title": "' + title + '",' +
+                        '"url": "' + yt_id + '",' +
+                        '"img": "' + body.thumbnail_url + '",' +
+                        '"order": ' + String(videos_count + 1) + '}';
+
+
+                    conn.hmset('videos', String(video_id), video_string, (err) => {
+
+                        if (err) {
+                            console.log(err);
+                        } else {
+                            console.log(
+                                '  [OK] Video inserted into Lantube DB!'.green.bold + '\n' +
+                                '   Details: '.green.bold + '\n' +
+                                '   _id: 	'.green.bold + result._id + '\n' +
+                                '   title: '.green.bold + result.title + '\n' +
+                                '   url: 	'.green.bold + result.url + '\n' +
+                                '   img: '.green.bold + result.img + '\n' +
+                                '   order: '.green.bold + (result.order + 1)
+                            );
+                        }
+
+                        conn.hget('videos', video_id, (err, video) => {
+
+                            let vid = JSON.parse(video);
+                            res.json({
+                                _id: vid._id,
+                                title: vid.title,
+                                url: vid.url,
+                                img: vid.img
+                            });
+
+                        });
+                    });
+                });
 
                 model.Videos.findOne()
                     .sort('-order')
