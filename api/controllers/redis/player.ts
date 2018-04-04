@@ -177,7 +177,7 @@ export class Player {
 
             if (process.env.PLAYER !== 'omxplayer') {
                 // this.playing.kill('SIGINT');
-                this.playing.stdin.write(" ");
+                this.playing.stdin.write("SPACE");
             } else {
                 this.playing.stdin.write("q");
             }

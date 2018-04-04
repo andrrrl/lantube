@@ -1,6 +1,6 @@
-import { Player } from './../../controllers/redis/player';
 import * as redis from '../../connections/redis';
 import * as express from 'express';
+import { Player } from './../../controllers/redis/player';
 
 export = (io) => {
     let router = express.Router();

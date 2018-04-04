@@ -1,9 +1,13 @@
 import * as express from 'express';
 import * as request from 'request';
 import * as redis from '../../connections/redis';
+import { Videos } from './../../controllers/redis/videos';
+
 let router = express.Router();
 
 export = (io) => {
+
+    let VideosCtrl = new Videos(io);
 
     router.route('/api/videos')
 
@@ -27,73 +31,50 @@ export = (io) => {
         });
 
     router.route('/api/videos/add/:video')
-        .get((req, res, next) => {
+        .get(async (req, res, next) => {
 
-            console.log('req.params.video', req.params.video);
+            let ytId = VideosCtrl.getVideoId(req.params.video);
 
-            // Extract Youtube video ID
-            let yt_id = req.params.video.trim().replace(/http(s?):\/\/(w{3}?)(\.?)youtube\.com\/watch\?v=/, '');
-
-            // Check ID
-            if (yt_id === '') {
+            if (!ytId) {
                 res.json({
                     result: 'error',
                     error: 'No video.'
                 });
-            } else {
-                if (yt_id.indexOf('http') === -1 && yt_id.indexOf('youtube') > -1) {
-                    yt_id = 'https://www.' + yt_id;
-
-                } else if (yt_id.indexOf('youtube') === -1) {
-                    yt_id = 'https://www.youtube.com/watch?v=' + yt_id;
-                }
             }
 
-            // Get video data from Youtube embed API
-            request({
-                url: 'http://www.youtube.com/oembed?url=' + yt_id + '&format=json',
-                json: true
-            }, (error, response, body) => {
+            let body: any = await VideosCtrl.getVideoInfo(ytId);
 
-                if (!error && response.statusCode === 200) {
+            redis.hlen('videos', (err, videos_count) => {
+                if (err) {
+                    console.log(err);
+                }
+                let video_id = 'video' + Number(videos_count + 1);
+                let title = body.title.replace(/"/g, '');
 
-                    redis.hlen('videos', (err, videos_count) => {
-                        if (err) {
-                            console.log(err);
-                        }
-                        let video_id = 'video' + Number(videos_count + 1);
-                        let title = body.title.replace(/"/g, '');
+                // Redis no acepta objetos JSON aun... ¬_¬
+                let video_string = '{ "_id": "' + video_id + '",' +
+                    '"title": "' + title + '",' +
+                    '"url": "' + ytId + '",' +
+                    '"img": "' + body.thumbnail_url + '",' +
+                    '"order": ' + String(videos_count + 1) + '}';
 
-                        // Redis no acepta objetos JSON aun... ¬_¬
-                        let video_string = '{ "_id": "' + video_id + '",' +
-                            '"title": "' + title + '",' +
-                            '"url": "' + yt_id + '",' +
-                            '"img": "' + body.thumbnail_url + '",' +
-                            '"order": ' + String(videos_count + 1) + '}';
+                redis.hmset('videos', String(video_id), video_string, (err) => {
+                    redis.hget('videos', video_id, (err, video) => {
 
-
-                        // res.end(JSON.parse(video_string));
-
-                        redis.hmset('videos', String(video_id), video_string, (err) => {
-                            redis.hget('videos', video_id, (err, video) => {
-
-                                let vid = JSON.parse(video);
-                                res.json({
-                                    _id: vid._id,
-                                    title: vid.title,
-                                    url: vid.url,
-                                    img: vid.img
-                                });
-
-                            });
+                        let vid = JSON.parse(video);
+                        res.json({
+                            _id: vid._id,
+                            title: vid.title,
+                            url: vid.url,
+                            img: vid.img
                         });
 
-
                     });
-                }
+                });
 
 
             });
+
         });
 
     return router;
