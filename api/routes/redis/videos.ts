@@ -48,25 +48,19 @@ export = (io) => {
                 if (err) {
                     console.log(err);
                 }
-                let video_id = 'video' + Number(videos_count + 1);
-                let title = body.title.replace(/"/g, '');
 
-                // Redis no acepta objetos JSON aun... ¬_¬
-                let video_string = '{ "_id": "' + video_id + '",' +
-                    '"title": "' + title + '",' +
-                    '"url": "' + ytId + '",' +
-                    '"img": "' + body.thumbnail_url + '",' +
-                    '"order": ' + String(videos_count + 1) + '}';
+                let videoForRedis = VideosCtrl.redisVideoString(ytId, videos_count, body);
 
-                redis.hmset('videos', String(video_id), video_string, (err) => {
-                    redis.hget('videos', video_id, (err, video) => {
+                redis.hmset('videos', String(videoForRedis.videoId), videoForRedis.videoString, (err) => {
+                    redis.hget('videos', videoForRedis.videoId, (err, video) => {
 
                         let vid = JSON.parse(video);
                         res.json({
                             _id: vid._id,
                             title: vid.title,
                             url: vid.url,
-                            img: vid.img
+                            img: vid.img,
+                            order: vid.order
                         });
 
                     });

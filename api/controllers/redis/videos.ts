@@ -55,4 +55,23 @@ export class Videos {
         })
     }
 
+    // converts video info to String, so it can be saved to Redis
+    // calculates Redis ID
+    redisVideoString(videoId, videosCount, video) {
+        let video_id = 'video' + Number(videosCount + 1);
+        let title = video.title.replace(/"/g, '');
+
+        // Redis no acepta objetos JSON aun... ¬_¬
+        let video_string = '{ "_id": "' + video_id + '",' +
+            '"title": "' + title + '",' +
+            '"url": "' + videoId + '",' +
+            '"img": "' + video.thumbnail_url + '",' +
+            '"order": ' + String(videosCount + 1) + '}';
+
+        return {
+            videoId: video_id,
+            videoString: video_string
+        }
+    }
+
 }
