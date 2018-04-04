@@ -113,7 +113,8 @@ export class Player {
                 this.playlist(this.playerOptions.list);
                 player_playlist = '/tmp/playlist.pls';
             }
-            this.playing = spawn(process.env.PLAYER, [playerModeArg, player_playlist, video_url]);
+            // this.playing = spawn(process.env.PLAYER, [playerModeArg, player_playlist, video_url]);
+            this.playing = exec(process.env.PLAYER + ' ' + playerModeArg + ' ' + player_playlist + ' ' + video_url);
         }
 
         this.initPlaybackSession();
@@ -122,11 +123,7 @@ export class Player {
 
     initPlaybackSession() {
 
-        if (this.playerOptions.playlist === true) {
-            this.io.emit('USER_MESSAGE', { signal: 'playlist' });
-        } else {
-            this.io.emit('USER_MESSAGE', { signal: 'playing' });
-        }
+        this.io.emit('USER_MESSAGE', { signal: ((this.playerOptions.playlist === true) ? 'playlist' : 'playing') });
 
         // Counter for retrying (if slow connection, etc)
         let stuck = 0;
@@ -179,7 +176,8 @@ export class Player {
         this.stopEmitter.on('stopEvent', () => {
 
             if (process.env.PLAYER !== 'omxplayer') {
-                this.playing.kill('SIGINT');
+                // this.playing.kill('SIGINT');
+                this.playing.stdin.write(" ");
             } else {
                 this.playing.stdin.write("q");
             }
