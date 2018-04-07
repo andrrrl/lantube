@@ -17,6 +17,7 @@ let Server = new ServerSchema.Server();
 export class Player {
     playerOptions: IPlayerOptions;
 
+    currentStatus: any = 'idle';
     volumeChange: any;
 
     volumeEmitter = new EventEmitter();
@@ -68,9 +69,15 @@ export class Player {
     }
 
     // Only for omxplayer for now
-    volume(volume) {
-        this.volumeChange = volume;
-        this.volumeEmitter.emit('volumeEvent');
+    volume(volume, emitSignal = true) {
+        return new Promise((resolve, reject) => {
+            this.volumeChange = volume;
+            this.volumeEmitter.emit('volumeEvent');
+            if (emitSignal === true) {
+                this.io.emit('USER_MESSAGE', { signal: 'volume changed' });
+            }
+            resolve(true);
+        });
     }
 
     play(playerOptions) {
@@ -104,9 +111,9 @@ export class Player {
                 break;
         }
 
+        let formats = ' -f 34/18/43/35/44/22/45/37/46';
         // Player type?
         if (process.env.PLAYER === 'omxplayer') {
-            let formats = ' -f 34/18/43/35/44/22/45/37/46';
             this.playing = exec(process.env.PLAYER + ' -b -o both $(' + process.env.YOUTUBE_DL + formats + ' -g ' + video_url + ')');
         } else {
             if (player_playlist) {
@@ -114,7 +121,8 @@ export class Player {
                 player_playlist = '/tmp/playlist.pls';
             }
             // this.playing = spawn(process.env.PLAYER, [playerModeArg, player_playlist, video_url]);
-            this.playing = exec(process.env.PLAYER + ' ' + playerModeArg + ' ' + player_playlist + ' ' + video_url);
+            // ' ' + playerModeArg + ' ' + player_playlist +
+            this.playing = exec(process.env.PLAYER + ' ' + playerModeArg + ' $(' + process.env.YOUTUBE_DL + formats + ' -g ' + video_url + ')');
         }
 
         this.initPlaybackSession();
@@ -176,8 +184,12 @@ export class Player {
         this.stopEmitter.on('stopEvent', () => {
 
             if (process.env.PLAYER !== 'omxplayer') {
-                // this.playing.kill('SIGINT');
-                this.playing.stdin.write("SPACE");
+                // this.playing.stdin.write("quit\n");
+                if (process.env.PLAYER !== 'cvlc') {
+                    this.playing.kill('SIGINT');
+                } else {
+                    this.playing.stdin.write("stop\n");
+                }
             } else {
                 this.playing.stdin.write("q");
             }
@@ -187,19 +199,23 @@ export class Player {
 
         this.pauseEmitter.on('pauseEvent', () => {
             if (process.env.PLAYER !== 'omxplayer') {
-                this.playing.stdin.write("p");
+                if (process.env.PLAYER !== 'cvlc') {
+                    console.info('Pause not supported!');
+                } else {
+                    this.playing.stdin.write("pause\n");
+                }
             } else {
-                console.info('Pause not supported!');
+                this.playing.stdin.write("p");
             }
             console.info('Playback paused!');
         });
 
         this.volumeEmitter.on('volumeEvent', () => {
             if (process.env.PLAYER !== 'omxplayer') {
+                console.info('Volumen change not supported!');
+            } else {
                 this.playing.stdin.write(this.volumeChange);
                 console.info('Volume: ' + this.volumeChange);
-            } else {
-                console.info('Volumen change not supported!');
             }
 
         });
@@ -253,15 +269,17 @@ export class Player {
 
         playlist += 'NumberOfEntries=' + videos.length;
 
-        fs.writeFileSync('/tmp/playlist.pls', playlist)
+        let pls = fs.writeFileSync('/tmp/playlist.pls', playlist);
+        console.log('PPPPPPPPLLLLLLLLLLAAAAAAAAAAA', pls);
 
     }
 
     deletePlaylist() {
-        fs.stat('/tmp/playlist.pls', (err) => {
-            if (!err) {
-                fs.unlinkSync('/tmp/playlist.pls');
-            }
-        });
+        let stats = fs.statSync('/tmp/playlist.pls');
+        if (stats.isFile()) {
+            fs.unlinkSync('/tmp/playlist.pls');
+        } else {
+            return false;
+        }
     }
 }
