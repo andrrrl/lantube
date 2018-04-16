@@ -6,6 +6,7 @@ import * as mongoose from 'mongoose';
 import * as fs from 'fs';
 import * as ServerSchema from '../../schemas/redis/Server';
 import { IVideo } from './../../interfaces/IVideo.interface';
+import * as redis from '../../connections/redis';
 
 const
     spawn = ChildProcess.spawn,
@@ -21,9 +22,9 @@ export class Videos {
         this.io = io;
     };
 
-    getVideoId(video) {
+    getVideoId(youtubeId) {
         // Extract Youtube video ID
-        let ytId = video.trim().replace(/http(s?):\/\/(w{3}?)(\.?)youtube\.com\/watch\?v=/, '');
+        let ytId = youtubeId.trim().replace(/http(s?):\/\/(w{3}?)(\.?)youtube\.com\/watch\?v=/, '');
 
         // Check ID
         if (ytId === '') {
@@ -57,15 +58,17 @@ export class Videos {
 
     // converts video info to String, so it can be saved to Redis
     // calculates Redis ID
-    redisVideoString(videoId, videosCount, video) {
+    async formatForRedis(key, videoId, videoData) {
+
+        let videosCount: any = await this.count(key);
         let video_id = 'video' + Number(videosCount + 1);
-        let title = video.title.replace(/"/g, '');
+        let title = videoData.title.replace(/"/g, '');
 
         // Redis no acepta objetos JSON aun... ¬_¬
         let video_string = '{ "_id": "' + video_id + '",' +
             '"title": "' + title + '",' +
             '"url": "' + videoId + '",' +
-            '"img": "' + video.thumbnail_url + '",' +
+            '"img": "' + videoData.thumbnail_url + '",' +
             '"order": ' + String(videosCount + 1) + '}';
 
         return {
@@ -73,5 +76,84 @@ export class Videos {
             videoString: video_string
         }
     }
+
+    count(key) {
+        return new Promise((resolve, reject) => {
+            redis.hlen(key, (err, count) => {
+                if (err) {
+                    reject(err);
+                }
+                resolve(count);
+            });
+        });
+    }
+
+    get(key, videoId) {
+        return new Promise((resolve, reject) => {
+            redis.hget(key, videoId, (err, video) => {
+                if (err) {
+                    reject(err);
+                }
+                resolve(video);
+            });
+        });
+    }
+
+    getAll(key) {
+        return new Promise((resolve, reject) => {
+
+            redis.hgetall(key, (err, videosRedis) => {
+
+                if (err) {
+                    reject(err);
+                }
+
+                let videos = [];
+                let i = 1;
+                Object.keys(videosRedis).forEach(video => {
+                    videos.push(JSON.parse(videosRedis[video]));
+                });
+
+                if (videos.length > 0) {
+                    resolve(videos);
+                } else {
+                    resolve([]);
+                }
+            });
+        });
+    }
+
+    add(key, ytId) {
+        return new Promise(async (resolve, reject) => {
+            let videoData: any = await this.getVideoInfo(ytId);
+            let redisFormatted = await this.formatForRedis('videos', ytId, videoData);
+            redis.hmset(key, redisFormatted.videoId, redisFormatted.videoString, async (err) => {
+                if (err) {
+                    reject(err);
+                }
+                let addedVideo = await this.get('videos', redisFormatted.videoId);
+                resolve(addedVideo);
+            });
+        });
+    }
+
+    delete(videoId) {
+        return new Promise((resolve, reject) => {
+            redis.hdel('videos', videoId, async (err, reply) => {
+                if (err) {
+                    reject(err);
+                }
+                if (reply === 1) {
+                    let added = await this.get('videos', videoId);
+                    resolve(added);
+                } else {
+                    resolve({
+                        message: reply
+                    });
+                }
+            });
+        });
+    }
+
 
 }

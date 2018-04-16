@@ -1,6 +1,5 @@
 import * as express from 'express';
 import * as request from 'request';
-import * as redis from '../../connections/redis';
 import { Videos } from './../../controllers/redis/videos';
 
 let router = express.Router();
@@ -11,22 +10,9 @@ export = (io) => {
 
     router.route('/api/videos')
 
-        // GET ALL VIDEOS
-        .get((req, res, next) => {
-
-            redis.hgetall('videos', (err, videos_redis) => {
-                let videos = [];
-                let i = 1;
-                for (let video in videos_redis) {
-                    videos.push(JSON.parse(videos_redis[String('video' + i)]));
-                    i++;
-                }
-                if (videos.length > 0) {
-                    res.json(videos);
-                } else {
-                    res.json([]);
-                }
-            });
+        .get(async (req, res, next) => {
+            let videos = await VideosCtrl.getAll('videos');
+            res.json(videos);
 
         });
 
@@ -38,38 +24,31 @@ export = (io) => {
             if (!ytId) {
                 res.json({
                     result: 'error',
-                    error: 'No video.'
+                    error: 'No video ID.'
                 });
             }
 
-            let body: any = await VideosCtrl.getVideoInfo(ytId);
+            let added = await VideosCtrl.add('videos', ytId);
 
-            redis.hlen('videos', (err, videos_count) => {
-                if (err) {
-                    console.log(err);
-                }
-
-                let videoForRedis = VideosCtrl.redisVideoString(ytId, videos_count, body);
-
-                redis.hmset('videos', String(videoForRedis.videoId), videoForRedis.videoString, (err) => {
-                    redis.hget('videos', videoForRedis.videoId, (err, video) => {
-
-                        let vid = JSON.parse(video);
-                        res.json({
-                            _id: vid._id,
-                            title: vid.title,
-                            url: vid.url,
-                            img: vid.img,
-                            order: vid.order
-                        });
-
-                    });
+            if (added) {
+                res.json(added);
+            } else {
+                res.json({
+                    message: 'Can\'t add video'
                 });
-
-
-            });
+            }
 
         });
+
+
+    router.route('/api/videos/delete/:videoId')
+        .delete(async (req, res, next) => {
+
+            let deleted = await VideosCtrl.delete(req.params.videoId);
+            res.json(deleted);
+
+        });
+
 
     return router;
 
