@@ -39,14 +39,11 @@ export class Player {
         return mongoose.Types.ObjectId.isValid(id);
     }
 
-    stopAll(emitSignal = true) {
-        return new Promise(async (resolve, reject) => {
-            await this.stopEmitter.emit('stopEvent');
-            if (emitSignal === true) {
-                this.io.emit('USER_MESSAGE', { signal: 'stopped' });
-            }
-            resolve(true);
-        });
+    async stopAll(emitSignal = true) {
+        await this.stopEmitter.emit('stopEvent');
+        if (emitSignal === true) {
+            this.io.emit('USER_MESSAGE', { signal: 'stopped' });
+        }
     }
 
     // Only for omxplayer for now
@@ -80,63 +77,58 @@ export class Player {
         });
     }
 
-    play(playerOptions) {
-        return new Promise(async (resolve, reject) => {
+    async play(playerOptions) {
 
-            this.playerOptions = playerOptions;
+        this.playerOptions = playerOptions;
 
-            // Stop/clear any current playback before starting
-            await this.stopAll(false);
+        // Stop/clear any current playback before starting
+        await this.stopAll(false);
 
-            let player = playerOptions.player || process.env.PLAYER;
-            var videoUrl = playerOptions.url || '';
+        let player = playerOptions.player || process.env.PLAYER;
+        var videoUrl = playerOptions.url || '';
 
-            let player_playlist = this.playerOptions.playlist === true ? process.env.PLAYER_PLAYLIST : process.env.PLAYER_NO_PLAYLIST;
-            let playerMode = this.playerOptions.playerMode || process.env.PLAYER_MODE || 'windowed';
+        let player_playlist = this.playerOptions.playlist === true ? process.env.PLAYER_PLAYLIST : process.env.PLAYER_NO_PLAYLIST;
+        let playerMode = this.playerOptions.playerMode || process.env.PLAYER_MODE || 'windowed';
 
-            let playerModeArg = '';
+        let playerModeArg = '';
 
-            // Player mode?
-            switch (playerMode) {
-                case 'windowed':
-                    playerModeArg = process.env.PLAYER_NO_PLAYLIST;
-                    break;
-                case 'fullscreen':
-                    playerModeArg = process.env.PLAYER_MODE_FULLSCREEN_ARG;
-                    break;
-                case 'audio-only':
-                    playerModeArg = process.env.PLAYER_MODE_AUDIO_ONLY_ARG;
-                    break;
-                case 'chromecast':
-                    this.chromecast = execSync(process.env.YOUTUBE_DL + ' -o - ' + videoUrl + ' | castnow --quiet -');
-                    break;
+        // Player mode?
+        switch (playerMode) {
+            case 'windowed':
+                playerModeArg = process.env.PLAYER_NO_PLAYLIST;
+                break;
+            case 'fullscreen':
+                playerModeArg = process.env.PLAYER_MODE_FULLSCREEN_ARG;
+                break;
+            case 'audio-only':
+                playerModeArg = process.env.PLAYER_MODE_AUDIO_ONLY_ARG;
+                break;
+            case 'chromecast':
+                this.chromecast = execSync(process.env.YOUTUBE_DL + ' -o - ' + videoUrl + ' | castnow --quiet -');
+                break;
+        }
+
+        let formats = ' -f 34/18/43/35/44/22/45/37/46';
+        // Player type?
+        if (process.env.PLAYER === 'omxplayer') {
+            this.playing = exec(process.env.PLAYER + ' -b -o both $(' + process.env.YOUTUBE_DL + formats + ' -g ' + videoUrl + ')');
+        } else {
+            if (player_playlist) {
+                this.playlist(this.playerOptions.list);
+                player_playlist = '/tmp/playlist.pls';
             }
-
-            let formats = ' -f 34/18/43/35/44/22/45/37/46';
-            // Player type?
-            if (process.env.PLAYER === 'omxplayer') {
-                this.playing = exec(process.env.PLAYER + ' -b -o both $(' + process.env.YOUTUBE_DL + formats + ' -g ' + videoUrl + ')');
-            } else {
-                if (player_playlist) {
-                    this.playlist(this.playerOptions.list);
-                    player_playlist = '/tmp/playlist.pls';
-                }
-                // this.playing = spawn(process.env.PLAYER, [playerModeArg, player_playlist, videoUrl]);
-                // ' ' + playerModeArg + ' ' + player_playlist +
-                if (typeof this.playing === 'undefined') {
-                    if (process.env.PLAYER !== 'cvlc -I cli') {
-                        this.playing = exec(process.env.PLAYER + ' ' + playerModeArg + ' $(' + process.env.YOUTUBE_DL + formats + ' -g ' + videoUrl + ')');
-                    } else {
-                        this.playing = exec(process.env.PLAYER);
-                    }
+            // this.playing = spawn(process.env.PLAYER, [playerModeArg, player_playlist, videoUrl]);
+            // ' ' + playerModeArg + ' ' + player_playlist +
+            if (typeof this.playing === 'undefined') {
+                if (process.env.PLAYER !== 'cvlc -I cli') {
+                    this.playing = exec(process.env.PLAYER + ' ' + playerModeArg + ' $(' + process.env.YOUTUBE_DL + formats + ' -g ' + videoUrl + ')');
+                } else {
+                    this.playing = exec(process.env.PLAYER);
                 }
             }
+        }
 
-            resolve(videoUrl);
-
-        }).then((videoUrl) => {
-            this.initPlaybackSession(videoUrl);
-        });
+        this.initPlaybackSession(videoUrl);
 
 
     }
@@ -163,8 +155,8 @@ export class Player {
         this.playing.stdout.on('data', (data) => {
 
             if (process.env.NODE_ENV === 'development') {
-                // console.log('Starting playback with ' + (JSON.stringify(this.playerOptions) || 'no options.'));
-                // console.log(`stdout: ${data}`);
+                console.info('Starting playback with ' + (JSON.stringify(this.playerOptions) || 'no options.'));
+                // console.info(`stdout: ${data}`);
             }
 
             // Check if connection is stuck (for now only mpv / mplayer)
@@ -219,7 +211,7 @@ export class Player {
 
                 console.log(process.env.PLAYER, 'STOP');
                 resolve({ result: 'STOP' });
-            });
+            }).catch(result => console.log(result));
 
         });
 
