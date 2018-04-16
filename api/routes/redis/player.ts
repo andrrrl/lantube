@@ -59,7 +59,7 @@ export = (io) => {
                 if (id === 'last') {
                     id = 'video' + videos_count;
                 }
-                redis.hget('videos', id, (err, video: any) => {
+                redis.hget('videos', id, async (err, video: any) => {
 
                     video = JSON.parse(video);
 
@@ -73,7 +73,7 @@ export = (io) => {
                             });
                         } else {
                             // Play video!
-                            PlayerCtrl.play({
+                            await PlayerCtrl.play({
                                 player: process.env.PLAYER,
                                 playerMode: process.env.PLAYER_MODE,
                                 _id: video._id,
