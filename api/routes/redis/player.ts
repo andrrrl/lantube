@@ -119,20 +119,19 @@ export = (io) => {
 
 
     router.route('/api/player/volume/:volume')
-        .get(function (req, res, next) {
+        .get(async (req, res, next) => {
 
-            PlayerCtrl.volume(req.params.volume);
-
+            let volumeChanged = await PlayerCtrl.volume(req.params.volume);
             res.json({
-                result: 'volume ' + req.params.volume
+                volume: volumeChanged
             });
 
         });
 
 
     router.route('/api/player/pls')
-        .get(function (req, res, next) {
-            redis.hgetall('videos', function (err, videos_redis) {
+        .get((req, res, next) => {
+            redis.hgetall('videos', (err, videos_redis) => {
 
                 if (err) {
                     console.log(err);
@@ -177,6 +176,18 @@ export = (io) => {
 
                     }
                 }
+            });
+        });
+
+
+    // /**
+    //  * Server ans Player status
+    //  */
+    router.route('/api/player/stats')
+        .get(async (req, res, next) => {
+
+            redis.get('player_stats', (err, player_stats) => {
+                res.json(JSON.parse(player_stats));
             });
         });
 
