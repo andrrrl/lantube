@@ -5,6 +5,7 @@ import * as request from 'request';
 import * as mongoose from 'mongoose';
 import * as fs from 'fs';
 import * as ServerSchema from '../../schemas/redis/Server';
+import { Videos } from './../../controllers/redis/videos';
 import { IPlayerOptions } from './../../interfaces/IPlayerOptions.interface';
 
 const
@@ -22,13 +23,18 @@ export class Player {
 
     volumeEmitter = new EventEmitter();
     pauseEmitter = new EventEmitter();
+    nextEmitter = new EventEmitter();
     stopEmitter = new EventEmitter();
+
+    videosCtrl;
 
     private playing: ChildProcess.ChildProcess;
     private chromecast: Buffer;
 
     constructor(private io: any) {
         this.io = io;
+        this.videosCtrl = new Videos(this.io);
+
     };
 
     /**
@@ -61,6 +67,24 @@ export class Player {
 
             Server.setPlayerStats(stats);
             this.io.emit('USER_MESSAGE', { signal: 'paused' });
+            resolve(true);
+        })
+    }
+
+    playNext() {
+        return new Promise((resolve, reject) => {
+            this.nextEmitter.emit('nextEvent');
+
+            // Update stats
+            let stats = {
+                player: process.env.PLAYER,
+                status: 'paused',
+                videoId: this.playerOptions._id,
+                lastUpdated: new Date(),
+            };
+
+            Server.setPlayerStats(stats);
+            this.io.emit('USER_MESSAGE', { signal: 'next' });
             resolve(true);
         })
     }
@@ -191,6 +215,18 @@ export class Player {
             if (process.env.NODE_ENV === 'development') {
                 // will print stuff continuously...
                 // console.log(`stderr: ${data}`);
+            }
+        });
+
+        this.nextEmitter.on('nextEvent', async () => {
+            if (process.env.PLAYER !== 'omxplayer') {
+                if (process.env.PLAYER !== 'cvlc -I cli') {
+                } else {
+                    let nextVideo = await this.videosCtrl.getNext('videos', this.playerOptions.order);
+                    this.playerOptions = nextVideo;
+                    await this.play(this.playerOptions);
+                }
+            } else {
             }
         });
 
