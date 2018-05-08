@@ -98,7 +98,7 @@ export class Videos {
         });
     }
 
-    getNext(key, currentOrder) {
+    getPrevOrNext(key, currentOrder, prevOrNext) {
         return new Promise((resolve, reject) => {
 
             redis.hgetall(key, (err, videosRedis) => {
@@ -118,7 +118,7 @@ export class Videos {
                     });
 
                     let nextVideo = videos.find(x => {
-                        return Number(x.order) === Number(currentOrder) + 1;
+                        return Number(x.order) === Number(currentOrder) + (prevOrNext === 'prev' ? - 1 : + 1);
                         // console.log(x.order, currentOrder);
                     });
 
