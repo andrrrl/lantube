@@ -17,7 +17,6 @@ let Server = new ServerSchema.Server();
 
 export class Videos {
 
-
     constructor(private io: any) {
         this.io = io;
     };
@@ -99,6 +98,46 @@ export class Videos {
         });
     }
 
+    getNext(key, currentOrder) {
+        return new Promise((resolve, reject) => {
+
+            redis.hgetall(key, (err, videosRedis) => {
+
+                if (err) {
+                    reject(err);
+                }
+
+                let videos = [];
+                Object.keys(videosRedis).forEach(video => {
+                    videos.push(JSON.parse(videosRedis[video]));
+                });
+
+                if (videos.length > 0) {
+                    videos.sort(function (a, b) {
+                        return parseInt(a._id.replace(/video/, '')) - parseInt(b._id.replace(/video/, ''));
+                    });
+
+                    let nextVideo = videos.find(x => {
+                        return Number(x.order) === Number(currentOrder) + 1;
+                        // console.log(x.order, currentOrder);
+                    });
+
+                    resolve({
+                        player: process.env.PLAYER,
+                        playerMode: process.env.PLAYER_MODE,
+                        _id: nextVideo._id,
+                        url: nextVideo.url,
+                        img: nextVideo.img,
+                        order: nextVideo.order,
+                        status: 'playing'
+                    });
+                } else {
+                    resolve([]);
+                }
+            });
+        });
+    }
+
     getAll(key) {
         return new Promise((resolve, reject) => {
 
@@ -109,7 +148,6 @@ export class Videos {
                 }
 
                 let videos = [];
-                let i = 1;
                 Object.keys(videosRedis).forEach(video => {
                     videos.push(JSON.parse(videosRedis[video]));
                 });

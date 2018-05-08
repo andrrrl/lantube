@@ -8,4 +8,5 @@ export interface IPlayerOptions {
     status: string;
     playlist: boolean;
     list: any[];
+    order: number;
 }

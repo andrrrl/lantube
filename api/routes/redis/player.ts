@@ -79,6 +79,7 @@ export = (io) => {
                                 _id: video._id,
                                 url: video.url,
                                 img: video.img,
+                                order: video.order,
                                 status: 'playing'
                             });
 
@@ -86,7 +87,8 @@ export = (io) => {
                                 result: 'playing',
                                 url: video.url,
                                 title: video.title,
-                                _id: video._id
+                                _id: video._id,
+                                order: video.order
                             });
 
                         }
@@ -113,6 +115,12 @@ export = (io) => {
             res.json({
                 result: 'stopped'
             });
+        });
+
+    router.route('/api/player/next')
+        .get(async (req, res, next) => {
+            let nextVideo = await PlayerCtrl.playNext();
+            res.json(nextVideo);
         });
 
 

@@ -5,6 +5,7 @@ import * as request from 'request';
 import * as mongoose from 'mongoose';
 import * as fs from 'fs';
 import * as ServerSchema from '../../schemas/redis/Server';
+import { Videos } from './../../controllers/redis/videos';
 import { IPlayerOptions } from './../../interfaces/IPlayerOptions.interface';
 
 const
@@ -22,13 +23,19 @@ export class Player {
 
     volumeEmitter = new EventEmitter();
     pauseEmitter = new EventEmitter();
+    prevEmitter = new EventEmitter();
+    nextEmitter = new EventEmitter();
     stopEmitter = new EventEmitter();
+
+    videosCtrl;
 
     private playing: ChildProcess.ChildProcess;
     private chromecast: Buffer;
 
     constructor(private io: any) {
         this.io = io;
+        this.videosCtrl = new Videos(this.io);
+
     };
 
     /**
@@ -39,14 +46,11 @@ export class Player {
         return mongoose.Types.ObjectId.isValid(id);
     }
 
-    stopAll(emitSignal = true) {
-        return new Promise(async (resolve, reject) => {
-            await this.stopEmitter.emit('stopEvent');
-            if (emitSignal === true) {
-                this.io.emit('USER_MESSAGE', { signal: 'stopped' });
-            }
-            resolve(true);
-        });
+    async stopAll(emitSignal = true) {
+        await this.stopEmitter.emit('stopEvent');
+        if (emitSignal === true) {
+            this.io.emit('USER_MESSAGE', { signal: 'stopped' });
+        }
     }
 
     // Only for omxplayer for now
@@ -64,6 +68,43 @@ export class Player {
 
             Server.setPlayerStats(stats);
             this.io.emit('USER_MESSAGE', { signal: 'paused' });
+            resolve(true);
+        })
+    }
+
+    playPrev() {
+        return new Promise((resolve, reject) => {
+            this.nextEmitter.emit('prevEvent');
+
+            // Update stats
+            let stats = {
+                player: process.env.PLAYER,
+                status: 'paused',
+                videoId: this.playerOptions._id,
+                lastUpdated: new Date(),
+            };
+
+            Server.setPlayerStats(stats);
+            this.io.emit('USER_MESSAGE', { signal: 'prev' });
+            resolve(true);
+        })
+    }
+
+
+    playNext() {
+        return new Promise((resolve, reject) => {
+            this.nextEmitter.emit('nextEvent');
+
+            // Update stats
+            let stats = {
+                player: process.env.PLAYER,
+                status: 'paused',
+                videoId: this.playerOptions._id,
+                lastUpdated: new Date(),
+            };
+
+            Server.setPlayerStats(stats);
+            this.io.emit('USER_MESSAGE', { signal: 'next' });
             resolve(true);
         })
     }
@@ -137,7 +178,6 @@ export class Player {
 
         this.initPlaybackSession(videoUrl);
 
-
     }
 
     retryPlayback(data, retryTimes = 20) {
@@ -204,21 +244,54 @@ export class Player {
             // console.log(`stderr: ${data}`);
         });
 
-        this.stopEmitter.on('stopEvent', async () => {
-            if (process.env.PLAYER !== 'omxplayer') {
-                if (process.env.PLAYER !== 'cvlc -I cli') {
-                    this.playing.kill('SIGINT');
+        this.prevEmitter.on('prevEvent', async () => {
+            return new Promise(async (resolve, reject) => {
+                let nextVideo = await this.videosCtrl.getPrevOrNext('videos', this.playerOptions.order, 'prev');
+                this.playerOptions = nextVideo;
+                await this.play(this.playerOptions);
+                // if (process.env.PLAYER !== 'omxplayer') {
+                //     if (process.env.PLAYER !== 'cvlc -I cli') {
+                //     } else {
+                //     }
+                // } else {
+                //     this.playing.stdin.write('j');
+                // }
+            }).catch(error => console.log(error))
+        });
+
+        this.nextEmitter.on('nextEvent', async () => {
+            return new Promise(async (resolve, reject) => {
+                let nextVideo = await this.videosCtrl.getPrevOrNext('videos', this.playerOptions.order, 'next');
+                this.playerOptions = nextVideo;
+                await this.play(this.playerOptions);
+                // if (process.env.PLAYER !== 'omxplayer') {
+                //     if (process.env.PLAYER !== 'cvlc -I cli') {
+
+                //     } else {
+                //     }
+                // } else {
+                //     this.playing.stdin.write('k');
+                // }
+            }).catch(error => console.log(error))
+        });
+
+        this.stopEmitter.on('stopEvent', () => {
+            return new Promise(async (resolve, reject) => {
+                if (process.env.PLAYER !== 'omxplayer') {
+                    if (process.env.PLAYER !== 'cvlc -I cli') {
+                        this.playing.kill('SIGINT');
+                    } else {
+                        this.playing.stdin.write("stop\n");
+                        this.playing.stdin.write('clear\n');
+                    }
+                    console.log(process.env.PLAYER, 'STOP');
                 } else {
-                    this.playing.stdin.write("stop\n");
-                    this.playing.stdin.write('clear\n');
+                    this.playing.stdin.write("q");
                 }
-            } else {
-                this.playing.stdin.write("q");
-            }
+                await this.deletePlaylist();
 
-            await this.deletePlaylist();
-
-            console.log(process.env.PLAYER, 'STOP');
+                resolve({ result: 'STOP' });
+            }).catch(result => console.log(result));
 
         });
 
