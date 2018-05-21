@@ -73,7 +73,7 @@ export = (io) => {
                             });
                         } else {
                             // Play video!
-                            await PlayerCtrl.play({
+                            PlayerCtrl.play({
                                 player: process.env.PLAYER,
                                 playerMode: process.env.PLAYER_MODE,
                                 _id: video._id,
