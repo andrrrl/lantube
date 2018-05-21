@@ -46,8 +46,8 @@ export class Player {
         return mongoose.Types.ObjectId.isValid(id);
     }
 
-    async stopAll(emitSignal = true) {
-        await this.stopEmitter.emit('stopEvent');
+    stopAll(emitSignal = true) {
+        this.stopEmitter.emit('stopEvent');
         if (emitSignal === true) {
             this.io.emit('USER_MESSAGE', { signal: 'stopped' });
         }
@@ -125,12 +125,12 @@ export class Player {
         });
     }
 
-    async play(playerOptions) {
+    play(playerOptions) {
 
         this.playerOptions = playerOptions;
 
         // Stop/clear any current playback before starting
-        await this.stopAll(false);
+        this.stopAll(false);
 
         let player = playerOptions.player || process.env.PLAYER;
         var videoUrl = playerOptions.url || '';
@@ -194,8 +194,8 @@ export class Player {
                     if (process.env.NODE_ENV === 'development') {
                         console.log('Connection stuck, retrying...');
                     }
-                    await this.stopAll(false);
-                    await this.play(this.playerOptions);
+                    this.stopAll(false);
+                    this.play(this.playerOptions);
 
                 }, 5000);
             }
@@ -210,23 +210,27 @@ export class Player {
         }
     }
 
-    initPlaybackSession(videoUrl) {
+    async initPlaybackSession(videoUrl) {
 
         this.io.emit('USER_MESSAGE', { signal: ((this.playerOptions.playlist === true) ? 'playlist' : 'playing') });
 
         if (process.env.PLAYER === 'cvlc -I cli' && (typeof this.playing !== 'undefined')) {
-            this.playing.stdin.write('clear\n');
             let ytb = execSync('youtube-dl -g ' + videoUrl);
             this.playing.stdin.write('add ' + ytb.toString().split('\n')[1], () => {
-                this.playing.stdin.write('stop\n');
-                console.log(process.env.PLAYER, 'STOP');
-                this.playing.stdin.write('play\n');
-                console.log(process.env.PLAYER, 'PLAY');
+                this.playing.stdin.write('stop\n', () => {
+                    console.log(process.env.PLAYER, 'STOP (cleanup)');
+                    this.playing.stdin.write('clear\n', () => {
+                        this.playing.stdin.write('play\n', () => {
+                            console.log(process.env.PLAYER, 'PLAY (cleanup)');
+                            // console.log(this.playing);
+                        });
+                    });
+                });
             });
         }
 
         // Play video!
-        this.playing.stdout.on('data', (data) => {
+        this.playing.stdout.once('data', (data) => {
 
             if (process.env.NODE_ENV === 'development') {
                 console.log('Starting playback with ' + (JSON.stringify(this.playerOptions) || 'no options.'));
@@ -234,7 +238,7 @@ export class Player {
             // console.log(`stdout: ${data}`);
 
             // Check if connection is stuck (for now only mpv / mplayer)
-            this.retryPlayback(data);
+            // this.retryPlayback(data);
         });
 
         this.playing.stderr.on('data', data => {
@@ -249,13 +253,6 @@ export class Player {
                 let nextVideo = await this.videosCtrl.getPrevOrNext('videos', this.playerOptions.order, 'prev');
                 this.playerOptions = nextVideo;
                 await this.play(this.playerOptions);
-                // if (process.env.PLAYER !== 'omxplayer') {
-                //     if (process.env.PLAYER !== 'cvlc -I cli') {
-                //     } else {
-                //     }
-                // } else {
-                //     this.playing.stdin.write('j');
-                // }
             }).catch(error => console.log(error))
         });
 
@@ -264,18 +261,10 @@ export class Player {
                 let nextVideo = await this.videosCtrl.getPrevOrNext('videos', this.playerOptions.order, 'next');
                 this.playerOptions = nextVideo;
                 await this.play(this.playerOptions);
-                // if (process.env.PLAYER !== 'omxplayer') {
-                //     if (process.env.PLAYER !== 'cvlc -I cli') {
-
-                //     } else {
-                //     }
-                // } else {
-                //     this.playing.stdin.write('k');
-                // }
             }).catch(error => console.log(error))
         });
 
-        this.stopEmitter.on('stopEvent', () => {
+        await this.stopEmitter.on('stopEvent', () => {
             return new Promise(async (resolve, reject) => {
                 if (process.env.PLAYER !== 'omxplayer') {
                     if (process.env.PLAYER !== 'cvlc -I cli') {
@@ -284,14 +273,14 @@ export class Player {
                         this.playing.stdin.write("stop\n");
                         this.playing.stdin.write('clear\n');
                     }
-                    console.log(process.env.PLAYER, 'STOP');
+                    console.log(process.env.PLAYER, 'STOP (stop button)');
                 } else {
                     this.playing.stdin.write("q");
                 }
                 await this.deletePlaylist();
 
                 resolve({ result: 'STOP' });
-            }).catch(result => console.log(result));
+            });
 
         });
 
