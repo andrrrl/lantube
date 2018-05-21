@@ -275,7 +275,10 @@ export class Player {
                     }
                     console.log(process.env.PLAYER, 'STOP (stop button)');
                 } else {
-                    this.playing.stdin.write("q");
+                    if (this.playing.connected) {
+                        this.playing.stdin.write("q");
+                    }
+                    this.playing.kill('SIGINT');
                 }
                 await this.deletePlaylist();
 
