@@ -7,6 +7,7 @@ import * as fs from 'fs';
 import * as ServerSchema from '../../schemas/redis/Server';
 import { Videos } from './../../controllers/redis/videos';
 import { IPlayerOptions } from './../../interfaces/IPlayerOptions.interface';
+import { kill } from "process";
 
 const
     spawn = ChildProcess.spawn,
@@ -275,10 +276,12 @@ export class Player {
                     }
                     console.log(process.env.PLAYER, 'STOP (stop button)');
                 } else {
-                    if (this.playing.connected) {
+                    if (this.playing.stdin.writable) {
                         this.playing.stdin.write("q");
+                    } else {
+                        kill(this.playing.pid);
+                        // this.playing.kill('SIGINT');
                     }
-                    this.playing.kill('SIGINT');
                 }
                 await this.deletePlaylist();
 
