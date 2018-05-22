@@ -81,15 +81,21 @@ export = (io) => {
                                 img: video.img,
                                 order: video.order,
                                 status: 'playing'
+                            }).then(() => {
+
+                                res.json({
+                                    result: 'playing',
+                                    url: video.url,
+                                    title: video.title,
+                                    _id: video._id,
+                                    order: video.order
+                                });
+                            }).catch(() => {
+                                res.json({
+                                    result: 'error'
+                                });
                             });
 
-                            res.json({
-                                result: 'playing',
-                                url: video.url,
-                                title: video.title,
-                                _id: video._id,
-                                order: video.order
-                            });
 
                         }
 
