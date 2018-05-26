@@ -1,12 +1,14 @@
 import * as redis from '../../connections/redis';
 import * as express from 'express';
 import { Player } from './../../controllers/redis/player';
+import { Videos } from '../../controllers/redis/videos';
 
 export = (io) => {
     let router = express.Router();
     let app = express();
 
     let PlayerCtrl = new Player(io);
+    let VideosCtrl = new Videos(io);
 
     // router.route('/api/player/:player?')
     //     .get((req, res, next) => {
@@ -116,10 +118,15 @@ export = (io) => {
         });
 
     router.route('/api/player/stop')
-        .get(async (req, res, next) => {
-            await PlayerCtrl.stopAll(true);
-            res.json({
-                result: 'stopped'
+        .get((req, res, next) => {
+            PlayerCtrl.stopAll(true).then(result => {
+                res.json({
+                    result: 'stopped'
+                });
+            }).catch(err => {
+                res.json({
+                    result: 'error'
+                });
             });
         });
 
@@ -145,52 +152,56 @@ export = (io) => {
 
     router.route('/api/player/pls')
         .get((req, res, next) => {
-            redis.hgetall('videos', (err, videos_redis) => {
+            VideosCtrl.getAll('videos').then(videosRedis => {
 
-                if (err) {
-                    console.log(err);
-                    res.end();
-                }
-
-                let playlist = PlayerCtrl.playlist(videos_redis);
+                let playlist = PlayerCtrl.playlist(videosRedis);
 
                 res.setHeader('Accept-charset', 'utf-8');
                 res.setHeader('Content-type', 'audio/x-scpls');
                 res.setHeader('Media-type', 'audio/x-scpls');
                 res.send(playlist);
                 res.end();
+
+            }).catch(err => {
+                res.json({
+                    result: 'error',
+                    error: err
+                });
             });
         });
 
-    router.route('/api/player/playlist')
-        .get((req, res, next) => {
+    router.route('/api/player/playall')
+        .get(async (req, res, next) => {
 
-            redis.hgetall('videos', (err, videos_redis) => {
-                if (err) {
-                    res.end(err);
-                } else {
+            let videosRedis = await VideosCtrl.getAll('videos');
+                videosRedis.sort((a, b) => a.order - b.order);
+                let firstOrder = videosRedis[0];
+    
+                // Play All!
+                PlayerCtrl.play({
+                    player: process.env.PLAYER,
+                    playerMode: process.env.PLAYER_MODE,
+                    _id: firstOrder._id,
+                    url: firstOrder.url,
+                    img: firstOrder.img,
+                    order: firstOrder.order - 1,
+                    status: 'playing'
+                }).then(() => {
+                    res.json({
+                        result: 'playing',
+                        url: firstOrder.url,
+                        title: firstOrder.title,
+                        _id: firstOrder._id,
+                        order: firstOrder.order,
+                        status: 'playing'
+                    });
+                }).catch(() => {
+                    res.json({
+                        result: 'error'
+                    });
+                });
 
-                    if (videos_redis == null) {
-                        res.json({
-                            result: 'error',
-                            error: 'No hay nada en la lista!'
-                        });
-                    } else {
 
-                        // Play PLS playlist!
-                        PlayerCtrl.play({
-                            player: process.env.PLAYER,
-                            playerMode: process.env.PLAYER_MODE,
-                            playlist: true,
-                            list: videos_redis
-                        });
-                        res.json({
-                            result: 'playlist'
-                        });
-
-                    }
-                }
-            });
         });
 
 
