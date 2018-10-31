@@ -4,6 +4,8 @@ components/
 .env
 *.pyc
 *.dev
+*.js
+*.map.js
 
 # Logs
 logs
