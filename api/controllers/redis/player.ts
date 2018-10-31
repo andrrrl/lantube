@@ -1,7 +1,5 @@
 import { execSync } from "child_process";
-import { EventEmitter } from 'events';
 import * as ChildProcess from 'child_process';
-import * as request from 'request';
 import * as mongoose from 'mongoose';
 import * as fs from 'fs';
 import * as ServerSchema from '../../schemas/redis/Server';
@@ -10,11 +8,13 @@ import { IPlayerOptions } from './../../interfaces/IPlayerOptions.interface';
 import { kill } from "process";
 
 const
-    spawn = ChildProcess.spawn,
     exec = ChildProcess.exec;
 
 // Load Server
 let Server = new ServerSchema.Server();
+
+// tslint:disable-next-line:no-console
+process.on('unhandledRejection', r => console.log(r));
 
 export class Player {
 
@@ -154,7 +154,10 @@ export class Player {
         return new Promise(async (resolve, reject) => {
             if (process.env.PLAYER !== 'omxplayer') {
                 if (process.env.PLAYER !== 'cvlc -I cli') {
-                    this.playing.kill('SIGINT');
+                    if (!this.playing.killed) {
+                        this.playing.kill('SIGINT');
+                        // kill(this.playing.pid, 'SIGINT');
+                    }
                 } else {
                     this.playing.stdin.write("stop\n");
                     this.playing.stdin.write('clear\n');
@@ -173,7 +176,6 @@ export class Player {
             this.playing = null;
             resolve(true);
 
-            // resolve(await this.deletePlaylist());
 
         });
     }
@@ -217,7 +219,7 @@ export class Player {
                     if (process.env.PLAYER === 'omxplayer') {
                         if (this.playing === null) {
                             console.log('starting omxplayer...');
-                            this.playing = exec(process.env.PLAYER + ' -b -o both --vol -1200 $(' + process.env.YOUTUBE_DL + this.formats + ' -g ' + videoUrl + ')');
+                            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -1200 $(${process.env.YOUTUBE_DL} ${this.formats} -g ${videoUrl})`);
                         }
                     } else {
                         if (player_playlist) {
