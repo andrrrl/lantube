@@ -20,7 +20,7 @@ app.locals.ENV = env;
 app.locals.ENV_DEVELOPMENT = env === 'development';
 
 let server = app.listen(app.get('port'), () => {
-    console.log('  Lantube server listening on port ' + server.address().port);
+    console.log('  Lantube server listening on port ' + app.get('port'));
     if (cors) {
         console.info('   > CORS enabled!');
     }
