@@ -119,7 +119,7 @@ export = (io) => {
 
     router.route('/api/player/stop')
         .get((req, res, next) => {
-            PlayerCtrl.stopAll(true).then(result => {
+            PlayerCtrl.stopAll().then(result => {
                 res.json({
                     result: 'stopped'
                 });
@@ -174,32 +174,32 @@ export = (io) => {
         .get(async (req, res, next) => {
 
             let videosRedis = await VideosCtrl.getAll('videos');
-                videosRedis.sort((a, b) => a.order - b.order);
-                let firstOrder = videosRedis[0];
-    
-                // Play All!
-                PlayerCtrl.play({
-                    player: process.env.PLAYER,
-                    playerMode: process.env.PLAYER_MODE,
-                    _id: firstOrder._id,
+            videosRedis.sort((a, b) => a.order - b.order);
+            let firstOrder = videosRedis[0];
+
+            // Play All!
+            PlayerCtrl.play({
+                player: process.env.PLAYER,
+                playerMode: process.env.PLAYER_MODE,
+                _id: firstOrder._id,
+                url: firstOrder.url,
+                img: firstOrder.img,
+                order: firstOrder.order - 1,
+                status: 'playing'
+            }).then(() => {
+                res.json({
+                    result: 'playing',
                     url: firstOrder.url,
-                    img: firstOrder.img,
-                    order: firstOrder.order - 1,
+                    title: firstOrder.title,
+                    _id: firstOrder._id,
+                    order: firstOrder.order,
                     status: 'playing'
-                }).then(() => {
-                    res.json({
-                        result: 'playing',
-                        url: firstOrder.url,
-                        title: firstOrder.title,
-                        _id: firstOrder._id,
-                        order: firstOrder.order,
-                        status: 'playing'
-                    });
-                }).catch(() => {
-                    res.json({
-                        result: 'error'
-                    });
                 });
+            }).catch(() => {
+                res.json({
+                    result: 'error'
+                });
+            });
 
 
         });
@@ -211,7 +211,7 @@ export = (io) => {
     router.route('/api/player/stats')
         .get(async (req, res, next) => {
 
-            redis.get('player_stats', (err, player_stats) => {
+            redis.get('playerStats', (err, player_stats) => {
                 res.json(JSON.parse(player_stats));
             });
         });

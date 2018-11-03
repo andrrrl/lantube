@@ -150,7 +150,7 @@ export class Player {
         });
     }
 
-    stopAll(emitSignal = true) {
+    stopAll() {
         return new Promise(async (resolve, reject) => {
             if (process.env.PLAYER !== 'omxplayer') {
                 if (process.env.PLAYER !== 'cvlc -I cli') {
@@ -175,8 +175,6 @@ export class Player {
             }
             this.playing = null;
             resolve(true);
-
-
         });
     }
 
@@ -212,14 +210,16 @@ export class Player {
             }
 
             // Stop/clear any current playback before starting
-            this.stopAll(false).then(stopped => {
+            this.stopAll().then(async stopped => {
 
                 if (stopped) {
                     // Player type?
                     if (process.env.PLAYER === 'omxplayer') {
                         if (this.playing === null) {
+                            console.log('exctracting youtube URL...');
+                            let youtubeURL = await this.extracYoutubeURL(videoUrl);
                             console.log('starting omxplayer...');
-                            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -1200 $(${process.env.YOUTUBE_DL} ${this.formats} -g ${videoUrl})`);
+                            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -1200 --threshold 30 --audio_fifo 30 "${youtubeURL}"`);
                         }
                     } else {
                         if (player_playlist) {
@@ -236,6 +236,16 @@ export class Player {
                 this.play(this.playerOptions);
             });
 
+        });
+    }
+
+    extracYoutubeURL(videoUrl) {
+        return new Promise((resolve, reject) => {
+            let video = exec(`${process.env.YOUTUBE_DL} ${this.formats} -g ${videoUrl}`);
+            video.stdout.once('data', (data) => {
+                data = data.toString().replace('\n', '').replace('\n', '').replace('\n', '');
+                resolve(data);
+            });
         });
     }
 
