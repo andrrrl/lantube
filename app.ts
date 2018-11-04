@@ -27,10 +27,13 @@ let server = app.listen(app.get('port'), () => {
 });
 
 let io = socketio(server);
+server.on('listening', () => {
 
-io.on('connection', (socket) => {
-    console.log("SOCKET SERVER CONNECTION");
-    socket.emit('USER_MESSAGE', { signal: 'connected' });
+    io.on('connection', (socket) => {
+        console.log("SOCKET SERVER CONNECTION");
+        socket.emit('USER_MESSAGE', { signal: 'connected' });
+    });
+    // io.emit('USER_MESSAGE', { signal: 'ready' });
 });
 
 let index = require('./api/routes/redis/index');

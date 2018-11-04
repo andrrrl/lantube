@@ -10,6 +10,9 @@ export = (io) => {
     let PlayerCtrl = new Player(io);
     let VideosCtrl = new Videos(io);
 
+
+
+
     // router.route('/api/player/:player?')
     //     .get((req, res, next) => {
     //         redis.hget('players', req.params.player, (err, redis_player) => {
@@ -97,10 +100,7 @@ export = (io) => {
                                     result: 'error'
                                 });
                             });
-
-
                         }
-
                     }
                 });
             });
@@ -137,16 +137,12 @@ export = (io) => {
         });
 
 
-
-
     router.route('/api/player/volume/:volume')
         .get(async (req, res, next) => {
-
             let volumeChanged = await PlayerCtrl.volume(req.params.volume);
             res.json({
                 volume: volumeChanged
             });
-
         });
 
 

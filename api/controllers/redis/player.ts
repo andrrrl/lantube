@@ -5,7 +5,6 @@ import * as fs from 'fs';
 import * as ServerSchema from '../../schemas/redis/Server';
 import { Videos } from './../../controllers/redis/videos';
 import { IPlayerOptions } from './../../interfaces/IPlayerOptions.interface';
-import { kill } from "process";
 
 const
     exec = ChildProcess.exec;
@@ -73,7 +72,7 @@ export class Player {
 
             Server.setPlayerStats(stats);
 
-            this.io.emit('USER_MESSAGE', { signal: 'paused' });
+            this.io.emit('USER_MESSAGE', stats);
 
             resolve(true);
         })
@@ -95,7 +94,7 @@ export class Player {
                     };
 
                     Server.setPlayerStats(stats);
-                    this.io.emit('USER_MESSAGE', { signal: 'prev' });
+                    this.io.emit('USER_MESSAGE', stats);
                     resolve(true);
                 });
             });
@@ -120,7 +119,7 @@ export class Player {
                     };
 
                     Server.setPlayerStats(stats);
-                    this.io.emit('USER_MESSAGE', { signal: 'next' });
+                    this.io.emit('USER_MESSAGE', stats);
                     resolve(true);
                 });
             });
@@ -130,7 +129,7 @@ export class Player {
 
     // Only for omxplayer for now
     volume(volume, emitSignal = true) {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             if (volume === 'down') {
                 this.volumeChange = '-';
             } else if (volume === 'up') {
@@ -144,7 +143,7 @@ export class Player {
                 console.info('Volume: ' + this.volumeChange);
             }
             if (emitSignal === true) {
-                this.io.emit('USER_MESSAGE', { signal: 'volume changed' });
+                this.io.emit('PLAYER_MESSAGE', await Server.getPlayerStats());
             }
             resolve(this.volumeChange);
         });
@@ -216,10 +215,23 @@ export class Player {
                     // Player type?
                     if (process.env.PLAYER === 'omxplayer') {
                         if (this.playing === null) {
+
                             console.log('exctracting youtube URL...');
                             let youtubeURL = await this.extracYoutubeURL(videoUrl);
                             console.log('starting omxplayer...');
-                            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -1200 --threshold 30 --audio_fifo 30 "${youtubeURL}"`);
+                            await this.startPlayer(youtubeURL);
+                            // Update stats
+                            let stats = {
+                                player: process.env.PLAYER,
+                                status: 'playing',
+                                videoId: this.playerOptions._id,
+                                lastUpdated: new Date(),
+                            };
+                            this.io.emit('USER_MESSAGE', stats);
+                            await Server.setPlayerStats(stats);
+
+                            this.initPlaybackSession(videoUrl);
+                            resolve(true);
                         }
                     } else {
                         if (player_playlist) {
@@ -227,8 +239,7 @@ export class Player {
                             player_playlist = '/tmp/playlist.pls';
                         }
                     }
-                    this.initPlaybackSession(videoUrl);
-                    resolve(true);
+
                 }
 
             }).catch(result => {
@@ -249,9 +260,18 @@ export class Player {
         });
     }
 
-    async initPlaybackSession(videoUrl) {
+    startPlayer(playableURL): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            // OMXPLAYER won't pipe anything to stdout, only to stderr if option -I or --info is used
+            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -1200 --threshold 30 --audio_fifo 30 -I "${playableURL}"`);
+            this.playing.stderr.once('data', (data) => {
+                resolve(true);
+            });
+        });
 
-        this.io.emit('USER_MESSAGE', { signal: ((this.playerOptions.playlist === true) ? 'playlist' : 'playing') });
+    }
+
+    async initPlaybackSession(videoUrl) {
 
         if (process.env.PLAYER === 'cvlc -I cli' && (typeof this.playing !== 'undefined')) {
             let ytb = execSync('youtube-dl -g ' + videoUrl);
@@ -317,12 +337,12 @@ export class Player {
             // Update stats
             let stats = {
                 player: process.env.PLAYER,
-                status: 'idle',
+                status: 'stopped',
                 videoId: null,
                 lastUpdated: new Date(),
             };
 
-            this.io.emit('USER_MESSAGE', { signal: 'stopped' });
+            this.io.emit('USER_MESSAGE', stats);
             // Update player stats
             Server.setPlayerStats(stats);
 

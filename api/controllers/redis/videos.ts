@@ -1,17 +1,9 @@
-import { execSync } from "child_process";
-import { EventEmitter } from 'events';
-import * as ChildProcess from 'child_process';
 import * as request from 'request';
-import * as mongoose from 'mongoose';
-import * as fs from 'fs';
 import * as ServerSchema from '../../schemas/redis/Server';
 import { IVideo } from './../../interfaces/IVideo.interface';
 import * as redis from '../../connections/redis';
 import { IRedisFormattedVideo } from "../../interfaces/IRedisFormattedVideo.interface";
-
-const
-    spawn = ChildProcess.spawn,
-    exec = ChildProcess.exec;
+import { IYoutubeVideo } from "../../interfaces/iYoutubeVideo.interface";
 
 // Load Server
 let Server = new ServerSchema.Server();
@@ -47,7 +39,7 @@ export class Videos {
             request({
                 url: 'http://www.youtube.com/oembed?url=' + videoId + '&format=json',
                 json: true
-            }, (error, response, body) => {
+            }, (error, response, body: any) => {
                 if (error) {
                     reject(error);
                 }
@@ -94,7 +86,7 @@ export class Videos {
             }
 
             let videos = [];
-            redis.hgetall(key, (err, videosRedis) => {
+            redis.hgetall(key, async (err, videosRedis) => {
 
                 if (err) {
                     resolve(err);
@@ -108,6 +100,9 @@ export class Videos {
                 } else {
                     resolve([]);
                 }
+
+                this.io.emit('USER_MESSAGE', await Server.getPlayerStats());
+
             });
         });
     }
@@ -191,8 +186,12 @@ export class Videos {
             for (let video of videos) {
                 let videoId = 'video' + i;
                 let title = video.title.replace(/"/g, '');
-                let thumb = video.thumbnail_url;
+                let thumb = video.img;
+
                 let ytbURL = video.url;
+                if (ytbURL === 'undefined') {
+                    ytbURL = await this.getVideoInfo(video.url);
+                }
                 let videoString = this.generateRedisString(videoId, title, ytbURL, thumb, i);
 
                 redis.hmset(key, videoId, videoString, (err, reply) => {

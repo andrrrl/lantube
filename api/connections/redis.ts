@@ -7,7 +7,7 @@ redis.on("error", function (err) {
 });
 
 redis.once('connect', () => {
-    console.log('   > Connected to Redis!');
+    console.log('   > Connected to REDIS!');
     exports = redis;
 });
 

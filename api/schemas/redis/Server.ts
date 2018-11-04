@@ -1,4 +1,5 @@
 import * as os from 'os';
+import { reject } from 'bluebird';
 let redis = require('../../connections/redis');
 
 
@@ -31,25 +32,25 @@ export class Server {
 
     // Player
     // status, video_id, video_title
-    public getPlayerStats(cb) {
-        // this.playerStats = {
-        //     player: process.env.PLAYER || 'mpv',
-        //     status: status || 'idle',
-        //     video_id: video_id || 0,
-        //     video_title: video_title || '',
-        //     last_updated: new Date(),
-        // }
-        redis.get('playerStats', (err, stats) => {
-            return cb(JSON.stringify(this.playerStats));
+    public getPlayerStats() {
+        return new Promise((resolve, reject) => {
+            redis.get('playerStats', (err, stats) => {
+                console.log(stats);
+                this.playerStats = stats;
+                resolve(this.playerStats);
+            });
         });
     }
 
     setPlayerStats(stats) {
-        redis.set('playerStats', JSON.stringify(stats), () => {
-            redis.get('playerStats', (err, stats) => {
-                return stats;
+        return new Promise((resolve, reject) => {
+            redis.set('playerStats', JSON.stringify(stats), () => {
+                redis.get('playerStats', (err, stats) => {
+                    resolve(JSON.stringify(stats));
+                });
             });
         });
+
     }
 
     setServerStats() {
