@@ -1,5 +1,9 @@
 import * as redisClient from 'redis';
 
+// let redis = redisClient.createClient({
+//     host: 'lantube',
+//     port: 6379
+// });
 let redis = redisClient.createClient();
 
 redis.on("error", function (err) {
