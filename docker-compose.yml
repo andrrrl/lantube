@@ -1,0 +1,11 @@
+version: '3.0'
+services:
+  web:
+    build: .
+    ports:
+    - 3000:3000/tcp
+  redis:
+    image: redis:alpine
+    container_name: lantube
+    ports:
+    - 6379:6379/tcp
