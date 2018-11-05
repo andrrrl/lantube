@@ -199,6 +199,17 @@ export class Player {
             }
 
             this.playing = null;
+
+            // Update stats
+            let stats = {
+                player: process.env.PLAYER,
+                status: 'stopped',
+                videoId: null,
+                lastUpdated: new Date(),
+            };
+            this.io.emit('USER_MESSAGE', stats);
+            await Server.setPlayerStats(stats);
+
             resolve(true);
         });
     }
