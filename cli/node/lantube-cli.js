@@ -58,7 +58,7 @@ const
   readline = require('readline'),
   ip = require('ip'),
 
-  LANTUBE_SERVER = 'http://' + ip.address() + ':3000/api/videos/',
+  LANTUBE_SERVER = 'http://' + ip.address() + ':3000/api/',
   TITLE_LANTUBE = 'Lantube says',
   MSG_ERROR = 'No',
   MSG_SERVER_DOWN = 'server down?',
@@ -95,10 +95,10 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
   console.log('╭──────┤  ▶ Lantube CLI  ├──────╮'.bold.yellow);
   console.log('│      ╰─────────────────╯      │'.bold.yellow);
 
-  console.log(LANTUBE_SERVER + (options.order ? options.order + '/' : '') + (options.action));
+  console.log(LANTUBE_SERVER + 'videos/' + (options.order ? options.order + '/' : '') + (options.action));
 
   request({
-      url: LANTUBE_SERVER + (options.order ? options.order + '/' : '') + (options.action),
+      url: LANTUBE_SERVER + 'videos/' + (options.order ? options.order + '/' : '') + (options.action !== 'list' ? options.action : ''),
       json: true
     },
     function (error, response, body) {
@@ -109,11 +109,11 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
         switch (options.action) {
           case 'list':
             lantube_message = 'Listing all videos...';
-            var videos = result;
+            var videos = result.sort((a,b) => +b._id -a._id );
             result = '\n';
             for (let index in videos) {
               result +=
-                '  ' + (videos[index].order < 10 ? ' ' : '') + videos[index].order +
+                '  ' + (videos[index]._id < 10 ? ' ' : '') + videos[index]._id.replace('video', '') +
                 '  "' + videos[index].title + '"' +
                 '  (' + videos[index].url + ')\n';
             };
@@ -183,11 +183,16 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
         console.log('  ' + TITLE_LANTUBE.green.bold + ': [' + options.action.yellow.bold + ']');
         console.log('  Result: '.green.bold + '[' + result.yellow.bold + ']');
 
+
+
         if (options.action == 'list') {
+		//console.log(videos);
           rl.question('Play a video from the list [1-' + videos.length + ']:\n', (num) => {
 
+console.log(LANTUBE_SERVER + 'player/' + videos.find(x => x._id.replace('video', '') === num)._id.replace('video', '') + '/play')
+
             request({
-                url: LANTUBE_SERVER + num + '/play',
+                url: LANTUBE_SERVER + 'player/' + videos.find(x => x._id.replace('video', '') === num)._id.replace('video', '') + '/play',
                 json: true
               },
               function (error, response, body) {
