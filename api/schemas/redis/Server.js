@@ -25,23 +25,22 @@ class Server {
         };
     }
     // Player
-    getPlayerStats(status, video_id, video_title) {
-        this.playerStats = {
-            player: process.env.PLAYER || 'mpv',
-            status: status || 'idle',
-            video_id: video_id || 0,
-            video_title: video_title || '',
-            last_updated: new Date(),
-        };
-        redis.get('playerStats', (err, stats) => {
-            return JSON.stringify(this.playerStats);
+    // status, video_id, video_title
+    getPlayerStats() {
+        return new Promise((resolve, reject) => {
+            redis.get('playerStats', (err, stats) => {
+                console.log(stats);
+                this.playerStats = stats;
+                resolve(this.playerStats);
+            });
         });
     }
-    setPlayerStatss(status, video_id, video_title) {
-        let pstats = this.getPlayerStats(status, video_id, video_title);
-        redis.set('playerStats', JSON.stringify(pstats), () => {
-            redis.get('playerStats', (err, stats) => {
-                return stats;
+    setPlayerStats(stats) {
+        return new Promise((resolve, reject) => {
+            redis.set('playerStats', JSON.stringify(stats), () => {
+                redis.get('playerStats', (err, stats) => {
+                    resolve(JSON.stringify(stats));
+                });
             });
         });
     }
@@ -61,5 +60,5 @@ class Server {
         });
     }
 }
-module.exports = Server;
+exports.Server = Server;
 //# sourceMappingURL=Server.js.map

@@ -3,6 +3,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const express = require("express");
 const HttpStatus = require("http-status-codes");
+const socketio = require("socket.io");
 require('dotenv').config({
     path: '.env'
 });
@@ -14,16 +15,30 @@ app.options('*', cors());
 var env = 'development';
 app.locals.ENV = env;
 app.locals.ENV_DEVELOPMENT = env === 'development';
+let server = app.listen(app.get('port'), () => {
+    console.log('  Lantube server listening on port ' + app.get('port'));
+    if (cors) {
+        console.info('   > CORS enabled!');
+    }
+});
+let io = socketio(server);
+server.on('listening', () => {
+    io.on('connection', (socket) => {
+        console.log("SOCKET SERVER CONNECTION");
+        socket.emit('USER_MESSAGE', { signal: 'connected' });
+    });
+    // io.emit('USER_MESSAGE', { signal: 'ready' });
+});
 let index = require('./api/routes/redis/index');
 let stats = require('./api/routes/redis/stats');
 let player = require('./api/routes/redis/player');
 let videos = require('./api/routes/redis/videos');
-app.use('/', index);
-app.use('/', stats);
-app.use('/', player);
-app.use('/', videos);
+// app.use('/', index);
+// app.use('/', stats);
+app.use('/', player(io));
+app.use('/', videos(io));
 // Error handler
-app.use(function (err, req, res, next) {
+app.use((err, req, res, next) => {
     if (err) {
         // Parse err
         let e;
@@ -52,7 +67,7 @@ app.use(function (err, req, res, next) {
         });
     }
 });
-app.all('*', function (req, res, next) {
+app.all('*', (req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
@@ -64,9 +79,6 @@ app.all('*', function (req, res, next) {
     else {
         next();
     }
-});
-let server = app.listen(app.get('port'), function () {
-    console.log('  Lantube server listening on port ' + server.address().port);
 });
 module.exports = app;
 //# sourceMappingURL=app.js.map

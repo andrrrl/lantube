@@ -11,9 +11,13 @@ components/
 logs
 **/*.log
 **/*.log*
+
 **/*.js
 **/*.map
 *.js
 **.js
 *.map
 **.map
+
+# REDIS DB Files
+*.rdb
