@@ -33,93 +33,25 @@ $ npm install
 * Will auto-run `npm install`
 * Also will run `node ./tools/install.js`, a tiny tool that creates a default `.env` file (see below)
 
-### Default .env config file: ###
-
-```
-# Server host name
-HOST_NAME=hostname
-# Nodejs server port, default 3000
-NODE_PORT=3000
-
-# [DEV] MongoDB Connection
-MONGO_HOST=localhost
-MONGO_PORT=
-MONGO_DB=lantube
-MONGO_AUTH=no
-MONGO_USER=admin
-MONGO_PASS=
-
-# [PROD] MongoDB Connection
-# MONGO_HOST=example.com
-# MONGO_PORT=27001
-# MONGO_DB=lantube
-# MONGO_AUTH=yes
-# MONGO_USER=admin
-# MONGO_PASS=shhhh
-
-# MongoDB Collections
-MONGO_VIDEOS_COLL=videos
-MONGO_STATS_COLL=serverStats
-
-## Players:
-
-# Volume step (Alsa only)
-PLAYER_VOLUME_STEP=4
-
-## *** MPV ***
-## Command that opens the player
-PLAYER=mpv
-
-## Player video modes (windowed:default|fullscreen|audio-only|chromecast):
-PLAYER_MODE="fullscreen"
-PLAYER_MODE_FULLSCREEN_ARG="--fs"
-PLAYER_MODE_AUDIO_ONLY_ARG="--no-video"
-
-## Argument for passing a playlist:
-PLAYER_PLAYLIST="--playlist"
-PLAYER_NO_PLAYLIST="--terminal"
-
-## *** VLC/CVLC ***
-## Command that opens the player:
-# PLAYER=vlc
-# 
-## Player video modes (windowed:default|fullscreen|audio-only|chromecast):
-# PLAYER_MODE="fullscreen"
-# PLAYER_MODE_FULLSCREEN_ARG="--fullscreen"
-# PLAYER_MODE_AUDIO_ONLY_ARG="--no-video"
-# 
-## Argument for passing a playlist:
-# PLAYER_PLAYLIST"=--playlist"
-# PLAYER_NO_PLAYLIST=--play-and-exit
-```
-
 ### Server: ###
 
 Just run one of the following commands:
 
 #### Livereload mode (default, better for dev): ####
 ```
- $ gulp 
+ $ npm start 
 ```
-It will run tasks like sass, uglify and start node server with [nodemon](http://nodemon.io/) + [livereload](http://livereload.com/)
-
-#### Non-livereload mode (better for user experience): ####
-```
-$ gulp lantube
-```
-It will also run sass and uglify but will start node server with regular `node` command.  
-`nodemon` is disabled, so server won't auto-restart (and playback won't stop, important bit!).
+It will transpile typescript to javascript and serve [nodemon](http://nodemon.io/)
 
 ### Client (Browser): ###
-* Local: Navigate to http://localhost:3000 in any modern browser
+* Use project [lantube-mobile](https://github.com/andrrrl/lantube-mobile), which runs in http://localhost:8100 in any modern browser
 * LAN: Get your server's IP number and navigate to http://YOUR_SERVER_IP:3000 from any modern browser
-* Select playback mode (fullscreen, windowed, audio-only or chromecast). Deafults to what's defined in the `.env` file.
 
 ### Client (CLI): ###
-* Python CLI (full featured):
+* *WIP* Python CLI (full featured):
   1. `$ cd cli/python`
   2. `$ python lantube-cli.py help`
-* Node.js CLI (for quick tests): 
+* *WIP* Node.js CLI (for quick tests): 
   1. `$ cd cli/node/`
   2. `$ node lantube-cli.js help`
 
@@ -129,8 +61,8 @@ It will also run sass and uglify but will start node server with regular `node` 
 * Lantube is just for fun, don't rely too much on it for serious matters
 
 ### TODOs: ###
-* [x] Volume controls (Alsa only)
+* [x] Volume controls (Where compatible)
 * [ ] Firefox/Chromium extension (?)
 * [ ] API auth with passport (?)
 * [ ] Make it work use outside LAN (?)
-* [x] Googlecast support
+* [ ] Googlecast support
