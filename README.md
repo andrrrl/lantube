@@ -1,7 +1,7 @@
 # Lantube: #
 ## Youtube video player from LAN ##
 * Converts any computer into a Youtube video player, controlled from a browser or command line tools (optional, requires Python, cURL and/or SSH)
-* Uses local media player software, like MPV (tested, default), VLC (tested) and maybe omxplayer (not tested yet)
+* Uses local media player software, like OMXPLAYER (tested, default), MPV and VLC (not all features working)
 * Runs as a service in a media center computer, like a [Raspberry Pi](https://www.raspberrypi.org/), with very few configs
 * Users in the same LAN area can add and play (and stop) any Youtube video
 * Use of Lantube in untrusted LANs or over the Internet is possible but **not recommended** at all
