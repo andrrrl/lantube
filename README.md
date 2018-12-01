@@ -1,5 +1,5 @@
 # Lantube: #
-## MEAN youtube video player from LAN, just for fun! ##
+## Youtube video player from LAN ##
 * Converts any computer into a Youtube video player, controlled from a browser or command line tools (optional, requires Python, cURL and/or SSH)
 * Uses local media player software, like MPV (tested, default), VLC (tested) and maybe omxplayer (not tested yet)
 * Runs as a service in a media center computer, like a [Raspberry Pi](https://www.raspberrypi.org/), with very few configs
@@ -9,15 +9,16 @@
 
 ### Requirements and Notices: ###
 * Lantube is tested only on Debian-based systems
-* This installation works out of the box if [Node.js](https://nodejs.org/) and [MongoDB](https://www.mongodb.com/) are installed (and running)
-* Requires a local media player like MPV, VLC, etc. to work. If no player is set (or if `.env` file is missing), it will try to use MPV as default player
+* This installation works out of the box if [Node.js](https://nodejs.org/) and [REDIS](https://redis.io/) or [MongoDB](https://www.mongodb.com/) are installed (and running)
+* Requires a local media player like OMXPLAYER (Raspberry Pi only), MPV, VLC, etc. to work. If no player is set (or if `.env` file is missing), it will try to use MPV as default player
 * If your player fails to play Youtube streams, you can search for answers online for your particular case, as players, systems and distros can have different configurations
-* DB connection can be a remote MongoDB, like [mLab](https://mlab.com/) or [Openshift](https://www.openshift.com/) (only DB service)
+* DB connection can be a remote MongoDB, like [mLab](https://mlab.com/), AWS Cloud, [Openshift](https://www.openshift.com/) (only DB service)
 * Chromecast dongle [optional]
 
 ### Supported players ###
 * MPV
 * VLC (fails? see [Updating the VLC YouTube parser](http://askubuntu.com/a/197766/280008))
+* OMXPLAYER (Raspberry Pi)
 * Chromecast with [castnow](https://github.com/xat/castnow)
 
 ### Installation ###
@@ -29,7 +30,7 @@ $ git clone https://github.com/andrrrl/lantube
 ```
 $ npm install
 ```
-* Will auto-run `bower install`
+* Will auto-run `npm install`
 * Also will run `node ./tools/install.js`, a tiny tool that creates a default `.env` file (see below)
 
 ### Default .env config file: ###
