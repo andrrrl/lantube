@@ -77,7 +77,7 @@ if (process.argv.length === 3) {
                     if (err) {
                         console.log(err);
                     }
-                    let video_id = 'video' + Number(videos_count + 1);
+                    let videoId = 'video' + Number(videos_count + 1);
                     // let title = body.title.replace(/"/g, '');
 
                     let title = body.title.replace(/(^[a-z]|\s[a-z])/g, (p) => {
@@ -85,16 +85,16 @@ if (process.argv.length === 3) {
                     });
 
                     // Redis no acepta objetos JSON aun... ¬_¬
-                    let video_string = '{ "_id": "' + video_id + '",' +
+                    let video_string = '{ "videoId": "' + videoId + '",' +
                         '"title": "' + title + '",' +
                         '"url": "' + yt_id + '",' +
                         '"img": "' + body.thumbnail_url + '",' +
                         '"order": ' + String(videos_count + 1) + '}';
 
 
-                    conn.hmset('videos', String(video_id), video_string, (err) => {
+                    conn.hmset('videos', String(videoId), video_string, (err) => {
 
-                        conn.hget('videos', video_id, (err, video) => {
+                        conn.hget('videos', videoId, (err, video) => {
 
                             if (err) {
                                 console.log(err);
@@ -103,7 +103,7 @@ if (process.argv.length === 3) {
                                 console.log(
                                     colors.green.bold('  [OK] Video inserted into Lantube DB!') + '\n' +
                                     colors.green.bold('   Details: ') + '\n' +
-                                    colors.green.bold('   _id: 	') + vid._id + '\n' +
+                                    colors.green.bold('   videoId: 	') + vid.videoId + '\n' +
                                     colors.green.bold('   title: ') + vid.title + '\n' +
                                     colors.green.bold('   url: 	') + vid.url + '\n' +
                                     colors.green.bold('   img: ') + vid.img + '\n' +

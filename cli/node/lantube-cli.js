@@ -74,16 +74,24 @@ var
   options = {},
   lantube_message = '';
 
-if (process.argv.length < 2) {
+if (process.argv.length === 3) {
   options = {
     action: process.argv[2]
   };
+} else if (process.argv.length === 4) {
+  options = {
+    module: process.argv[2],
+    action: process.argv[3]
+  };
 } else {
   options = {
-    action: process.argv[2],
-    order: process.argv[3] ? process.argv[3] : null
+    module: process.argv[2],
+    action: process.argv[3],
+    order: process.argv[4] ? process.argv[4] : null
   };
 }
+
+console.log(process.argv);
 
 if (options.action == 'play') {
   options.order = options.order || 1;
@@ -95,10 +103,10 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
   console.log('╭──────┤  ▶ Lantube CLI  ├──────╮'.bold.yellow);
   console.log('│      ╰─────────────────╯      │'.bold.yellow);
 
-  console.log(LANTUBE_SERVER + 'videos/' + (options.order ? options.order + '/' : '') + (options.action));
+  console.log(`${LANTUBE_SERVER}${options.module}/${(options.order ? options.order + '/' : '')}${options.action}`);
 
   request({
-      url: LANTUBE_SERVER + 'videos/' + (options.order ? options.order + '/' : '') + (options.action !== 'list' ? options.action : ''),
+      url: `${LANTUBE_SERVER}${options.module}/${(options.order ? options.order + '/' : '')}${(options.action !== 'list' ? options.action : '')}`,
       json: true
     },
     function (error, response, body) {
@@ -109,7 +117,7 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
         switch (options.action) {
           case 'list':
             lantube_message = 'Listing all videos...';
-            var videos = result.sort((a,b) => +b._id -a._id );
+            var videos = result.sort((a,b) => +Number(b._id.replace('video', '')) -Number(a._id.replace('video', '')) );
             result = '\n';
             for (let index in videos) {
               result +=
@@ -122,6 +130,14 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
             lantube_message = 'Playing...';
             result = result.result;
             break;
+          case 'prev':
+            lantube_message = 'Playing previous...';
+            result = result.result;
+            break;
+          case 'next':
+            lantube_message = 'Playing next...';
+            result = result.result;
+            break;
           case 'playlist':
             lantube_message = 'Playing full Lantube list...';
             result = result.result;
@@ -131,18 +147,20 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
             result = result.result;
             break;
           case 'stats':
-            lantube_message = 'Current server stats...';
-            let unordered_stats = JSON.parse(response.body.match(/\{(.*)\}/)[0]);
+            lantube_message = `Current ${options.module} stats...`;
+            // console.log(response);
+            let stats = response.body;
+            // let unordered_stats = JSON.parse(response.body.match(/\{(.*)\}/)[0]);
 
-            var stats = {};
-            Object.keys(unordered_stats).sort().forEach(function (key) {
-              stats[key] = unordered_stats[key];
-            });
+            // var stats = {};
+            // Object.keys(unordered_stats).sort().forEach(function (key) {
+            //   stats[key] = unordered_stats[key];
+            // });
 
             result = '\n';
             for (let stat in stats) {
-              stats[stat] = stat.length <= 9 ? '        ' + stats[stat] : stats[stat] + '';
-              result += ('  - ' + stat).bold.yellow + ': \t' + ('' + stats[stat]).bold.white + '\n';
+              stats[stat] = `${stat.length <= 9 ? stats[stat] : stats[stat]}`;
+              result += `${(' - ' + stat).bold.yellow}:\t${(stats[stat]).bold.white}\n`;
             };
             break;
           case 'player':
@@ -181,7 +199,9 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 
         // Show console notification
         console.log('  ' + TITLE_LANTUBE.green.bold + ': [' + options.action.yellow.bold + ']');
-        console.log('  Result: '.green.bold + '[' + result.yellow.bold + ']');
+        if (result) {
+          console.log('  Result: '.green.bold + '[' + result.yellow.bold + ']');
+        }
 
 
 
@@ -221,16 +241,20 @@ console.log(LANTUBE_SERVER + 'player/' + videos.find(x => x._id.replace('video',
   if (options.action == 'help') {
     lantube_message = '' +
       '       ╭─────────────────╮\n' +
-      '╭──────┤ ⛑  Lantube Help ├──────╮\n' +
+      '╭──────┤ ♬  Lantube Help ├──────╮\n' +
       '│      ╰─────────────────╯      │\n' +
-      '  - Usage: \n'.bold + '  node lantube-cli.js [OPTION]\n\n' +
+      '  - Usage: \n'.bold + 
+      '    node lantube-cli.js MODULE [OPTION]\n\n' +
       '  - Options: \n'.bold +
-      '    Show this help:  	help\n' +
-      '    List all videos: 	list\n' +
-      '    Play all videos: 	playlist\n' +
-      '    Play single video: play [N]\n' +
-      '    Stop any playback: stop\n' +
-      '    Show server stats: stats\n';
+      '    Show this help:      help\n' +
+      '    List all videos:     videos list\n' +
+      '    Play all videos:     player playlist\n' +
+      '    Play previous video: player prev\n' +
+      '    Play next video:     player next\n' +
+      '    Play single video:   player play ORDER\n' +
+      '    Stop any playback:   player stop\n' +
+      '    Show server stats:   server stats\n';
+      '    Show player stats:   player stats\n';
 
     console.log(lantube_message.yellow.bold);
     console.log('╰───────────────────────────────╯'.bold.yellow);

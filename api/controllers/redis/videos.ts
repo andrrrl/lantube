@@ -4,13 +4,15 @@ import { IVideo } from './../../interfaces/IVideo.interface';
 import * as redis from '../../connections/redis';
 import { IRedisFormattedVideo } from "../../interfaces/IRedisFormattedVideo.interface";
 import { IYoutubeVideo } from "../../interfaces/iYoutubeVideo.interface";
+import { Player } from './player';
+import { Socket } from 'net';
 
 // Load Server
 let Server = new ServerSchema.Server();
 
 export class Videos {
 
-    constructor(private io: any) {
+    constructor(private io: Socket) {
         this.io = io;
     };
 
@@ -63,13 +65,13 @@ export class Videos {
         });
     }
 
-    get(key, videoId) {
+    getById(key, videoId) {
         return new Promise((resolve, reject) => {
             redis.hget(key, videoId, (err, video) => {
                 if (err) {
                     reject(err);
                 }
-                resolve(video);
+                resolve(JSON.parse(video));
             });
         });
     }
@@ -101,7 +103,8 @@ export class Videos {
                     resolve([]);
                 }
 
-                this.io.emit('USER_MESSAGE', await Server.getPlayerStats());
+                // this.io.emit('VIDEOS_MESSAGE', {message: 'getAll'});
+                // this.io.end();
 
             });
         });
@@ -128,7 +131,7 @@ export class Videos {
     }
 
     generateRedisString(videoId, title, videoUri, thumb, order) {
-        return '{ "_id": "' + videoId + '",' +
+        return '{ "videoId": "' + videoId + '",' +
             '"title": "' + title + '",' +
             '"url": "' + videoUri + '",' +
             '"img": "' + thumb + '",' +
@@ -142,14 +145,19 @@ export class Videos {
 
             let videoData: any = await this.getVideoInfo(ytId);
             let redisFormatted = await this.formatForRedis('videos', ytId, videoData);
-            console.log('f', redisFormatted);
+            // console.log('f', redisFormatted);
             redis.hmset(key, redisFormatted.videoId, redisFormatted.videoString, async (err) => {
                 if (err) {
                     reject(err);
                 }
-                let addedVideo = await this.get('videos', redisFormatted.videoId);
+                let addedVideo = await this.getById('videos', redisFormatted.videoId);
                 resolve(addedVideo);
             });
+            this.io.emit('VIDEOS_MESSAGE', { message: 'added' });
+            this.io.end();
+
+            // let stats = await this.getStats();
+            // this.io.emit('PLAYER_MESSAGE', stats);
         });
 
         // });
@@ -163,13 +171,18 @@ export class Videos {
                 }
                 if (reply === 1) {
                     await this.reorderAll('videos');
-                    let added = await this.get('videos', videoId);
+                    let added = await this.getById('videos', videoId);
                     resolve(added);
                 } else {
                     resolve({
                         message: reply
                     });
                 }
+            this.io.emit('VIDEOS_MESSAGE', { message: 'deleted' });
+            this.io.end();
+
+            // let stats = await this.getStats();
+            // this.io.emit('PLAYER_MESSAGE', stats);
             });
         });
     }
@@ -179,7 +192,7 @@ export class Videos {
             let videos = await this.getAll(key);
 
             videos.sort((a, b) => {
-                return parseInt(a._id.replace(/video/, '')) - parseInt(b._id.replace(/video/, ''));
+                return parseInt(a.videoId.replace(/video/, '')) - parseInt(b.videoId.replace(/video/, ''));
             });
 
             let i = 1;
@@ -208,43 +221,54 @@ export class Videos {
         });
     }
 
-    getPrevOrNext(key, currentOrder, prevOrNext) {
-        return new Promise((resolve, reject) => {
+    getPrev(key, videoOrder) {
+        return new Promise(async (resolve, reject) => {
+            videoOrder = videoOrder ? videoOrder - 1 : 1;
+            let video: any;
+            let videoCount = await this.count(key);
 
-            redis.hgetall(key, (err, videosRedis) => {
+            // Any videos?
+            if (videoCount > 0) {
 
-                if (err) {
-                    reject(err);
-                }
-
-                let videos = [];
-                Object.keys(videosRedis).forEach(video => {
-                    videos.push(JSON.parse(videosRedis[video]));
-                });
-
-                if (videos.length > 0) {
-                    videos.sort(function (a, b) {
-                        return parseInt(a._id.replace(/video/, '')) - parseInt(b._id.replace(/video/, ''));
-                    });
-
-                    let nextVideo = videos.find(x => {
-                        return Number(x.order) === Number(currentOrder) + (prevOrNext === 'prev' ? - 1 : + 1);
-                    });
-
-                    resolve({
-                        player: process.env.PLAYER,
-                        playerMode: process.env.PLAYER_MODE,
-                        _id: nextVideo._id,
-                        url: nextVideo.url,
-                        img: nextVideo.img,
-                        order: nextVideo.order,
-                        status: 'playing'
-                    });
+                // Is it first video?
+                if (videoOrder === 0) {
+                    video = await this.getById('videos', `video${videoCount}`);
                 } else {
-                    resolve([]);
+                    video = await this.getById('videos', `video${videoOrder}`);
                 }
-            });
+                resolve(video);
+            } else {
+                resolve(null);
+            }
         });
+    }
+
+    getNext(key, videoOrder) {
+        return new Promise(async (resolve, reject) => {
+
+            console.log({ videoOrder });
+            videoOrder = videoOrder ? videoOrder + 1 : 1;
+
+            let video: any;
+            let videoCount = await this.count(key);
+
+            // Any videos?
+            if (videoCount > 0) {
+                // Is it last video?
+                if (videoOrder > videoCount) {
+                    video = await this.getById('videos', `video1`);
+                } else {
+                    video = await this.getById('videos', `video${videoOrder}`);
+                }
+                resolve(video);
+            } else {
+                resolve(null);
+            }
+        });
+    }
+
+    getStats() {
+        return Server.getPlayerStats();
     }
 
 }

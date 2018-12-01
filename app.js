@@ -25,9 +25,8 @@ let io = socketio(server);
 server.on('listening', () => {
     io.on('connection', (socket) => {
         console.log("SOCKET SERVER CONNECTION");
-        socket.emit('USER_MESSAGE', { signal: 'connected' });
+        socket.emit('SERVER_MESSAGE', { signal: 'connected' });
     });
-    // io.emit('USER_MESSAGE', { signal: 'ready' });
 });
 let index = require('./api/routes/redis/index');
 let stats = require('./api/routes/redis/stats');

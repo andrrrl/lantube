@@ -19,18 +19,18 @@ class Server {
         this.playerStats = {
             player: process.env.PLAYER || 'mpv',
             status: 'idle',
-            video_id: 0,
-            video_title: '',
+            videoId: '0',
+            title: '',
             last_updated: new Date(),
         };
     }
     // Player
-    // status, video_id, video_title
+    // status, videoId, video_title
     getPlayerStats() {
         return new Promise((resolve, reject) => {
             redis.get('playerStats', (err, stats) => {
-                console.log(stats);
-                this.playerStats = stats;
+                console.log({ stats });
+                this.playerStats = JSON.parse(stats);
                 resolve(this.playerStats);
             });
         });

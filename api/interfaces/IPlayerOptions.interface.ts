@@ -1,7 +1,7 @@
 export interface IPlayerOptions {
     player: string;
     playerMode: string;
-    _id: string;
+    videoId: string;
     title: string;
     url: string;
     img: string;

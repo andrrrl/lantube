@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as ServerSchema from '../../schemas/redis/Server';
 import { Videos } from './../../controllers/redis/videos';
 import { IPlayerOptions } from './../../interfaces/IPlayerOptions.interface';
+import { IPlayerStats } from "../../interfaces/IPlayerStats";
 
 const
     exec = ChildProcess.exec;
@@ -27,10 +28,15 @@ export class Player {
 
     private playing: ChildProcess.ChildProcess;
     private chromecast: Buffer;
+    playerStats: IPlayerStats;
 
     constructor(private io: any) {
         this.io = io;
         this.videosCtrl = new Videos(this.io);
+
+        Server.getPlayerStats().then(playerStats => {
+            this.playerStats = playerStats;
+        });
 
     };
 
@@ -45,7 +51,7 @@ export class Player {
 
     // Only for omxplayer for now
     pause() {
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
             if (process.env.PLAYER !== 'omxplayer') {
                 if (process.env.PLAYER !== 'cvlc -I cli') {
                     console.info('Pause not supported!');
@@ -66,65 +72,81 @@ export class Player {
             let stats = {
                 player: process.env.PLAYER,
                 status: 'paused',
-                videoId: this.playerOptions._id,
+                videoId: this.playerOptions.videoId,
                 lastUpdated: new Date(),
             };
 
-            Server.setPlayerStats(stats);
+            await Server.setPlayerStats(stats);
 
-            this.io.emit('USER_MESSAGE', stats);
+            this.io.emit('PLAYER_MESSAGE', stats);
 
             resolve(true);
         })
     }
 
-    playPrev() {
-        return new Promise((resolve, reject) => {
+    // If videoId is null, let's consider 'video1' as starting ponit
+    getVideoOrder(videoId = 'video0') {
+        return Number(videoId.replace('video', ''));
+    }
 
-            this.videosCtrl.getPrevOrNext('videos', this.playerOptions.order || 0, 'prev').then(prevVideo => {
-                this.playerOptions = prevVideo;
-                this.play(this.playerOptions).then(result => {
+    playPrev(playerOptions) {
+        return new Promise(async (resolve, reject) => {
 
-                    // Update stats
-                    let stats = {
-                        player: process.env.PLAYER,
-                        status: 'paused',
-                        videoId: this.playerOptions._id,
-                        lastUpdated: new Date(),
-                    };
+            let order = this.getVideoOrder(playerOptions.videoId);
 
-                    Server.setPlayerStats(stats);
-                    this.io.emit('USER_MESSAGE', stats);
-                    resolve(true);
-                });
+            let prevVideo = await this.videosCtrl.getPrev('videos', order);
+
+            this.playerOptions = prevVideo;
+
+            // console.log('prev', this.playerOptions);
+            this.play(this.playerOptions).then(result => {
+
+                // Update stats
+                let stats = {
+                    player: process.env.PLAYER,
+                    status: 'playing',
+                    videoId: this.playerOptions.videoId,
+                    lastUpdated: new Date(),
+                };
+
+                Server.setPlayerStats(stats);
+                this.io.emit('PLAYER_MESSAGE', stats);
+                resolve(this.playerOptions);
             });
 
         });
     }
 
 
-    playNext() {
-        return new Promise((resolve, reject) => {
+    playNext(playerOptions) {
+        return new Promise(async (resolve, reject) => {
 
-            this.videosCtrl.getPrevOrNext('videos', this.playerOptions.order || 0, 'next').then(nextVideo => {
-                this.playerOptions = nextVideo;
-                this.play(this.playerOptions).then(result => {
+            playerOptions = await Server.getPlayerStats();
+            console.log({ playerOptions });
+            let order = this.getVideoOrder(playerOptions.videoId);
 
-                    // Update stats
-                    let stats = {
-                        player: process.env.PLAYER,
-                        status: 'paused',
-                        videoId: this.playerOptions._id,
-                        lastUpdated: new Date(),
-                    };
+            let nextVideo = await this.videosCtrl.getNext('videos', order);
 
-                    Server.setPlayerStats(stats);
-                    this.io.emit('USER_MESSAGE', stats);
-                    resolve(true);
-                });
+            this.playerOptions = nextVideo;
+
+            console.log('next', this.playerOptions);
+
+            this.play(this.playerOptions).then(result => {
+
+                // Update stats
+                let stats = {
+                    player: process.env.PLAYER,
+                    status: 'playing',
+                    videoId: this.playerOptions.videoId,
+                    lastUpdated: new Date(),
+                };
+
+                Server.setPlayerStats(stats);
+                this.io.emit('PLAYER_MESSAGE', stats);
+                resolve(this.playerOptions);
             });
-
         });
+
     }
 
     // Only for omxplayer for now
@@ -143,7 +165,8 @@ export class Player {
                 console.info('Volume: ' + this.volumeChange);
             }
             if (emitSignal === true) {
-                this.io.emit('PLAYER_MESSAGE', await Server.getPlayerStats());
+                let stats = await Server.getPlayerStats();
+                this.io.emit('PLAYER_MESSAGE', stats);
             }
             resolve(this.volumeChange);
         });
@@ -151,6 +174,17 @@ export class Player {
 
     stopAll() {
         return new Promise(async (resolve, reject) => {
+
+            // Update stats
+            let stats = {
+                player: process.env.PLAYER,
+                status: 'stopped',
+                videoId: this.playerStats.videoId,
+                lastUpdated: new Date(),
+            };
+            this.io.emit('PLAYER_MESSAGE', stats);
+            Server.setPlayerStats(stats);
+            
             if (process.env.PLAYER !== 'omxplayer') {
                 if (process.env.PLAYER !== 'cvlc -I cli') {
                     if (!this.playing.killed) {
@@ -166,21 +200,27 @@ export class Player {
                 if (this.playing && this.playing.pid) {
                     if (this.playing.stdin.writable) {
                         this.playing.stdin.write("q");
+                        if (!this.playing.killed) {
+                            this.playing.kill();
+                        }
+                        resolve(true);
                     } else {
-                        reject();
+                        resolve(false);
                     }
-                    reject();
+                } else {
+                    resolve(true);
                 }
             }
             this.playing = null;
             resolve(true);
+
+
         });
     }
 
 
     play(playerOptions) {
-
-        return new Promise((resolve, reject) => {
+        return new Promise(async (resolve, reject) => {
 
             this.playerOptions = playerOptions;
 
@@ -209,45 +249,47 @@ export class Player {
             }
 
             // Stop/clear any current playback before starting
-            this.stopAll().then(async stopped => {
+            let stopped = await this.stopAll();
 
-                if (stopped) {
-                    // Player type?
-                    if (process.env.PLAYER === 'omxplayer') {
-                        if (this.playing === null) {
+            if (stopped) {
+                // Player type?
+                if (process.env.PLAYER === 'omxplayer') {
+                    if (this.playing === null) {
+                        // Update stats
+                        let stats = {
+                            player: process.env.PLAYER,
+                            status: 'playing',
+                            videoId: this.playerOptions.videoId,
+                            lastUpdated: new Date(),
+                        };
 
-                            console.log('exctracting youtube URL...');
-                            let youtubeURL = await this.extracYoutubeURL(videoUrl);
-                            console.log('starting omxplayer...');
-                            await this.startPlayer(youtubeURL);
-                            // Update stats
-                            let stats = {
-                                player: process.env.PLAYER,
-                                status: 'playing',
-                                videoId: this.playerOptions._id,
-                                lastUpdated: new Date(),
-                            };
-                            this.io.emit('USER_MESSAGE', stats);
-                            await Server.setPlayerStats(stats);
+                        console.log('exctracting youtube URL...');
+                        let youtubeURL = await this.extracYoutubeURL(videoUrl);
+                        console.log('starting omxplayer...');
+                        await this.startPlayer(youtubeURL);
+                        await Server.setPlayerStats(stats);
+                        this.io.emit('PLAYER_MESSAGE', stats);
 
-                            this.initPlaybackSession(videoUrl);
-                            resolve(true);
-                        }
-                    } else {
-                        if (player_playlist) {
-                            this.playlist(this.playerOptions.list);
-                            player_playlist = '/tmp/playlist.pls';
-                        }
+                        this.initPlaybackSession(videoUrl);
+                        resolve(this.playerOptions);
                     }
-
+                } else {
+                    if (player_playlist) {
+                        this.playlist(this.playerOptions.list);
+                        player_playlist = '/tmp/playlist.pls';
+                    }
                 }
 
-            }).catch(result => {
-                console.log('ERROR, can\'t stop the beat I can\'t stop. Retrying...');
+            } else {
+                console.log('WARNING, can\'t stop the beat I can\'t stop. Retrying...');
                 this.play(this.playerOptions);
-            });
+            }
 
+        }).catch(async result => {
+            console.log('ERROR, can\'t stop the beat I can\'t stop. Retrying...');
+            await this.play(this.playerOptions);
         });
+
     }
 
     extracYoutubeURL(videoUrl) {
@@ -263,6 +305,7 @@ export class Player {
     startPlayer(playableURL): Promise<boolean> {
         return new Promise((resolve, reject) => {
             // OMXPLAYER won't pipe anything to stdout, only to stderr if option -I or --info is used
+            // --alpha 0 
             this.playing = exec(`${process.env.PLAYER} -b -o both --vol -1200 --threshold 30 --audio_fifo 30 -I "${playableURL}"`);
             this.playing.stderr.once('data', (data) => {
                 resolve(true);
@@ -309,10 +352,10 @@ export class Player {
 
         this.playing.on('exit', code => {
             if (process.env.NODE_ENV === 'development') {
-                // console.log(`Player exited with code ${code}`);
+                console.log(`Player exited with code ${code}`);
             }
             if (this.playerOptions.playlist === true) {
-                this.playNext();
+                this.playNext(this.playerOptions);
             }
         });
 
@@ -338,11 +381,11 @@ export class Player {
             let stats = {
                 player: process.env.PLAYER,
                 status: 'stopped',
-                videoId: null,
+                videoId: this.playerOptions.videoId,
                 lastUpdated: new Date(),
             };
 
-            this.io.emit('USER_MESSAGE', stats);
+            this.io.emit('PLAYER_MESSAGE', stats);
             // Update player stats
             Server.setPlayerStats(stats);
 
@@ -361,7 +404,7 @@ export class Player {
         }
 
         videos.sort(function (a, b) {
-            return parseInt(a._id.replace(/video/, '')) - parseInt(b._id.replace(/video/, ''));
+            return Number(a.videoId.replace(/video/, '')) - Number(b.videoId.replace(/video/, ''));
         });
 
         videos.forEach((video, index) => {

@@ -2,6 +2,7 @@ import * as redis from '../../connections/redis';
 import * as express from 'express';
 import { Player } from './../../controllers/redis/player';
 import { Videos } from '../../controllers/redis/videos';
+import { Server } from '../../schemas/redis/Server';
 
 export = (io) => {
     let router = express.Router();
@@ -9,6 +10,7 @@ export = (io) => {
 
     let PlayerCtrl = new Player(io);
     let VideosCtrl = new Videos(io);
+    let ServerCtrl = new Server();
 
 
 
@@ -81,7 +83,7 @@ export = (io) => {
                             PlayerCtrl.play({
                                 player: process.env.PLAYER,
                                 playerMode: process.env.PLAYER_MODE,
-                                _id: video._id,
+                                videoId: video.videoId,
                                 url: video.url,
                                 img: video.img,
                                 order: video.order,
@@ -92,7 +94,7 @@ export = (io) => {
                                     result: 'playing',
                                     url: video.url,
                                     title: video.title,
-                                    _id: video._id,
+                                    videoId: video.videoId,
                                     order: video.order
                                 });
                             }).catch(() => {
@@ -130,9 +132,15 @@ export = (io) => {
             });
         });
 
+    router.route('/api/player/prev')
+        .get(async (req, res, next) => {
+            let prevVideo = await PlayerCtrl.playPrev(await ServerCtrl.getPlayerStats());
+            res.json(prevVideo);
+        });
+
     router.route('/api/player/next')
         .get(async (req, res, next) => {
-            let nextVideo = await PlayerCtrl.playNext();
+            let nextVideo = await PlayerCtrl.playNext(await ServerCtrl.getPlayerStats());
             res.json(nextVideo);
         });
 
@@ -177,7 +185,7 @@ export = (io) => {
             PlayerCtrl.play({
                 player: process.env.PLAYER,
                 playerMode: process.env.PLAYER_MODE,
-                _id: firstOrder._id,
+                videoId: firstOrder.videoId,
                 url: firstOrder.url,
                 img: firstOrder.img,
                 order: firstOrder.order - 1,
@@ -187,7 +195,7 @@ export = (io) => {
                     result: 'playing',
                     url: firstOrder.url,
                     title: firstOrder.title,
-                    _id: firstOrder._id,
+                    videoId: firstOrder.videoId,
                     order: firstOrder.order,
                     status: 'playing'
                 });

@@ -1,8 +1,7 @@
 import * as os from 'os';
 import { reject } from 'bluebird';
+import { IPlayerStats } from '../../interfaces/IPlayerStats';
 let redis = require('../../connections/redis');
-
-
 export class Server {
 
     constructor() {
@@ -22,21 +21,21 @@ export class Server {
         last_updated: new Date()
     };
 
-    playerStats: any = {
+    playerStats: IPlayerStats = {
         player: process.env.PLAYER || 'mpv',
         status: 'idle',
-        video_id: 0,
-        video_title: '',
+        videoId: '0',
+        title: '',
         last_updated: new Date(),
     };
 
     // Player
-    // status, video_id, video_title
-    public getPlayerStats() {
+    // status, videoId, video_title
+    public getPlayerStats(): Promise<IPlayerStats> {
         return new Promise((resolve, reject) => {
             redis.get('playerStats', (err, stats) => {
-                console.log(stats);
-                this.playerStats = stats;
+                console.log({ stats });
+                this.playerStats = JSON.parse(stats);
                 resolve(this.playerStats);
             });
         });

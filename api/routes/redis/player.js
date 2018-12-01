@@ -11,11 +11,13 @@ const redis = require("../../connections/redis");
 const express = require("express");
 const player_1 = require("./../../controllers/redis/player");
 const videos_1 = require("../../controllers/redis/videos");
+const Server_1 = require("../../schemas/redis/Server");
 module.exports = (io) => {
     let router = express.Router();
     let app = express();
     let PlayerCtrl = new player_1.Player(io);
     let VideosCtrl = new videos_1.Videos(io);
+    let ServerCtrl = new Server_1.Server();
     // router.route('/api/player/:player?')
     //     .get((req, res, next) => {
     //         redis.hget('players', req.params.player, (err, redis_player) => {
@@ -76,7 +78,7 @@ module.exports = (io) => {
                         PlayerCtrl.play({
                             player: process.env.PLAYER,
                             playerMode: process.env.PLAYER_MODE,
-                            _id: video._id,
+                            videoId: video.videoId,
                             url: video.url,
                             img: video.img,
                             order: video.order,
@@ -86,7 +88,7 @@ module.exports = (io) => {
                                 result: 'playing',
                                 url: video.url,
                                 title: video.title,
-                                _id: video._id,
+                                videoId: video.videoId,
                                 order: video.order
                             });
                         }).catch(() => {
@@ -119,9 +121,14 @@ module.exports = (io) => {
             });
         });
     });
+    router.route('/api/player/prev')
+        .get((req, res, next) => __awaiter(this, void 0, void 0, function* () {
+        let prevVideo = yield PlayerCtrl.playPrev(yield ServerCtrl.getPlayerStats());
+        res.json(prevVideo);
+    }));
     router.route('/api/player/next')
         .get((req, res, next) => __awaiter(this, void 0, void 0, function* () {
-        let nextVideo = yield PlayerCtrl.playNext();
+        let nextVideo = yield PlayerCtrl.playNext(yield ServerCtrl.getPlayerStats());
         res.json(nextVideo);
     }));
     router.route('/api/player/volume/:volume')
@@ -156,7 +163,7 @@ module.exports = (io) => {
         PlayerCtrl.play({
             player: process.env.PLAYER,
             playerMode: process.env.PLAYER_MODE,
-            _id: firstOrder._id,
+            videoId: firstOrder.videoId,
             url: firstOrder.url,
             img: firstOrder.img,
             order: firstOrder.order - 1,
@@ -166,7 +173,7 @@ module.exports = (io) => {
                 result: 'playing',
                 url: firstOrder.url,
                 title: firstOrder.title,
-                _id: firstOrder._id,
+                videoId: firstOrder.videoId,
                 order: firstOrder.order,
                 status: 'playing'
             });

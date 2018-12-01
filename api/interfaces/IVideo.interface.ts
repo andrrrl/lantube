@@ -1,7 +1,6 @@
 export interface IVideo {
-    _id: string;
+    videoId: string;
     title: string;
     url: string;
     img: string;
-    order: number;
 }
