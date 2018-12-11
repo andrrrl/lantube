@@ -1,6 +1,5 @@
 import { execSync } from "child_process";
 import * as ChildProcess from 'child_process';
-import * as mongoose from 'mongoose';
 import * as fs from 'fs';
 import * as ServerSchema from '../../schemas/redis/Server';
 import { Videos } from './../../controllers/redis/videos';
@@ -35,14 +34,6 @@ export class Player {
             this.playerStats = playerStats;
         });
     };
-
-    /**
-     * 
-     * @param id string
-     */
-    isValid(id) {
-        return mongoose.Types.ObjectId.isValid(id);
-    }
 
     // Only for omxplayer for now
     pause() {
