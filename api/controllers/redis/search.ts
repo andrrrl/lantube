@@ -22,20 +22,18 @@ export class Search {
 
         return request(options)
             .then((body) => {
-
-                console.log({ body });
                 const html = libxml.parseHtmlString(body);
                 this.resultList = html.find('//a[@rel="spf-prefetch"]');
                 this.durationList = html.find('//span[@class="video-time"]');
                 this.imageList = html.find('//span[@class="yt-thumb-simple"]');
-                console.log(this.imageList);
-
                 this.resultList.forEach((video, k) => {
+                    let imgPreferred = this.imageList[k].get('img').attr('src').value().includes('https');
+                    let imgFallback = this.imageList[k].get('img').attr('data-thumb').value();
                     this.videoList.push({
                         title: video.text(),
                         url: video.attr('href').value(),
                         duration: this.durationList[k].text(),
-                        img: (this.imageList[k].get('img').attr('src').value().includes('https') ? this.imageList[k].get('img').attr('src').value() : this.imageList[k].get('img').attr('data-thumb').value())
+                        img: (imgPreferred ? imgPreferred : (imgFallback ? imgFallback : ''))
                     });
                 });
 
