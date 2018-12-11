@@ -60,6 +60,11 @@ if (process.argv.length === 3) {
                     let thumb = body.thumbnail_url;
                     let order = String(videos_count + 1);
                     // Redis no acepta objetos JSON aun... ¬_¬
+                    // let video_string = '{ "videoId": "' + videoId + '",' +
+                    //     '"title": "' + title + '",' +
+                    //     '"url": "' + yt_id + '",' +
+                    //     '"img": "' + body.thumbnail_url + '",' +
+                    //     '"order": ' + String(videos_count + 1) + '}';
                     let video_string = `{"videoId":"${videoId}","videoInfo":{"videoId":"${videoId}","title":"${title}","url":"${videoUri}","img":"${thumb}"},"order":${order}}`;
                     conn.hmset('videos', String(videoId), video_string, (err) => {
                         conn.hget('videos', videoId, (err, video) => {
