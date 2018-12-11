@@ -46,6 +46,7 @@
         "@types/request-promise": "^4.1.41",
         "@types/socket.io": "^1.4.33",
         "concurrently": "^3.5.1",
+        "nodemon": "^1.18.8",
         "typescript": "^3.1.4"
     }
 }
