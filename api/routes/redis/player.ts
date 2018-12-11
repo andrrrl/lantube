@@ -13,49 +13,15 @@ export = (io) => {
     let ServerCtrl = new Server();
 
 
-
-
-    // router.route('/api/player/:player?')
-    //     .get((req, res, next) => {
-    //         redis.hget('players', req.params.player, (err, redis_player) => {
-    //             res.json(JSON.parse(redis_player));
-    //         });
-    //     })
-    //     .put((req, res, next) => {
-
-    //         // let player = JSON.stringify(req.body);
-    //         let player = {
-    //             player: req.body.player,
-    //             playerMode: req.body.player_mode,
-    //             playerVolume: req.body.player_volume,
-    //             playerVolumeStep: req.body.player_volume_step,
-    //             playerIsMuted: req.body.player_is_muted
-    //         };
-
-    //         redis.hmset('players', req.body.player, JSON.stringify(player), (err) => {
-    //             redis.hget('player', req.body.player, (err, redis_player) => {
-    //                 res.json(JSON.parse(redis_player));
-    //             });
-    //         });
-    //     });
-
-    // Get all players
-    // router.route('/api/players')
-    //     .get((req, res, next) => {
-    //         redis.hgetall('players', (err, players) => {
-    //             res.json(players);
-    //         });
-    //     });
-
     // PLAY
     router.route('/api/player/:id/play')
 
         .get((req, res, next) => {
 
-            let order = !req.params.id.match(/[a-zA-Z]/g) ? parseInt(req.params.id) : false;
+            let order = !req.params.id.match(/[a-zA-Z]/g) ? Number(req.params.id) : false;
             let id = req.params.id;
 
-            if (!isNaN(parseInt(id))) {
+            if (!isNaN(Number(id))) {
                 id = 'video' + id;
             }
 
@@ -83,19 +49,11 @@ export = (io) => {
                             PlayerCtrl.play({
                                 player: process.env.PLAYER,
                                 playerMode: process.env.PLAYER_MODE,
-                                videoId: video.videoId,
-                                url: video.url,
-                                img: video.img,
-                                order: video.order,
-                                status: 'playing'
+                                status: 'playing',
+                                ...video
                             }).then(() => {
-
                                 res.json({
-                                    result: 'playing',
-                                    url: video.url,
-                                    title: video.title,
-                                    videoId: video.videoId,
-                                    order: video.order
+                                    result: 'playing'
                                 });
                             }).catch(() => {
                                 res.json({
@@ -119,6 +77,7 @@ export = (io) => {
 
         });
 
+    // STOP
     router.route('/api/player/stop')
         .get((req, res, next) => {
             PlayerCtrl.stopAll().then(result => {
@@ -186,16 +145,20 @@ export = (io) => {
                 player: process.env.PLAYER,
                 playerMode: process.env.PLAYER_MODE,
                 videoId: firstOrder.videoId,
-                url: firstOrder.url,
-                img: firstOrder.img,
+                videoInfo: {
+                    videoId: firstOrder.videoId,
+                    url: firstOrder.url,
+                    img: firstOrder.img,
+                    title: firstOrder.title,
+                },
                 order: firstOrder.order - 1,
                 status: 'playing'
             }).then(() => {
                 res.json({
-                    result: 'playing',
+                    videoId: firstOrder.videoId,
                     url: firstOrder.url,
                     title: firstOrder.title,
-                    videoId: firstOrder.videoId,
+                    img: firstOrder.img,
                     order: firstOrder.order,
                     status: 'playing'
                 });
@@ -204,8 +167,14 @@ export = (io) => {
                     result: 'error'
                 });
             });
+        });
 
-
+    router.route('/api/player/playlist')
+        .patch(async (req, res, next) => {
+            let stats = await ServerCtrl.getPlayerStats();
+            stats.playlist = !stats.playlist;
+            ServerCtrl.setPlayerStats(stats);
+            res.json(stats);
         });
 
 
@@ -214,10 +183,8 @@ export = (io) => {
     //  */
     router.route('/api/player/stats')
         .get(async (req, res, next) => {
-
-            redis.get('playerStats', (err, player_stats) => {
-                res.json(JSON.parse(player_stats));
-            });
+            let stats = await ServerCtrl.getPlayerStats();
+            res.json(stats);
         });
 
 
