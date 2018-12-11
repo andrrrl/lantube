@@ -1,7 +1,10 @@
+import { IVideo } from "./IVideo.interface";
+
 export interface IPlayerStats {
     player?: string;
-    status?: 'idle' | 'stopped' | 'playing' | 'paused';
+    status?: 'idle' | 'stopped' | 'playing' | 'paused' | 'loading';
     videoId?: string;
-    title?: string;
-    last_updated?: Date;
+    videoInfo?: IVideo;
+    playlist: boolean;
+    lastUpdated?: Date;
 }
