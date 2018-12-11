@@ -3,6 +3,10 @@ import * as helmet from 'helmet';
 import * as express from 'express';
 import * as HttpStatus from 'http-status-codes';
 import * as socketio from 'socket.io';
+import * as ServerSchema from './api/schemas/redis/Server';
+
+// Load Server
+let Server = new ServerSchema.Server();
 
 require('dotenv').config({
     path: '.env'
@@ -19,18 +23,24 @@ var env = 'development';
 app.locals.ENV = env;
 app.locals.ENV_DEVELOPMENT = env === 'development';
 
-let server = app.listen(app.get('port'), () => {
+let server = app.listen(app.get('port'), async () => {
     console.log('  Lantube server listening on port ' + app.get('port'));
     if (cors) {
         console.info('   > CORS enabled!');
     }
+    let stats = await Server.getPlayerStats();
+    stats.status = 'stopped';
+    await Server.setPlayerStats(stats);
 });
 
 let io = socketio(server);
 server.on('listening', () => {
-    io.on('connection', (socket) => {
-        console.log("SOCKET SERVER CONNECTION");
+    io.on('connection', async (socket) => {
+        console.log("Cliente conectado.");
         socket.emit('SERVER_MESSAGE', { signal: 'connected' });
+
+        let stats = await Server.getPlayerStats();
+        socket.emit('PLAYER_MESSAGE', stats);
     });
 });
 
