@@ -93,8 +93,11 @@ if (process.argv.length === 3) {
 
 console.log(process.argv);
 
-if (options.action == 'play') {
+if (options.action === 'play') {
   options.order = options.order || 1;
+}
+if (options.action === 'stop') {
+  options.order = null;
 }
 
 if (typeof options.action !== 'undefined' && options.action !== 'help') {
@@ -103,12 +106,12 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
   console.log('╭──────┤  ▶ Lantube CLI  ├──────╮'.bold.yellow);
   console.log('│      ╰─────────────────╯      │'.bold.yellow);
 
-  console.log(`${LANTUBE_SERVER}${options.module}/${(options.order ? options.order + '/' : '')}${options.action}`);
+  console.log(`${LANTUBE_SERVER}${(options.module ? options.module + '/' : '')}${(options.order ? options.order + '/' : '')}${options.action}`);
 
   request({
-      url: `${LANTUBE_SERVER}${options.module}/${(options.order ? options.order + '/' : '')}${(options.action !== 'list' ? options.action : '')}`,
-      json: true
-    },
+    url: `${LANTUBE_SERVER}${options.module}/${(options.order ? options.order + '/' : '')}${(options.action !== 'list' ? options.action : '')}`,
+    json: true
+  },
     function (error, response, body) {
       if (!error && response.statusCode == 200) {
 
@@ -117,13 +120,13 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
         switch (options.action) {
           case 'list':
             lantube_message = 'Listing all videos...';
-            var videos = result.sort((a,b) => +Number(b._id.replace('video', '')) -Number(a._id.replace('video', '')) );
+            var videos = result.sort((a, b) => +Number(b.videoId.replace('video', '')) - Number(a.videoId.replace('video', '')));
             result = '\n';
             for (let index in videos) {
               result +=
-                '  ' + (videos[index]._id < 10 ? ' ' : '') + videos[index]._id.replace('video', '') +
-                '  "' + videos[index].title + '"' +
-                '  (' + videos[index].url + ')\n';
+                '  ' + (videos[index].videoId < 10 ? ' ' : '') + videos[index].videoId.replace('video', '') +
+                '  "' + videos[index].videoInfo.title + '"' +
+                '  (' + videos[index].videoInfo.url + ')\n';
             };
             break;
           case 'play':
@@ -206,19 +209,19 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 
 
         if (options.action == 'list') {
-		//console.log(videos);
+          //console.log(videos);
           rl.question('Play a video from the list [1-' + videos.length + ']:\n', (num) => {
 
-console.log(LANTUBE_SERVER + 'player/' + videos.find(x => x._id.replace('video', '') === num)._id.replace('video', '') + '/play')
+            console.log(LANTUBE_SERVER + 'player/' + videos.find(x => x.videoId.replace('video', '') === num).videoId.replace('video', '') + '/play')
 
             request({
-                url: LANTUBE_SERVER + 'player/' + videos.find(x => x._id.replace('video', '') === num)._id.replace('video', '') + '/play',
-                json: true
-              },
+              url: LANTUBE_SERVER + 'player/' + videos.find(x => x.videoId.replace('video', '') === num).videoId.replace('video', '') + '/play',
+              json: true
+            },
               function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                   var result = response.body;
-                  console.log('Playing... "' + result.title + '"');
+                  console.log('Playing... "' + result.videoInfo.title + '"');
                   process.exit();
                 }
               });
@@ -243,7 +246,7 @@ console.log(LANTUBE_SERVER + 'player/' + videos.find(x => x._id.replace('video',
       '       ╭─────────────────╮\n' +
       '╭──────┤ ♬  Lantube Help ├──────╮\n' +
       '│      ╰─────────────────╯      │\n' +
-      '  - Usage: \n'.bold + 
+      '  - Usage: \n'.bold +
       '    node lantube-cli.js MODULE [OPTION]\n\n' +
       '  - Options: \n'.bold +
       '    Show this help:      help\n' +
@@ -254,7 +257,7 @@ console.log(LANTUBE_SERVER + 'player/' + videos.find(x => x._id.replace('video',
       '    Play single video:   player play ORDER\n' +
       '    Stop any playback:   player stop\n' +
       '    Show server stats:   server stats\n';
-      '    Show player stats:   player stats\n';
+    '    Show player stats:   player stats\n';
 
     console.log(lantube_message.yellow.bold);
     console.log('╰───────────────────────────────╯'.bold.yellow);
