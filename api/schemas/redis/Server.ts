@@ -18,15 +18,15 @@ export class Server {
         loadaverage: os.loadavg(),
         totalmem: os.totalmem(),
         freemem: os.freemem(),
-        last_updated: new Date()
+        lastUpdated: new Date()
     };
 
     playerStats: IPlayerStats = {
         player: process.env.PLAYER || 'mpv',
         status: 'idle',
         videoId: '0',
-        title: '',
-        last_updated: new Date(),
+        playlist: false,
+        lastUpdated: new Date(),
     };
 
     // Player
@@ -34,14 +34,14 @@ export class Server {
     public getPlayerStats(): Promise<IPlayerStats> {
         return new Promise((resolve, reject) => {
             redis.get('playerStats', (err, stats) => {
-                console.log({ stats });
+                // console.log({ stats });
                 this.playerStats = JSON.parse(stats);
                 resolve(this.playerStats);
             });
         });
     }
 
-    setPlayerStats(stats) {
+    public setPlayerStats(stats: IPlayerStats) {
         return new Promise((resolve, reject) => {
             redis.set('playerStats', JSON.stringify(stats), () => {
                 redis.get('playerStats', (err, stats) => {
