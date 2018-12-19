@@ -34,13 +34,19 @@ let server = app.listen(app.get('port'), async () => {
 });
 
 let io = socketio(server);
+
 server.on('listening', () => {
     io.on('connection', async (socket) => {
         console.log("Cliente conectado.");
+
+        socket.removeAllListeners();
+
         socket.emit('SERVER_MESSAGE', { signal: 'connected' });
 
         let stats = await Server.getPlayerStats();
+
         socket.emit('PLAYER_MESSAGE', stats);
+
     });
 });
 
