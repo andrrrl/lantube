@@ -18,7 +18,7 @@ export = (io) => {
 
         .get((req, res, next) => {
 
-            let order = !req.params.id.match(/[a-zA-Z]/g) ? Number(req.params.id) : false;
+            // let order = !req.params.id.match(/[a-zA-Z]/g) ? Number(req.params.id) : false;
             let id = req.params.id;
 
             if (!isNaN(Number(id))) {
@@ -45,6 +45,7 @@ export = (io) => {
                                 error: 'No hay banda!'
                             });
                         } else {
+
                             // Play video!
                             PlayerCtrl.play({
                                 player: process.env.PLAYER,
@@ -60,6 +61,7 @@ export = (io) => {
                                     result: 'error'
                                 });
                             });
+
                         }
                     }
                 });
@@ -93,13 +95,15 @@ export = (io) => {
 
     router.route('/api/player/prev')
         .get(async (req, res, next) => {
-            let prevVideo = await PlayerCtrl.playPrev(await ServerCtrl.getPlayerStats());
+            await PlayerCtrl.stopAll();
+            const prevVideo = await PlayerCtrl.playPrev(true);
             res.json(prevVideo);
         });
 
     router.route('/api/player/next')
         .get(async (req, res, next) => {
-            let nextVideo = await PlayerCtrl.playNext(await ServerCtrl.getPlayerStats());
+            await PlayerCtrl.stopAll();
+            const nextVideo = await PlayerCtrl.playNext(true);
             res.json(nextVideo);
         });
 
