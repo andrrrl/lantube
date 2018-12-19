@@ -28,7 +28,7 @@ export class Search {
                 this.imageList = html.find('//span[@class="yt-thumb-simple"]');
                 this.resultList.forEach((video, k) => {
                     let imgPreferred = this.imageList[k].get('img').attr('src').value().includes('https');
-                    let imgFallback = this.imageList[k].get('img').attr('data-thumb').value();
+                    let imgFallback = this.imageList[k].get('img').attr('data-thumb') ? this.imageList[k].get('img').attr('data-thumb').value() : '';
                     this.videoList.push({
                         title: video.text(),
                         url: video.attr('href').value(),
