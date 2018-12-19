@@ -25,6 +25,7 @@ export class Player {
     volumeChange: any;
     videosCtrl: any;
     stopped: any;
+    userTriggered = false;
 
     constructor(private io: any) {
         this.io = io;
@@ -39,29 +40,17 @@ export class Player {
     pause() {
         return new Promise(async (resolve, reject) => {
 
-            if (this.playing && this.playing.pid) {
-                this.playing.stdin.write(" ");
-            } else {
-                resolve(false);
-            }
-
+            // Update stats
             let current = await Server.getPlayerStats();
-
             let status: any = (current.status === 'paused' || current.status === 'stopped') ? 'playing' : 'paused';
-
             console.info(`Playback ${(current.status === 'paused' || current.status === 'stopped') ? 'starting' : 'paused'}!`);
 
-            let playerOptions: IPlayerStats = {
-                videoId: current.videoId,
-                videoInfo: current.videoInfo,
-                status,
-                playlist: current.playlist,
-            };
-            playerOptions.videoId = current.videoId;
-            playerOptions.videoInfo = current.videoInfo;
-
-            if (status === 'playing') {
-                this.playNext(playerOptions);
+            // If player is playing we just toggle play/pause
+            if (this.playing && this.playing.pid && this.playing.stdin.writable) {
+                this.playing.stdin.write(" ");
+            } else {
+                this.userTriggered = false;
+                this.play(this.playerStats);
             }
 
             // Update stats
@@ -74,8 +63,10 @@ export class Player {
                 lastUpdated: new Date(),
             };
 
+            // Persist player stats
             Server.setPlayerStats(stats);
 
+            // Emit stats change
             this.io.emit('PLAYER_MESSAGE', stats);
 
             resolve(true);
@@ -85,11 +76,13 @@ export class Player {
     // Only for omxplayer for now
     volume(volume, emitSignal = true) {
         return new Promise(async (resolve, reject) => {
+
             if (volume === 'down') {
                 this.volumeChange = '-';
             } else if (volume === 'up') {
                 this.volumeChange = '+';
             }
+
             if (process.env.PLAYER !== 'omxplayer') {
                 console.info('Volume change not supported!');
                 reject('Volume change not supported!')
@@ -97,16 +90,26 @@ export class Player {
                 this.playing.stdin.write(this.volumeChange);
                 console.info('Volume: ' + this.volumeChange);
             }
+
             if (emitSignal === true) {
                 let stats = await Server.getPlayerStats();
+
+                // Emit stats change
                 this.io.emit('PLAYER_MESSAGE', stats);
             }
+
             resolve(this.volumeChange);
+
         });
     }
 
-    stopAll() {
+    stopAll(userTriggered = true) {
         return new Promise(async (resolve, reject) => {
+
+            // this.userTriggered = userTriggered;
+
+            console.info(`Playback stopped!`);
+
             if (this.playing && this.playing.pid) {
                 if (this.playing.stdin.writable) {
                     this.playing.stdin.write("q");
@@ -131,74 +134,52 @@ export class Player {
         return Number(videoId.replace('video', ''));
     }
 
-    playPrev(playerOptions) {
+    // Play previous video (always user triggered)
+    playPrev(userTriggered = true) {
         return new Promise(async (resolve, reject) => {
 
-            let order = this.getVideoOrder(playerOptions.videoId);
-            let prevVideo: IVideo = await this.videosCtrl.getPrev('videos', order);
+            this.userTriggered = userTriggered;
 
             this.playerStats = await Server.getPlayerStats();
+            let order = this.getVideoOrder(this.playerStats.videoId);
+            let prevVideo: IVideo = await this.videosCtrl.getPrev('videos', order);
 
-            playerOptions.videoId = prevVideo.videoId;
-            playerOptions.videoInfo = prevVideo.videoInfo;
+            this.playerStats.videoId = prevVideo.videoInfo.videoId;
+            this.playerStats.videoInfo = prevVideo.videoInfo;
+            this.playerStats.status = 'loading';
 
-            this.playerStats.videoId = playerOptions.videoInfo.videoId;
-            this.playerStats.videoInfo = playerOptions.videoInfo;
+            console.log('prev: ', this.playerStats);
+            // console.log({ prevVideo });
 
             this.play(this.playerStats).then(result => {
-                // Update stats
-                let stats: IPlayerStats = {
-                    player: process.env.PLAYER,
-                    status: 'playing',
-                    videoId: this.playerStats.videoId,
-                    videoInfo: this.playerStats.videoInfo,
-                    playlist: this.playerStats.playlist,
-                    lastUpdated: new Date(),
-                };
-
-                Server.setPlayerStats(stats);
-                this.io.emit('PLAYER_MESSAGE', stats);
                 resolve(this.playerStats);
+            }).catch(() => {
+                reject(this.playerStats);
             });
 
         });
     }
 
-
-    playNext(playerOptions) {
+    // Play next video (can be user triggered or if player stats "playlist" value is true)
+    playNext(userTriggered = false) {
         return new Promise(async (resolve, reject) => {
 
-            this.playerStats = await Server.getPlayerStats();
-            playerOptions.playlist = this.playerStats.playlist;
+            this.userTriggered = userTriggered;
 
-            let order = this.getVideoOrder(this.playerStats.videoInfo.videoId);
+            this.playerStats = await Server.getPlayerStats();
+            let order = this.getVideoOrder(this.playerStats.videoId);
             let nextVideo: IVideo = await this.videosCtrl.getNext('videos', order);
 
-            playerOptions.videoId = nextVideo.videoId;
-            playerOptions.videoInfo = nextVideo.videoInfo;
+            this.playerStats.videoId = nextVideo.videoInfo.videoId;
+            this.playerStats.videoInfo = nextVideo.videoInfo;
+            this.playerStats.status = 'loading';
 
-            this.playerStats.videoId = playerOptions.videoInfo.videoId;
-            this.playerStats.videoInfo = playerOptions.videoInfo;
-
-
-            this.play(playerOptions).then(result => {
-
-                // Update stats
-                let stats: IPlayerStats = {
-                    player: process.env.PLAYER,
-                    status: 'playing',
-                    videoId: this.playerStats.videoInfo.videoId,
-                    videoInfo: this.playerStats.videoInfo,
-                    playlist: this.playerStats.playlist,
-                    lastUpdated: new Date(),
-                };
-
-                Server.setPlayerStats(stats);
-                this.io.emit('PLAYER_MESSAGE', stats);
+            this.play(this.playerStats).then(() => {
                 resolve(this.playerStats);
+            }).catch(() => {
+                reject(this.playerStats);
             });
         });
-
     }
 
     async play(playerOptions) {
@@ -206,23 +187,26 @@ export class Player {
 
             this.playerStats = await Server.getPlayerStats();
             this.playerStats.status = playerOptions.status;
-            this.playerStats.videoId = playerOptions.videoInfo.videoId;
+            this.playerStats.videoId = playerOptions.videoId;
             this.playerStats.videoInfo = playerOptions.videoInfo;
 
             var videoUrl = playerOptions.videoInfo.url;
 
             // Stop/clear any current playback before starting
-            this.stopped = await this.stopAll();
+            this.stopped = await this.stopAll(true);
 
             // Update stats
             let stats: IPlayerStats = {
                 player: process.env.PLAYER,
                 status: 'loading',
-                videoId: this.playerStats.videoInfo.videoId,
+                videoId: this.playerStats.videoId,
                 videoInfo: this.playerStats.videoInfo,
                 playlist: this.playerStats.playlist,
                 lastUpdated: new Date()
             };
+
+            // Persist player stats
+            Server.setPlayerStats(stats);
 
             this.io.emit('PLAYER_MESSAGE', stats);
 
@@ -251,8 +235,10 @@ export class Player {
 
                         this.playerStats = stats;
 
+                        // Emit stats change
                         this.io.emit('PLAYER_MESSAGE', stats);
 
+                        // Persist player stats
                         Server.setPlayerStats(stats);
 
                         resolve(this.playerStats);
@@ -272,49 +258,21 @@ export class Player {
 
     }
 
-    extracYoutubeURL(videoUrl) {
-        return new Promise((resolve, reject) => {
-            let video = exec(`${process.env.YOUTUBE_DL} ${this.formats} -g ${videoUrl}`);
-            video.stdout.once('data', (data) => {
-                data = data.toString().replace('\n', '').replace('\n', '').replace('\n', '');
-                resolve(data);
-            });
-        });
-    }
-
-    startPlayer(playableURL): Promise<ChildProcess.ChildProcess> {
-        return new Promise((resolve, reject) => {
-            // OMXPLAYER won't pipe anything to stdout, only to stderr if option -I or --info is used
-            // --alpha 0 
-            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -1200 --threshold 30 --audio_fifo 30 -I "${playableURL}"`);
-            this.playing.stderr.once('data', (data) => {
-                resolve(this.playing);
-            });
-        });
-
-    }
-
     async initPlaybackSession() {
 
         this.playerStats = await Server.getPlayerStats();
 
-        this.playing.on('disconnect', () => {
+        this.playing.on('disconnect', () => { });
 
-        });
-
-        this.playing.on('exit', code => {
-            this.stopped = true;
-            if (process.env.NODE_ENV === 'development') {
-                console.log(`Player exited with code ${code}`);
-            }
-        });
+        this.playing.on('exit', () => { });
 
         // Player is closed when video finishes
-        this.playing.on('close', code => {
+        this.playing.on('close', () => {
             this.stopped = true;
 
-            if (this.playerStats.playlist === true) {
-                this.playNext(this.playerStats);
+            console.log('User triggered?', this.userTriggered);
+            if (this.playerStats.playlist === true && !this.userTriggered) {
+                this.playNext(false);
             }
 
             // Update stats
@@ -327,14 +285,39 @@ export class Player {
                 lastUpdated: new Date(),
             };
 
+            // Emit stats change
             this.io.emit('PLAYER_MESSAGE', stats);
 
-            // Update player stats
+            // Persist player stats
             Server.setPlayerStats(stats);
 
         });
     }
 
+    extracYoutubeURL(videoURL) {
+        return new Promise((resolve, reject) => {
+            let video = exec(`${process.env.YOUTUBE_DL} ${this.formats} -g ${videoURL}`);
+            video.stdout.once('data', (data) => {
+                data = data.toString().replace('\n', '').replace('\n', '').replace('\n', '');
+                resolve(data);
+            });
+        });
+    }
+
+    startPlayer(extractedURI): Promise<ChildProcess.ChildProcess> {
+        return new Promise((resolve, reject) => {
+            // OMXPLAYER won't pipe anything to stdout, only to stderr if option -I or --info is used
+            // --alpha 0 
+            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -1200 --threshold 30 --audio_fifo 30 -I "${extractedURI}"`);
+            this.playing.stderr.once('data', (data) => {
+                resolve(this.playing);
+            });
+        });
+
+    }
+
+    // UNUSED, omxplayer won't play playlist files
+    // Left here for future implementations with VLC, MPV, etc
     playlist(videosRedis) {
 
         // Generate and serve PLS playlist
@@ -362,6 +345,8 @@ export class Player {
 
     }
 
+    // UNUSED, omxplayer won't play playlist files
+    // Left here for future implementations with VLC, MPV, etc
     deletePlaylist() {
         return new Promise((resolve, reject) => {
             let fileExists = fs.existsSync('file:///tmp/playlist.pls');
@@ -374,9 +359,4 @@ export class Player {
         })
     }
 
-    getStats(cb) {
-        return new Promise((resolve, reject) => {
-            resolve(cb);
-        });
-    }
 }
