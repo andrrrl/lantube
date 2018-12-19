@@ -247,8 +247,4 @@ export class Videos {
         });
     }
 
-    getStats() {
-        return Server.getPlayerStats();
-    }
-
 }
