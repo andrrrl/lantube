@@ -4,7 +4,7 @@ export interface IPlayerStats {
     player?: string;
     status?: 'idle' | 'stopped' | 'playing' | 'paused' | 'loading';
     videoId?: string;
-    videoInfo?: IVideo;
+    videoInfo?: any;
     playlist: boolean;
     lastUpdated?: Date;
 }

@@ -1,6 +1,6 @@
 export interface IVideo {
-    videoId: string;
     videoInfo: {
+        videoId: string;
         title: string;
         url: string;
         img: string;
