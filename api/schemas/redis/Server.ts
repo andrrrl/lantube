@@ -34,9 +34,12 @@ export class Server {
     public getPlayerStats(): Promise<IPlayerStats> {
         return new Promise((resolve, reject) => {
             redis.get('playerStats', (err, stats) => {
-                // console.log({ stats });
                 this.playerStats = JSON.parse(stats);
-                resolve(this.playerStats);
+                if (this.playerStats && this.playerStats.status) {
+                    resolve(this.playerStats);
+                } else {
+                    resolve({ ...this.playerStats, status: 'stopped' });
+                }
             });
         });
     }
