@@ -221,26 +221,7 @@ export class Player {
                         console.log('Starting OMXPLAYER...');
                         this.playing = await this.startPlayer(youtubeURL);
 
-                        this.initPlaybackSession();
-
-                        // Update stats
-                        stats = {
-                            player: process.env.PLAYER,
-                            status: 'playing',
-                            videoId: this.playerStats.videoInfo.videoId,
-                            videoInfo: this.playerStats.videoInfo,
-                            playlist: this.playerStats.playlist,
-                            lastUpdated: new Date(),
-                        };
-
-                        this.playerStats = stats;
-
-                        // Emit stats change
-                        this.io.emit('PLAYER_MESSAGE', stats);
-
-                        // Persist player stats
-                        Server.setPlayerStats(stats);
-
+                        await this.initPlaybackSession();
                         resolve(this.playerStats);
                     }
                 }
@@ -261,6 +242,27 @@ export class Player {
     async initPlaybackSession() {
 
         this.playerStats = await Server.getPlayerStats();
+
+        if (this.playing && this.playing.stdin && this.playing.stdin.writable) {
+            // Update stats
+            let stats: IPlayerStats = {
+                player: process.env.PLAYER,
+                status: 'playing',
+                videoId: this.playerStats.videoInfo.videoId,
+                videoInfo: this.playerStats.videoInfo,
+                playlist: this.playerStats.playlist,
+                lastUpdated: new Date(),
+            };
+
+            this.playerStats = stats;
+
+            // Emit stats change
+            this.io.emit('PLAYER_MESSAGE', stats);
+
+            // Persist player stats
+            Server.setPlayerStats(stats);
+
+        }
 
         this.playing.on('disconnect', () => { });
 
@@ -308,7 +310,7 @@ export class Player {
         return new Promise((resolve, reject) => {
             // OMXPLAYER won't pipe anything to stdout, only to stderr if option -I or --info is used
             // --alpha 0 
-            this.playing = exec(`${process.env.PLAYER} -b -o hdmi --vol -2200 --threshold 30 --audio_fifo 30 -I "${extractedURI}"`);
+            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -1200 --threshold 30 --audio_fifo 30 -I "${extractedURI}"`);
             this.playing.stderr.once('data', (data) => {
                 resolve(this.playing);
             });
