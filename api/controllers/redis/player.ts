@@ -106,7 +106,7 @@ export class Player {
     stopAll(userTriggered = true) {
         return new Promise(async (resolve, reject) => {
 
-            // this.userTriggered = userTriggered;
+            this.userTriggered = userTriggered;
 
             console.info(`Playback stopped!`);
 
@@ -193,7 +193,7 @@ export class Player {
             var videoUrl = playerOptions.videoInfo.url;
 
             // Stop/clear any current playback before starting
-            this.stopped = await this.stopAll(true);
+            this.stopped = await this.stopAll(false);
 
             // Update stats
             let stats: IPlayerStats = {
@@ -273,6 +273,7 @@ export class Player {
             this.stopped = true;
 
             console.log('User triggered?', this.userTriggered);
+            console.log('Playlist mode?', this.playerStats.playlist);
             if (this.playerStats.playlist === true && !this.userTriggered) {
                 this.playNext(false);
             }
@@ -308,9 +309,9 @@ export class Player {
 
     startPlayer(extractedURI): Promise<ChildProcess.ChildProcess> {
         return new Promise((resolve, reject) => {
-            // OMXPLAYER won't pipe anything to stdout, only to stderr if option -I or --info is used
-            // --alpha 0 
-            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -1200 --threshold 30 --audio_fifo 30 -I "${extractedURI}"`);
+            // OMXPLAYER won't pipe anything to stdout, only to stderr, if option -I or --info is used
+            // Use "--alpha 0" for audio only mode 
+            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -3600 --threshold 30 --audio_fifo 30 -I "${extractedURI}"`);
             this.playing.stderr.once('data', (data) => {
                 resolve(this.playing);
             });
