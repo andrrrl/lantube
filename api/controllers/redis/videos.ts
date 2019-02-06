@@ -1,14 +1,9 @@
 import * as request from 'request';
-import * as ServerSchema from '../../schemas/redis/Server';
 import { IVideo } from './../../interfaces/IVideo.interface';
 import * as redis from '../../connections/redis';
 import { IRedisFormattedVideo } from "../../interfaces/IRedisFormattedVideo.interface";
-import { IYoutubeVideo } from "../../interfaces/iYoutubeVideo.interface";
-import { Player } from './player';
 import { Socket } from 'net';
 
-// Load Server
-let Server = new ServerSchema.Server();
 
 export class Videos {
 
@@ -84,6 +79,7 @@ export class Videos {
             let videoId = 'video' + Number(videosCount + 1);
             let title = videoData.title.replace(/"/g, '');
             let thumb = videoData.thumbnail_url;
+            let duration = videoData.duration;
 
             // Redis no acepta objetos JSON aun... ¬_¬
             let videoString = this.generateRedisString(videoId, title, videoUri, thumb, videosCount + 1);
@@ -120,11 +116,12 @@ export class Videos {
 
     delete(videoId) {
         return new Promise((resolve, reject) => {
-            redis.hdel('videos', videoId, async (err, reply) => {
+            redis.HDEL('videos', String(videoId), async (err, reply) => {
                 if (err) {
                     reject(err);
                 }
                 if (reply === 1) {
+                    let v = await this.getAll('videos');
                     await this.reorderAll('videos');
                     let added = await this.getById('videos', videoId);
                     resolve(added);
@@ -141,8 +138,6 @@ export class Videos {
     getAll(key): any {
         return new Promise(async (resolve, reject) => {
 
-            console.log('Video count: ', await this.count('videos'));
-
             if (await this.count('videos') === 0) {
                 resolve([]);
             }
@@ -158,6 +153,11 @@ export class Videos {
                     Object.keys(videosRedis).forEach(video => {
                         videos.push(JSON.parse(videosRedis[video]));
                     });
+
+                    videos.sort((a, b) => {
+                        return parseInt(a.videoId.replace(/video/, '')) - parseInt(b.videoId.replace(/video/, ''));
+                    });
+
                     resolve(videos);
                 } else {
                     resolve([]);
@@ -167,7 +167,7 @@ export class Videos {
         });
     }
 
-    reorderAll(key) {
+    reorderAll(key, videoId = null) {
         return new Promise(async (resolve, reject) => {
             let videos = await this.getAll(key);
 
@@ -175,23 +175,36 @@ export class Videos {
                 return parseInt(a.videoId.replace(/video/, '')) - parseInt(b.videoId.replace(/video/, ''));
             });
 
+            if (videoId !== null) {
+                console.log(videoId, 'ES NULL');
+                let newTopIndex = videos.findIndex(x => x.videoId === videoId);
+                let newTop = videos[newTopIndex];
+                videos.splice(newTopIndex, 1);
+                videos = [...videos, newTop];
+            }
+
+            redis.hdel('videos', videos.map(x => x.videoId));
+
             let i = 1;
             for (let video of videos) {
                 let videoId = 'video' + i;
-                let title = video.title.replace(/"/g, '');
-                let thumb = video.img;
+                let title = video.videoInfo.title.replace(/"/g, '');
+                let thumb = video.videoInfo.img;
 
-                let ytbURL = video.url;
+                let ytbURL = video.videoInfo.url;
                 if (ytbURL === 'undefined') {
-                    ytbURL = await this.getVideoInfo(video.url);
+                    ytbURL = await this.getVideoInfo(video.videoInfo.url);
                 }
                 let videoString = this.generateRedisString(videoId, title, ytbURL, thumb, i);
 
-                redis.hmset(key, videoId, videoString, (err, reply) => {
+                await redis.hset(key, videoId, videoString, (err, reply) => {
                     if (err) {
                         reject(err);
                     }
                 });
+
+                console.log(i);
+
                 i++;
             }
 

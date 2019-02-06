@@ -10,6 +10,8 @@ export class Search {
 
     search(term) {
 
+        term = term !== null ? term : process.argv[2];
+
         this.videoList = [];
 
         let options = {
@@ -33,7 +35,7 @@ export class Search {
                         title: video.text(),
                         url: video.attr('href').value(),
                         duration: this.durationList[k].text(),
-                        img: (imgPreferred ? imgPreferred : (imgFallback ? imgFallback : ''))
+                        img: (imgPreferred ? this.imageList[k].get('img').attr('src').value() : (imgFallback ? imgFallback : ''))
                     });
                 });
 

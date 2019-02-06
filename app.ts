@@ -1,6 +1,7 @@
 import * as cors from 'cors';
 import * as helmet from 'helmet';
 import * as express from 'express';
+import * as bodyParser from 'body-parser'
 import * as HttpStatus from 'http-status-codes';
 import * as socketio from 'socket.io';
 import * as ServerSchema from './api/schemas/redis/Server';
@@ -15,6 +16,10 @@ require('dotenv').config({
 let app = express();
 
 app.set('port', 3000);
+
+// Tell express to use the body-parser middleware and to not parse extended bodies
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use(cors());
 app.use(helmet());
 app.options('*', cors());
@@ -101,6 +106,7 @@ app.all('*', (req, res, next) => {
         res.header('Access-Control-Max-Age', '1728000');
         res.sendStatus(200);
     } else {
+        console.log(req.body);
         next();
     }
 });

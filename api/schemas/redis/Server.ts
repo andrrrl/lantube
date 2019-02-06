@@ -1,5 +1,4 @@
 import * as os from 'os';
-import { reject } from 'bluebird';
 import { IPlayerStats } from '../../interfaces/IPlayerStats';
 let redis = require('../../connections/redis');
 export class Server {

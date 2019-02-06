@@ -110,6 +110,15 @@ export class Player {
 
             console.info(`Playback stopped!`);
 
+            let stats: IPlayerStats = await Server.getPlayerStats();
+            // Update stats
+            stats.status = 'stopped';
+
+            // Persist player stats
+            Server.setPlayerStats(stats);
+            // Emit stats change
+            this.io.emit('PLAYER_MESSAGE', stats);
+
             if (this.playing && this.playing.pid) {
                 if (this.playing.stdin.writable) {
                     this.playing.stdin.write("q");
@@ -264,37 +273,35 @@ export class Player {
 
         }
 
-        this.playing.on('disconnect', () => { });
-
+        this.playing.on('disconnect', () => { this.finishPlayback(); });
         this.playing.on('exit', () => { });
+        this.playing.on('close', () => { });
+    }
 
-        // Player is closed when video finishes
-        this.playing.on('close', () => {
-            this.stopped = true;
+    finishPlayback() {
+        this.stopped = true;
 
-            console.log('User triggered?', this.userTriggered);
-            console.log('Playlist mode?', this.playerStats.playlist);
-            if (this.playerStats.playlist === true && !this.userTriggered) {
-                this.playNext(false);
-            }
+        console.log('User triggered?', this.userTriggered);
+        console.log('Playlist mode?', this.playerStats.playlist);
+        if (this.playerStats.playlist === true && !this.userTriggered) {
+            this.playNext(false);
+        }
 
-            // Update stats
-            let stats: IPlayerStats = {
-                player: process.env.PLAYER,
-                status: 'stopped',
-                videoId: this.playerStats.videoInfo.videoId,
-                videoInfo: this.playerStats.videoInfo,
-                playlist: this.playerStats.playlist,
-                lastUpdated: new Date(),
-            };
+        // Update stats
+        let stats: IPlayerStats = {
+            player: process.env.PLAYER,
+            status: 'stopped',
+            videoId: this.playerStats.videoInfo.videoId,
+            videoInfo: this.playerStats.videoInfo,
+            playlist: this.playerStats.playlist,
+            lastUpdated: new Date(),
+        };
 
-            // Emit stats change
-            this.io.emit('PLAYER_MESSAGE', stats);
+        // Emit stats change
+        this.io.emit('PLAYER_MESSAGE', stats);
 
-            // Persist player stats
-            Server.setPlayerStats(stats);
-
-        });
+        // Persist player stats
+        Server.setPlayerStats(stats);
     }
 
     extracYoutubeURL(videoURL) {
@@ -311,7 +318,7 @@ export class Player {
         return new Promise((resolve, reject) => {
             // OMXPLAYER won't pipe anything to stdout, only to stderr, if option -I or --info is used
             // Use "--alpha 0" for audio only mode 
-            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -3600 --threshold 30 --audio_fifo 30 -I "${extractedURI}"`);
+            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -1000 --threshold 30 --audio_fifo 30 -I "${extractedURI}"`);
             this.playing.stderr.once('data', (data) => {
                 resolve(this.playing);
             });

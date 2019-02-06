@@ -183,11 +183,22 @@ export = (io) => {
 
 
     // /**
-    //  * Server ans Player status
+    //  * Server and Player status
     //  */
     router.route('/api/player/stats')
         .get(async (req, res, next) => {
             let stats = await ServerCtrl.getPlayerStats();
+            io.emit('PLAYER_MESSAGE', stats);
+            res.json(stats);
+        })
+
+    router.route('/api/player/stats/update/:videoId')
+        .put(async (req, res, next) => {
+
+            let videoId = req.params.videoId;
+            VideosCtrl.reorderAll('videos', videoId);
+
+            let stats = await ServerCtrl.setPlayerStats(req.body);
             res.json(stats);
         });
 
