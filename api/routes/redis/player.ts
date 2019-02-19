@@ -198,7 +198,7 @@ export = (io) => {
             let videoId = req.params.videoId;
             VideosCtrl.reorderAll('videos', videoId);
 
-            let stats = await ServerCtrl.setPlayerStats(req.body);
+            let stats = await ServerCtrl.getPlayerStats();
             res.json(stats);
         });
 
