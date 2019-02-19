@@ -77,7 +77,7 @@ export class Videos {
         return new Promise(async (resolve, reject) => {
             let videosCount: any = await this.count(key);
             let videoId = 'video' + Number(videosCount + 1);
-            let title = videoData.title;
+            let title = videoData.title.replace(/"/g, '');
             let thumb = videoData.thumbnail_url;
             let duration = videoData.duration;
 
@@ -92,8 +92,18 @@ export class Videos {
         });
     }
 
-    generateRedisString(videoId, title, videoUri, thumb, order) {
-        return `{"videoId":"${videoId}","videoInfo":{"videoId":"${videoId}","title":"${title}","url":"${videoUri}","img":"${thumb}"},"order":${order}}`;
+    generateRedisString(videoId, title, videoUri, thumb, order): string {
+        return JSON.stringify({
+            videoId: videoId,
+            videoInfo: {
+                videoId: videoId,
+                title: title,
+                url: videoUri,
+                img: thumb
+            },
+            order: order
+        });
+
     }
 
     add(key, ytId) {
