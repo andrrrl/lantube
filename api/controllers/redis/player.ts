@@ -110,14 +110,16 @@ export class Player {
 
             console.info(`Playback stopped!`);
 
-            let stats: IPlayerStats = await Server.getPlayerStats();
-            // Update stats
-            stats.status = 'stopped';
+            if (this.userTriggered) {
+                let stats: IPlayerStats = await Server.getPlayerStats();
+                // Update stats
+                stats.status = 'stopped';
 
-            // Persist player stats
-            Server.setPlayerStats(stats);
-            // Emit stats change
-            this.io.emit('PLAYER_MESSAGE', stats);
+                // Persist player stats
+                Server.setPlayerStats(stats);
+                // Emit stats change
+                this.io.emit('PLAYER_MESSAGE', stats);
+            }
 
             if (this.playing && this.playing.pid) {
                 if (this.playing.stdin.writable) {
@@ -273,9 +275,9 @@ export class Player {
 
         }
 
-        this.playing.on('disconnect', () => { this.finishPlayback(); });
+        this.playing.on('disconnect', () => { });
         this.playing.on('exit', () => { });
-        this.playing.on('close', () => { });
+        this.playing.on('close', () => { this.finishPlayback(); });
     }
 
     finishPlayback() {
@@ -306,7 +308,7 @@ export class Player {
 
     extracYoutubeURL(videoURL) {
         return new Promise((resolve, reject) => {
-            let video = exec(`${process.env.YOUTUBE_DL} ${this.formats} -g ${videoURL}`);
+            let video = exec(`${process.env.YOUTUBE_DL} --rm-cache-dir ${this.formats} -g ${videoURL}`);
             video.stdout.once('data', (data) => {
                 data = data.toString().replace('\n', '').replace('\n', '').replace('\n', '');
                 resolve(data);
