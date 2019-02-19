@@ -32,7 +32,7 @@ export class Search {
                     let imgPreferred = this.imageList[k].get('img').attr('src').value().includes('https');
                     let imgFallback = this.imageList[k].get('img').attr('data-thumb') ? this.imageList[k].get('img').attr('data-thumb').value() : '';
                     this.videoList.push({
-                        title: video.text(),
+                        title: video.text().replace(/\"/g, ''),
                         url: video.attr('href').value(),
                         duration: this.durationList[k].text(),
                         img: (imgPreferred ? this.imageList[k].get('img').attr('src').value() : (imgFallback ? imgFallback : ''))
