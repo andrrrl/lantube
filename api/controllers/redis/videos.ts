@@ -77,7 +77,7 @@ export class Videos {
         return new Promise(async (resolve, reject) => {
             let videosCount: any = await this.count(key);
             let videoId = 'video' + Number(videosCount + 1);
-            let title = videoData.title.replace(/"/g, '');
+            let title = videoData.title;
             let thumb = videoData.thumbnail_url;
             let duration = videoData.duration;
 
