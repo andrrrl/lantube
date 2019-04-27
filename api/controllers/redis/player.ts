@@ -200,6 +200,7 @@ export class Player {
             this.playerStats.status = playerOptions.status;
             this.playerStats.videoId = playerOptions.videoId;
             this.playerStats.videoInfo = playerOptions.videoInfo;
+            this.playerStats.audioOnly = playerOptions.audioOnly;
 
             var videoUrl = playerOptions.videoInfo.url;
 
@@ -212,6 +213,7 @@ export class Player {
                 status: 'loading',
                 videoId: this.playerStats.videoId,
                 videoInfo: this.playerStats.videoInfo,
+                audioOnly: this.playerStats.audioOnly,
                 playlist: this.playerStats.playlist,
                 lastUpdated: new Date()
             };
@@ -261,6 +263,7 @@ export class Player {
                 status: 'playing',
                 videoId: this.playerStats.videoInfo.videoId,
                 videoInfo: this.playerStats.videoInfo,
+                audioOnly: this.playerStats.audioOnly,
                 playlist: this.playerStats.playlist,
                 lastUpdated: new Date(),
             };
@@ -284,6 +287,7 @@ export class Player {
         this.stopped = true;
 
         console.log('User triggered?', this.userTriggered);
+        console.log('Audio only mode?', this.playerStats.audioOnly);
         console.log('Playlist mode?', this.playerStats.playlist);
         if (this.playerStats.playlist === true && !this.userTriggered) {
             this.playNext(false);
@@ -295,6 +299,7 @@ export class Player {
             status: 'stopped',
             videoId: this.playerStats.videoInfo.videoId,
             videoInfo: this.playerStats.videoInfo,
+            audioOnly: this.playerStats.audioOnly,
             playlist: this.playerStats.playlist,
             lastUpdated: new Date(),
         };
@@ -320,7 +325,9 @@ export class Player {
         return new Promise((resolve, reject) => {
             // OMXPLAYER won't pipe anything to stdout, only to stderr, if option -I or --info is used
             // Use "--alpha 0" for audio only mode 
-            this.playing = exec(`${process.env.PLAYER} -b -o both --vol -1000 --threshold 30 --audio_fifo 30 -I "${extractedURI}"`);
+            let playerString = `${process.env.PLAYER} ${this.playerStats.audioOnly ? `--alpha 0` : `-b`} -o both --vol -1000 -I --threshold 30 --audio_fifo 30 "${extractedURI}"`;
+            console.log(playerString);
+            this.playing = exec(playerString);
             this.playing.stderr.once('data', (data) => {
                 resolve(this.playing);
             });

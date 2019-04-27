@@ -4,7 +4,6 @@ let redis = require('../../connections/redis');
 export class Server {
 
     constructor() {
-
     }
 
     serverStats: any = {
@@ -25,6 +24,7 @@ export class Server {
         status: 'idle',
         videoId: '0',
         playlist: false,
+        audioOnly: false,
         lastUpdated: new Date(),
     };
 

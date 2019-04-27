@@ -181,6 +181,14 @@ export = (io) => {
             res.json(stats);
         });
 
+    router.route('/api/player/audioonly')
+        .patch(async (req, res, next) => {
+            let stats = await ServerCtrl.getPlayerStats();
+            stats.audioOnly = !stats.audioOnly;
+            ServerCtrl.setPlayerStats(stats);
+            res.json(stats);
+        });
+
 
     // /**
     //  * Server and Player status
