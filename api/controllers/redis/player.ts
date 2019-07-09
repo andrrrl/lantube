@@ -1,4 +1,3 @@
-import { execSync } from "child_process";
 import * as ChildProcess from 'child_process';
 import * as fs from 'fs';
 import * as ServerSchema from '../../schemas/redis/Server';
@@ -7,7 +6,8 @@ import { IPlayerStats } from "../../interfaces/IPlayerStats";
 import { IVideo } from "../../interfaces/IVideo.interface";
 
 const
-    exec = ChildProcess.exec;
+    exec = ChildProcess.exec,
+    spawn = ChildProcess.spawn;
 
 // Load Server
 let Server = new ServerSchema.Server();
@@ -26,10 +26,12 @@ export class Player {
     videosCtrl: any;
     stopped: any;
     userTriggered = false;
+    systemAudio;
 
     constructor(private io: any) {
         this.io = io;
         this.videosCtrl = new Videos(this.io);
+        this.systemAudio = process.env.SYSTEM_AUDIO;
 
         Server.getPlayerStats().then(playerStats => {
             this.playerStats = playerStats;
@@ -40,6 +42,9 @@ export class Player {
     pause() {
         return new Promise(async (resolve, reject) => {
 
+            this.playing.stdin.write("pause");
+            return;
+
             // Update stats
             let current = await Server.getPlayerStats();
             let action: any = (current.status === 'paused' || current.status === 'stopped') ? 'play' : 'pause';
@@ -48,7 +53,7 @@ export class Player {
 
             // If player is playing we just toggle play/pause
             if (this.playing && this.playing.pid && this.playing.stdin.writable) {
-                this.playing.stdin.write(" ");
+                this.playing.stdin.write(process.env.PLAYER_PAUSE); // " " <== omxplayer, 
             } else {
                 this.userTriggered = false;
                 this.play(this.playerStats);
@@ -79,19 +84,28 @@ export class Player {
     volume(volume, emitSignal = true) {
         return new Promise(async (resolve, reject) => {
 
+            this.systemAudio = this.systemAudio !== null ? this.systemAudio : process.env.SYSTEM_AUDIO;
+
             if (volume === 'down') {
                 this.volumeChange = '-';
             } else if (volume === 'up') {
                 this.volumeChange = '+';
             }
 
-            if (process.env.PLAYER !== 'omxplayer') {
-                console.info('Volume change not supported!');
-                reject('Volume change not supported!')
-            } else {
+            console.log('systemAudio', this.systemAudio);
+
+            if (this.systemAudio === 'pulseaudio') {
+                console.log(`pactl set-sink-volume 0 ${this.volumeChange}${process.env.SYSTEM_VOLUME_STEP}%`);
+                exec(`pactl set-sink-volume 0 ${this.volumeChange}${process.env.SYSTEM_VOLUME_STEP}%`);
+            } else if (this.systemAudio === 'alsa') {
+                console.log(`amixer -q sset Master ${process.env.SYSTEM_VOLUME_STEP}${this.volumeChange}`);
+                exec(`amixer -q sset Master ${process.env.SYSTEM_VOLUME_STEP}${this.volumeChange}`);
+            } else if (this.systemAudio === 'omxplayer') {
                 this.playing.stdin.write(this.volumeChange);
-                console.info('Volume: ' + this.volumeChange);
             }
+
+            console.info('Volume: ' + this.volumeChange);
+
 
             if (emitSignal === true) {
                 let stats = await Server.getPlayerStats();
@@ -265,11 +279,11 @@ export class Player {
                 console.log('Extracting Youtube URL...');
                 let youtubeURL = await this.extracYoutubeURL(videoUrl);
 
-                console.log('Starting OMXPLAYER...');
+                console.log(`Starting ${process.env.PLAYER.toLocaleUpperCase()}...`);
                 await this.startPlayer(youtubeURL);
 
                 await this.initPlaybackSession();
-                return resolve(this.playerStats);
+                resolve(this.playerStats);
             }
         }).catch(async result => {
             // console.log('ERROR, can\'t stop the beat I can\'t stop.');
@@ -355,20 +369,20 @@ export class Player {
     startPlayer(extractedURI): Promise<ChildProcess.ChildProcess> {
         return new Promise((resolve, reject) => {
             // OMXPLAYER won't pipe anything to stdout, only to stderr, if option -I or --info is used
-            // Use "--alpha 0" for audio only mode 
-            let playerString = `${process.env.PLAYER} ${this.playerStats.audioOnly ? `--alpha 0` : `-b`} -o both --vol -1200 -I --threshold 30 --audio_fifo 30 "${extractedURI}"`;
-            console.log(playerString);
+            // Use "--alpha 0" for audio only mode
 
-            this.playing = exec(playerString);
+            let playbackString = `${process.env.PLAYBACK_OPTIONS}`;
+            // this.playing = exec(`${process.env.PLAYER} ${playbackString} ${extractedURI}`);
+            console.log([...playbackString.split(' '), extractedURI].join(' '));
+            this.playing = spawn(process.env.PLAYER, [...playbackString.split(' '), extractedURI]);
+
+            // console.log(this.playing.stdout);
 
             this.playing.on('disconnect', () => { });
             this.playing.on('exit', () => { });
             this.playing.on('close', () => {
                 console.log('this.playing closed with action: ', this.playerStats.action);
                 this.finishPlayback(this.playerStats.action);
-            });
-            this.playing.stderr.once('data', (data) => {
-                return resolve(this.playing);
             });
         });
 
