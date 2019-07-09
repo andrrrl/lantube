@@ -54,7 +54,6 @@ const
   path = require('path'),
   request = require('request'),
   colors = require('colors'),
-  shell = require('shelljs'),
   readline = require('readline'),
   ip = require('ip'),
 
