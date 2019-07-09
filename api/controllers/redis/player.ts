@@ -42,8 +42,20 @@ export class Player {
     pause() {
         return new Promise(async (resolve, reject) => {
 
-            this.playing.stdin.write("pause");
-            return;
+            this.systemAudio = this.systemAudio !== null ? this.systemAudio : process.env.SYSTEM_AUDIO;
+
+            if (this.systemAudio === 'pulseaudio' || this.systemAudio === 'alsa') {
+                console.log(`xdotool search --class mpv windowactivate --sync %1 key space windowactivate $(xdotool getactivewindow)`);
+                exec(`xdotool search --class mpv windowactivate --sync %1 key space windowactivate $(xdotool getactivewindow)`);
+            } else if (this.systemAudio === 'omxplayer') {
+                // If player is playing we just toggle play/pause
+                if (this.playing && this.playing.pid && this.playing.stdin.writable) {
+                    this.playing.stdin.write(process.env.PLAYER_PAUSE); // " " <== omxplayer, 
+                } else {
+                    this.userTriggered = false;
+                    this.play(this.playerStats);
+                }
+            }
 
             // Update stats
             let current = await Server.getPlayerStats();
@@ -51,13 +63,6 @@ export class Player {
             let status: any = (current.status === 'paused' || current.status === 'stopped') ? 'playing' : 'paused';
             console.info(`Playback ${(current.status === 'paused' || current.status === 'stopped') ? 'starting' : 'paused'}!`);
 
-            // If player is playing we just toggle play/pause
-            if (this.playing && this.playing.pid && this.playing.stdin.writable) {
-                this.playing.stdin.write(process.env.PLAYER_PAUSE); // " " <== omxplayer, 
-            } else {
-                this.userTriggered = false;
-                this.play(this.playerStats);
-            }
 
             // Update stats
             let stats: IPlayerStats = {
@@ -371,7 +376,9 @@ export class Player {
             // OMXPLAYER won't pipe anything to stdout, only to stderr, if option -I or --info is used
             // Use "--alpha 0" for audio only mode
 
-            let playbackString = `${process.env.PLAYBACK_OPTIONS}`;
+            let playbackType = process.env.PLAYER_MODE === 'fullscreen' ? process.env.PLAYER_MODE_FULLSCREEN_ARG : process.env.PLAYER_MODE_AUDIO_ONLY_ARG;
+
+            let playbackString = `${process.env.PLAYBACK_OPTIONS} ${playbackType}`;
             // this.playing = exec(`${process.env.PLAYER} ${playbackString} ${extractedURI}`);
             console.log([...playbackString.split(' '), extractedURI].join(' '));
             this.playing = spawn(process.env.PLAYER, [...playbackString.split(' '), extractedURI]);
