@@ -98,8 +98,8 @@ export class Player {
                 console.log(`pactl set-sink-volume 0 ${this.volumeChange}${process.env.SYSTEM_VOLUME_STEP}%`);
                 exec(`pactl set-sink-volume 0 ${this.volumeChange}${process.env.SYSTEM_VOLUME_STEP}%`);
             } else if (this.systemAudio === 'alsa') {
-                console.log(`amixer -q sset Master ${process.env.SYSTEM_VOLUME_STEP}${this.volumeChange}`);
-                exec(`amixer -q sset Master ${process.env.SYSTEM_VOLUME_STEP}${this.volumeChange}`);
+                console.log(`amixer -q -D sset Master ${process.env.SYSTEM_VOLUME_STEP}${this.volumeChange}`);
+                exec(`amixer -q -D sset Master ${process.env.SYSTEM_VOLUME_STEP}${this.volumeChange}`);
             } else if (this.systemAudio === 'omxplayer') {
                 this.playing.stdin.write(this.volumeChange);
             }
