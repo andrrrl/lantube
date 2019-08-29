@@ -52,7 +52,7 @@ export = (io) => {
                                 playerMode: process.env.PLAYER_MODE,
                                 status: 'playing',
                                 ...video
-                            }).then(() => {
+                            }, true).then(() => {
                                 res.json({
                                     result: 'playing'
                                 });
