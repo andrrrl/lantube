@@ -103,42 +103,7 @@ export class Player {
         });
     }
 
-    stopAll(userTriggered = true) {
-        return new Promise(async (resolve, reject) => {
 
-            this.userTriggered = userTriggered;
-
-            console.info(`Playback stopped!`);
-
-            if (this.userTriggered) {
-                let stats: IPlayerStats = await Server.getPlayerStats();
-                // Update stats
-                stats.status = 'stopped';
-
-                // Persist player stats
-                Server.setPlayerStats(stats);
-                // Emit stats change
-                this.io.emit('PLAYER_MESSAGE', stats);
-            }
-
-            if (this.playing && this.playing.pid) {
-                if (this.playing.stdin.writable) {
-                    this.playing.stdin.write("q");
-                    if (!this.playing.killed) {
-                        this.playing.kill();
-                        if (this.playing.killed) {
-                            resolve(true);
-                        }
-                    }
-                } else {
-                    resolve(true);
-                }
-            }
-
-            this.playing = null;
-            resolve(true);
-        });
-    }
 
     // If videoId is null, let's consider 'video1' as starting ponit
     getVideoOrder(videoId = 'video') {
@@ -193,7 +158,48 @@ export class Player {
         });
     }
 
-    async play(playerOptions) {
+    stopAll(userTriggered = true) {
+        return new Promise(async (resolve, reject) => {
+
+            this.userTriggered = userTriggered;
+
+            console.info(`Playback stopped!`);
+
+            if (this.userTriggered) {
+                let stats: IPlayerStats = await Server.getPlayerStats();
+                // Update stats
+                stats.status = 'stopped';
+
+                // Persist player stats
+                Server.setPlayerStats(stats);
+                // Emit stats change
+                this.io.emit('PLAYER_MESSAGE', stats);
+            }
+
+            if (this.playing && this.playing.pid) {
+                if (this.playing.stdin.writable) {
+                    this.playing.stdin.write("q");
+                    if (!this.playing.killed) {
+                        this.playing.kill();
+                        if (this.playing.killed) {
+                            resolve(true);
+                        }
+                    }
+                } else {
+                    resolve(true);
+                }
+            }
+
+            this.playing = null;
+            resolve(true);
+        });
+    }
+
+    async play(playerOptions, userTriggered = false) {
+
+        // Stop/clear any current playback before starting
+        this.stopped = await this.stopAll(userTriggered);
+
         return new Promise(async (resolve, reject) => {
 
             this.playerStats = await Server.getPlayerStats();
@@ -204,8 +210,7 @@ export class Player {
 
             var videoUrl = playerOptions.videoInfo.url;
 
-            // Stop/clear any current playback before starting
-            this.stopped = await this.stopAll(false);
+
 
             // Update stats
             let stats: IPlayerStats = {
@@ -239,8 +244,7 @@ export class Player {
                     }
                 }
 
-            }
-            else {
+            } else {
                 // console.log('WARNING, can\'t stop the beat I can\'t stop.');
                 await this.play(this.playerStats);
             }
