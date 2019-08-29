@@ -59,11 +59,13 @@ let index = require('./api/routes/redis/index');
 let stats = require('./api/routes/redis/stats');
 let player = require('./api/routes/redis/player');
 let videos = require('./api/routes/redis/videos');
+let dht = require('./api/routes/sensor/dht');
 
 // app.use('/', index);
 // app.use('/', stats);
 app.use('/', player(io));
 app.use('/', videos(io));
+app.use('/', dht(io));
 
 // Error handler
 app.use((err: any, req, res, next) => {
