@@ -28,6 +28,8 @@
         "marked": "^0.3.18",
         "morgan": "^1.9.1",
         "node-notifier": "^4.6.0",
+        "pigpio": "^1.2.3",
+        "pigpio-dht": "^1.1.1",
         "pump": "^1.0.1",
         "redis": "^2.8.0",
         "request": "^2.88.0",
