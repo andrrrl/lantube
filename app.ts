@@ -24,7 +24,7 @@ app.use(cors());
 app.use(helmet());
 app.options('*', cors());
 
-var env = 'development';
+let env = 'development';
 app.locals.ENV = env;
 app.locals.ENV_DEVELOPMENT = env === 'development';
 
@@ -55,17 +55,19 @@ server.on('listening', () => {
     });
 });
 
-let index = require('./api/routes/redis/index');
-let stats = require('./api/routes/redis/stats');
-let player = require('./api/routes/redis/player');
-let videos = require('./api/routes/redis/videos');
-let dht = require('./api/routes/sensor/dht');
+const index = require('./api/routes/redis/index');
+const stats = require('./api/routes/redis/stats');
+const player = require('./api/routes/redis/player');
+const videos = require('./api/routes/redis/videos');
+const dht = require('./api/routes/sensor/dht');
+const coreTemp = require('./api/routes/sensor/coreTemp');
 
 // app.use('/', index);
 // app.use('/', stats);
 app.use('/', player(io));
 app.use('/', videos(io));
 app.use('/', dht(io));
+app.use('/', coreTemp(io));
 
 // Error handler
 app.use((err: any, req, res, next) => {
