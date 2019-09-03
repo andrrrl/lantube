@@ -10,8 +10,7 @@ export = (io) => {
     router.route('/api/sensor/coreTemp')
 
         .get(async (req, res, next) => {
-            console.log('hola');
-            let coreTemp = await coreTempCtrl.readSensor();
+            let coreTemp = await coreTempCtrl.initSensor();
             res.json(coreTemp);
         });
 
