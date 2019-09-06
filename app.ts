@@ -42,7 +42,7 @@ let io = socketio(server);
 
 server.on('listening', () => {
     io.on('connection', async (socket) => {
-        console.log("Cliente conectado.");
+        console.log("Listener conectado.");
 
         socket.removeAllListeners();
 
@@ -59,15 +59,17 @@ const index = require('./api/routes/redis/index');
 const stats = require('./api/routes/redis/stats');
 const player = require('./api/routes/redis/player');
 const videos = require('./api/routes/redis/videos');
-const dht = require('./api/routes/sensor/dht');
+// const dht = require('./api/routes/sensor/dht');
 const coreTemp = require('./api/routes/sensor/coreTemp');
+const relay = require('./api/routes/relay/relay');
 
 // app.use('/', index);
 // app.use('/', stats);
 app.use('/', player(io));
 app.use('/', videos(io));
-app.use('/', dht(io));
+// app.use('/', dht(io));
 app.use('/', coreTemp(io));
+app.use('/', relay());
 
 // Error handler
 app.use((err: any, req, res, next) => {
