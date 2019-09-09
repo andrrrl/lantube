@@ -1,24 +1,22 @@
 import * as express from 'express';
-import { Relay } from '../../controllers/relay/relay';
+import { FanRelay } from '../../controllers/relay/relay';
 
 let router = express.Router();
 
 export = () => {
 
-    let relayCtrl = new Relay();
-
     router.route('/api/relay/on')
 
         .get(async (req, res, next) => {
-            let realy = await relayCtrl.relayON();
-            res.json(realy);
+            FanRelay.relayON();
+            res.json({ relay: 'ON' });
         });
 
     router.route('/api/relay/off')
 
         .get(async (req, res, next) => {
-            let realy = await relayCtrl.relayOFF();
-            res.json(realy);
+            FanRelay.relayOFF()
+            res.json({ relay: 'OFF' });
         });
 
     return router;

@@ -1,22 +1,37 @@
 import * as onoff from 'onoff';
 
-export class Relay {
-    relay: onoff.Gpio;
+export class FanRelay {
+    static relay: onoff.Gpio;
 
-    constructor() {
-        console.log('Relay intance');
+    private static cleanUp() {
+        process.on('SIGINT', () => {
+            console.log('FanRelay shutdown');
+            this.relay.unexport();
+            console.log('Lantube shutdown');
+            process.exit();
+        });
     }
 
-    relayON() {
+    static relayON() {
         console.log('ON');
+        if (this.relay) {
+            this.relay.unexport();
+        }
         this.relay = new onoff.Gpio(23, 'out');
-        this.relay.write(onoff.Gpio.HIGH);
+        this.cleanUp();
+
+        this.relay.writeSync(onoff.Gpio.HIGH);
     }
 
-    relayOFF() {
+    static relayOFF() {
         console.log('OFF');
+        if (this.relay) {
+            this.relay.unexport();
+        }
         this.relay = new onoff.Gpio(23, 'out');
-        this.relay.write(onoff.Gpio.LOW);
+        this.cleanUp();
+
+        this.relay.writeSync(onoff.Gpio.LOW);
     }
 
 }

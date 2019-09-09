@@ -1,74 +1,75 @@
 import { Socket } from 'net';
 import { ChildProcess, exec } from 'child_process';
-import * as relayCtrl from '../relay/relay';
-
+import { FanRelay } from '../../controllers/relay/relay';
 export class CoreTemp {
     thermal: ChildProcess;
     relayStarted = false;
-    relay;
     temperature: number;
-
+    dangerTempLimit = 70;
+    coolTempLimit = 65;
 
     constructor(private io: Socket) {
         this.io = io;
-        this.relay = new relayCtrl.Relay();
 
         setInterval(() => {
 
+            this.thermal = null;
             this.thermal = exec('cat /sys/class/thermal/thermal_zone0/temp');
-            console.log('Leyendo temperatura del core...')
+
             this.thermal.stdout.once('data', (data) => {
-                console.log('stdout');
-
                 this.temperature = Math.round(Number(data) / 1000);
-
-                console.log(this.temperature);
-
-                const coreTemp = {
-                    sensor: 'coreTemp',
-                    value: `${this.temperature}°C`
-                }
-
+                console.log(`Core temp: ${this.temperature}°C`);
                 this.sendCoreTemp();
-
-                console.log('emit temp');
-                this.io.emit('SENSOR_MESSAGE', coreTemp);
-
             });
 
-            this.thermal.once('exit', () => {
-                console.log('exit');
+            this.thermal.on('exit', () => {
 
-                if (!this.relayStarted && this.temperature > 60) {
-                    this.relay.relayON();
+                // Acceptable temperature is between 65 and 70 deg C
+                if (!this.relayStarted && this.temperature > this.dangerTempLimit) {
+                    console.log('Call FanRelay.relayON()');
+                    FanRelay.relayON();
                     this.relayStarted = true;
                 }
 
-                if (this.relayStarted && this.temperature <= 58) {
-                    this.relay.relayOFF();
+                // Try to cool it down to 60 deg C
+                if (this.relayStarted && this.temperature <= this.coolTempLimit) {
+                    console.log('Call FanRelay.relayOFF()');
+                    FanRelay.relayOFF();
                     this.relayStarted = false;
                 }
 
                 this.thermal = null;
-
             });
         }, 10000);
 
-        process.on('SIGINT', () => {
-            console.log('Relay shutdown');
-            this.relay.unexport();
+        process.on('exit', () => {
+            if (this.thermal && !this.thermal.killed) {
+                this.thermal.kill();
+            }
         });
 
     };
 
     sendCoreTemp() {
         return new Promise(async (resolve, reject) => {
-            console.log('send temp');
+
+            const coreTemp = {
+                sensor: 'core',
+                type: 'temperature',
+                unit: '°C',
+                value: `${this.temperature}`,
+                dangerTempLimit: this.dangerTempLimit,
+                coolTempLimit: this.coolTempLimit
+            }
+
+            this.io.emit('SENSOR_MESSAGE', coreTemp);
+
             return resolve({
                 sensor: {
                     name: 'thermal_zone0',
-                    dataTypes: ['temperatura'],
-                    value: this.temperature
+                    dataTypes: ['temperature'],
+                    value: coreTemp.value,
+                    fanStatus: this.relayStarted
                 }
             });
 
