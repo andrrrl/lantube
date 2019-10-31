@@ -35,6 +35,7 @@ export class Player {
 
         Server.getPlayerStats().then(playerStats => {
             this.playerStats = playerStats;
+            this.playerStats.status = 'idle';
         });
     };
 
@@ -44,7 +45,8 @@ export class Player {
 
             this.systemAudio = this.systemAudio !== null ? this.systemAudio : process.env.SYSTEM_AUDIO;
 
-            if (this.systemAudio === 'pulseaudio' || this.systemAudio === 'alsa') {
+            // Only on GUI mode (audio-only won't work)
+            if ((this.systemAudio === 'pulseaudio' || this.systemAudio === 'alsa') && process.env.PLAYER_MODE !== 'audio-only') {
                 console.log(`xdotool search --class mpv windowactivate --sync %1 key space windowactivate $(xdotool getactivewindow)`);
                 exec(`xdotool search --class mpv windowactivate --sync %1 key space windowactivate $(xdotool getactivewindow)`);
             } else if (this.systemAudio === 'omxplayer') {
@@ -55,6 +57,8 @@ export class Player {
                     this.userTriggered = false;
                     this.play(this.playerStats);
                 }
+            } else if (process.env.PLAYER_MODE === 'audio-only') {
+                exec("echo '{ \"command\": [\"cycle\", \"pause\"] }' | socat - /tmp/mpvsocket");
             }
 
             // Update stats
@@ -125,7 +129,6 @@ export class Player {
     }
 
 
-
     // If videoId is null, let's consider 'video1' as starting ponit
     getVideoOrder(videoId = 'video') {
         return Number(videoId.replace('video', ''));
@@ -150,9 +153,9 @@ export class Player {
             // console.log({ prevVideo });
 
             this.play(this.playerStats).then(result => {
-                resolve(this.playerStats);
+                return resolve(this.playerStats);
             }).catch(() => {
-                reject(this.playerStats);
+                return reject(this.playerStats);
             });
 
         });
@@ -174,9 +177,9 @@ export class Player {
             this.playerStats.status = 'loading';
 
             this.play(this.playerStats).then(() => {
-                resolve(this.playerStats);
+                return resolve(this.playerStats);
             }).catch(() => {
-                reject(this.playerStats);
+                return reject(this.playerStats);
             });
         });
     }
@@ -378,10 +381,10 @@ export class Player {
 
             let playbackType = process.env.PLAYER_MODE === 'fullscreen' ? process.env.PLAYER_MODE_FULLSCREEN_ARG : process.env.PLAYER_MODE_AUDIO_ONLY_ARG;
 
-            let playbackString = `${process.env.PLAYBACK_OPTIONS} ${playbackType}`;
+            let playbackString = `${playbackType}`;
             // this.playing = exec(`${process.env.PLAYER} ${playbackString} ${extractedURI}`);
-            console.log([...playbackString.split(' '), extractedURI].join(' '));
-            this.playing = spawn(process.env.PLAYER, [...playbackString.split(' '), extractedURI]);
+            console.log(process.env.PLAYER, [process.env.PLAYER_EXTRA_ARGS, ...playbackString.split(' '), extractedURI]);
+            this.playing = spawn(process.env.PLAYER, [process.env.PLAYER_EXTRA_ARGS, ...playbackString.split(' '), extractedURI]);
 
             // console.log(this.playing.stdout);
 
@@ -431,9 +434,9 @@ export class Player {
             let fileExists = fs.existsSync('file:///tmp/playlist.pls');
             if (fileExists) {
                 fs.unlinkSync('file:///tmp/playlist.pls');
-                resolve(true);
+                return resolve(true);
             } else {
-                resolve(false);
+                return resolve(false);
             }
         })
     }
