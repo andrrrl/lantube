@@ -74,21 +74,27 @@ export class Videos {
     // converts video info to String, so it can be saved to Redis
     // calculates Redis ID
     formatForRedis(key, videoUri, videoData): Promise<IRedisFormattedVideo> {
+
         return new Promise(async (resolve, reject) => {
-            let videosCount: any = await this.count(key);
-            let videoId = 'video' + Number(videosCount + 1);
-            let title = videoData.title.replace(/"/g, '');
-            let thumb = videoData.thumbnail_url;
-            let duration = videoData.duration;
 
-            // Redis no acepta objetos JSON aun... ¬_¬
-            let videoString = this.generateRedisString(videoId, title, videoUri, thumb, videosCount + 1);
-            let videoRedis: IRedisFormattedVideo = {
-                videoId: videoId,
-                videoString: videoString
-            };
+            if (videoData !== 'Unauthorized') {
+                let videosCount: any = await this.count(key);
+                let videoId = 'video' + Number(videosCount + 1);
+                let title = videoData.title.replace(/"/g, '');
+                let thumb = videoData.thumbnail_url;
+                let duration = videoData.duration;
 
-            resolve(videoRedis);
+                // Redis no acepta objetos JSON aun... ¬_¬
+                let videoString = this.generateRedisString(videoId, title, videoUri, thumb, videosCount + 1);
+                let videoRedis: IRedisFormattedVideo = {
+                    videoId: videoId,
+                    videoString: videoString
+                };
+
+                return resolve(videoRedis);
+            } else {
+                return reject(false);
+            }
         });
     }
 
@@ -126,7 +132,7 @@ export class Videos {
 
     delete(videoId) {
         return new Promise((resolve, reject) => {
-            redis.HDEL('videos', String(videoId), async (err, reply) => {
+            redis.hdel('videos', String(videoId), async (err, reply) => {
                 if (err) {
                     reject(err);
                 }

@@ -82,6 +82,8 @@ export class Player {
             // Persist player stats
             Server.setPlayerStats(stats);
 
+            this.playerStats = stats;
+
             // Emit stats change
             this.io.emit('PLAYER_MESSAGE', stats);
 
@@ -114,7 +116,6 @@ export class Player {
             }
 
             console.info('Volume: ' + this.volumeChange);
-
 
             if (emitSignal === true) {
                 let stats = await Server.getPlayerStats();
