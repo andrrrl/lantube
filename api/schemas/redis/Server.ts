@@ -21,6 +21,7 @@ export class Server {
 
     playerStats: IPlayerStats = {
         player: process.env.PLAYER || 'mpv',
+        action: 'idle',
         status: 'idle',
         videoId: '0',
         playlist: false,
@@ -47,7 +48,7 @@ export class Server {
         return new Promise((resolve, reject) => {
             redis.set('playerStats', JSON.stringify(stats), () => {
                 redis.get('playerStats', (err, stats) => {
-                    resolve(JSON.stringify(stats));
+                    return resolve(JSON.stringify(stats));
                 });
             });
         });

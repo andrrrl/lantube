@@ -50,6 +50,7 @@ export = (io) => {
                             PlayerCtrl.play({
                                 player: process.env.PLAYER,
                                 playerMode: process.env.PLAYER_MODE,
+                                action: 'play',
                                 status: 'playing',
                                 ...video
                             }, true).then(() => {

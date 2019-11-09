@@ -42,6 +42,7 @@ export class Player {
 
             // Update stats
             let current = await Server.getPlayerStats();
+            let action: any = (current.status === 'paused' || current.status === 'stopped') ? 'play' : 'pause';
             let status: any = (current.status === 'paused' || current.status === 'stopped') ? 'playing' : 'paused';
             console.info(`Playback ${(current.status === 'paused' || current.status === 'stopped') ? 'starting' : 'paused'}!`);
 
@@ -56,7 +57,8 @@ export class Player {
             // Update stats
             let stats: IPlayerStats = {
                 player: process.env.PLAYER,
-                status: status,
+                action,
+                status,
                 videoId: current.videoId,
                 videoInfo: current.videoInfo,
                 playlist: current.playlist,
@@ -122,6 +124,7 @@ export class Player {
 
             this.playerStats.videoId = prevVideo.videoInfo.videoId;
             this.playerStats.videoInfo = prevVideo.videoInfo;
+            this.playerStats.action = 'prev';
             this.playerStats.status = 'loading';
 
             console.log('prev: ', this.playerStats);
@@ -148,6 +151,7 @@ export class Player {
 
             this.playerStats.videoId = nextVideo.videoInfo.videoId;
             this.playerStats.videoInfo = nextVideo.videoInfo;
+            this.playerStats.action = 'next';
             this.playerStats.status = 'loading';
 
             this.play(this.playerStats).then(() => {
@@ -168,10 +172,14 @@ export class Player {
             if (this.userTriggered) {
                 let stats: IPlayerStats = await Server.getPlayerStats();
                 // Update stats
+                stats.action = 'stop';
                 stats.status = 'stopped';
+
+                this.playerStats = stats;
 
                 // Persist player stats
                 Server.setPlayerStats(stats);
+
                 // Emit stats change
                 this.io.emit('PLAYER_MESSAGE', stats);
             }
@@ -197,12 +205,25 @@ export class Player {
 
     async play(playerOptions, userTriggered = false) {
 
-        // Stop/clear any current playback before starting
-        this.stopped = await this.stopAll(userTriggered);
 
+        // Stop/clear any current playback before starting
         return new Promise(async (resolve, reject) => {
+            if (this.playerStats.playlist && this.playerStats.status === 'playing') {
+                return resolve(false);
+            }
+
+            if (this.playing && this.playing.pid) {
+                if (this.playing.stdin.writable) {
+                    this.playing.stdin.write("q");
+                    if (!this.playing.killed) {
+                        this.playing.kill();
+                    }
+                }
+                this.playing = null;
+            }
 
             this.playerStats = await Server.getPlayerStats();
+            this.playerStats.action = playerOptions.action;
             this.playerStats.status = playerOptions.status;
             this.playerStats.videoId = playerOptions.videoId;
             this.playerStats.videoInfo = playerOptions.videoInfo;
@@ -210,11 +231,10 @@ export class Player {
 
             var videoUrl = playerOptions.videoInfo.url;
 
-
-
             // Update stats
             let stats: IPlayerStats = {
                 player: process.env.PLAYER,
+                action: playerOptions.action || 'idle',
                 status: 'loading',
                 videoId: this.playerStats.videoId,
                 videoInfo: this.playerStats.videoInfo,
@@ -228,79 +248,34 @@ export class Player {
 
             this.io.emit('PLAYER_MESSAGE', stats);
 
-            if (this.stopped) {
-                // Player type?
-                if (process.env.PLAYER === 'omxplayer') {
-                    if (this.playing === null) {
+            console.log(this.playing);
+            // Player type?
+            if (process.env.PLAYER === 'omxplayer') {
+                if (!this.playing) {
 
-                        console.log('Extracting Youtube URL...');
-                        let youtubeURL = await this.extracYoutubeURL(videoUrl);
+                    console.log('Extracting Youtube URL...');
+                    let youtubeURL = await this.extracYoutubeURL(videoUrl);
 
-                        console.log('Starting OMXPLAYER...');
-                        this.playing = await this.startPlayer(youtubeURL);
+                    console.log('Starting OMXPLAYER...');
+                    await this.startPlayer(youtubeURL);
 
-                        await this.initPlaybackSession();
-                        resolve(this.playerStats);
-                    }
+                    await this.initPlaybackSession();
+                    return resolve(this.playerStats);
                 }
-
-            } else {
-                // console.log('WARNING, can\'t stop the beat I can\'t stop.');
-                await this.play(this.playerStats);
             }
-
         }).catch(async result => {
             // console.log('ERROR, can\'t stop the beat I can\'t stop.');
             // await this.play(this.playerOptions);
         });
-
     }
 
     async initPlaybackSession() {
 
-        this.playerStats = await Server.getPlayerStats();
-
-        if (this.playing && this.playing.stdin && this.playing.stdin.writable) {
-            // Update stats
-            let stats: IPlayerStats = {
-                player: process.env.PLAYER,
-                status: 'playing',
-                videoId: this.playerStats.videoInfo.videoId,
-                videoInfo: this.playerStats.videoInfo,
-                audioOnly: this.playerStats.audioOnly,
-                playlist: this.playerStats.playlist,
-                lastUpdated: new Date(),
-            };
-
-            this.playerStats = stats;
-
-            // Emit stats change
-            this.io.emit('PLAYER_MESSAGE', stats);
-
-            // Persist player stats
-            Server.setPlayerStats(stats);
-
-        }
-
-        this.playing.on('disconnect', () => { });
-        this.playing.on('exit', () => { });
-        this.playing.on('close', () => { this.finishPlayback(); });
-    }
-
-    finishPlayback() {
-        this.stopped = true;
-
-        console.log('User triggered?', this.userTriggered);
-        console.log('Audio only mode?', this.playerStats.audioOnly);
-        console.log('Playlist mode?', this.playerStats.playlist);
-        if (this.playerStats.playlist === true && !this.userTriggered) {
-            this.playNext(false);
-        }
-
         // Update stats
         let stats: IPlayerStats = {
             player: process.env.PLAYER,
-            status: 'stopped',
+            action: this.playerStats.action,
+            status: 'playing',
             videoId: this.playerStats.videoInfo.videoId,
             videoInfo: this.playerStats.videoInfo,
             audioOnly: this.playerStats.audioOnly,
@@ -308,11 +283,55 @@ export class Player {
             lastUpdated: new Date(),
         };
 
+        this.playerStats = stats;
+
         // Emit stats change
         this.io.emit('PLAYER_MESSAGE', stats);
 
         // Persist player stats
         Server.setPlayerStats(stats);
+
+    }
+
+    async finishPlayback(action) {
+        console.log('playback before end', this.playerStats);
+        // this.stopped = true;
+
+        // console.log('User triggered?', this.userTriggered);
+        // console.log('Audio only mode?', this.playerStats.audioOnly);
+        // console.log('Playlist mode?', this.playerStats.playlist);
+        console.log('Action?', this.playerStats.action);
+        // if (this.playerStats.playlist === true && this.playerStats.action !== 'stop') {
+        //     this.playNext(false);
+        // }
+
+
+        if (this.playerStats.playlist === true && action !== 'stop') {
+            this.playNext(false);
+        } else {
+            // Update stats
+            let stats: IPlayerStats = {
+                player: process.env.PLAYER,
+                action: 'idle',
+                status: 'stopped',
+                videoId: this.playerStats.videoInfo.videoId,
+                videoInfo: this.playerStats.videoInfo,
+                audioOnly: this.playerStats.audioOnly,
+                playlist: this.playerStats.playlist,
+                lastUpdated: new Date(),
+            };
+
+            // Persist player stats
+            this.playerStats = stats;
+            Server.setPlayerStats(stats);
+
+            // Emit stats change
+            this.io.emit('PLAYER_MESSAGE', stats);
+
+            console.log('playback ended', this.playerStats);
+        }
+
+
     }
 
     extracYoutubeURL(videoURL) {
@@ -329,11 +348,19 @@ export class Player {
         return new Promise((resolve, reject) => {
             // OMXPLAYER won't pipe anything to stdout, only to stderr, if option -I or --info is used
             // Use "--alpha 0" for audio only mode 
-            let playerString = `${process.env.PLAYER} ${this.playerStats.audioOnly ? `--alpha 0` : `-b`} -o both --vol -1000 -I --threshold 30 --audio_fifo 30 "${extractedURI}"`;
+            let playerString = `${process.env.PLAYER} ${this.playerStats.audioOnly ? `--alpha 0` : `-b`} -o both --vol -1200 -I --threshold 30 --audio_fifo 30 "${extractedURI}"`;
             console.log(playerString);
+
             this.playing = exec(playerString);
+
+            this.playing.on('disconnect', () => { });
+            this.playing.on('exit', () => { });
+            this.playing.on('close', () => {
+                console.log('this.playing closed');
+                this.finishPlayback(this.playerStats.action);
+            });
             this.playing.stderr.once('data', (data) => {
-                resolve(this.playing);
+                return resolve(this.playing);
             });
         });
 
@@ -380,6 +407,28 @@ export class Player {
                 resolve(false);
             }
         })
+    }
+
+    updateStats(stats: IPlayerStats) {
+        // Update stats
+        stats = {
+            player: process.env.PLAYER,
+            action: this.playerStats.action,
+            status: 'playing',
+            videoId: this.playerStats.videoInfo.videoId,
+            videoInfo: this.playerStats.videoInfo,
+            audioOnly: this.playerStats.audioOnly,
+            playlist: this.playerStats.playlist,
+            lastUpdated: new Date(),
+        };
+
+        this.playerStats = stats;
+
+        // Emit stats change
+        this.io.emit('PLAYER_MESSAGE', stats);
+
+        // Persist player stats
+        Server.setPlayerStats(stats);
     }
 
 }
