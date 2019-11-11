@@ -47,7 +47,7 @@ export class Player {
 
             // Only on GUI mode (audio-only won't work)
             if ((this.systemAudio === 'pulseaudio' || this.systemAudio === 'alsa') && process.env.PLAYER_MODE !== 'audio-only') {
-                console.log(`xdotool search --class mpv windowactivate --sync %1 key space windowactivate $(xdotool getactivewindow)`);
+                // console.log(`xdotool search --class mpv windowactivate --sync %1 key space windowactivate $(xdotool getactivewindow)`);
                 exec(`xdotool search --class mpv windowactivate --sync %1 key space windowactivate $(xdotool getactivewindow)`);
             } else if (this.systemAudio === 'omxplayer') {
                 // If player is playing we just toggle play/pause
@@ -55,7 +55,7 @@ export class Player {
                     this.playing.stdin.write(process.env.PLAYER_PAUSE); // " " <== omxplayer, 
                 } else {
                     this.userTriggered = false;
-                    this.play(this.playerStats);
+                    this.play(this.playerStats, true);
                 }
             } else if (process.env.PLAYER_MODE === 'audio-only') {
                 exec("echo '{ \"command\": [\"cycle\", \"pause\"] }' | socat - /tmp/mpvsocket");
@@ -65,7 +65,7 @@ export class Player {
             let current = await Server.getPlayerStats();
             let action: any = (current.status === 'paused' || current.status === 'stopped') ? 'play' : 'pause';
             let status: any = (current.status === 'paused' || current.status === 'stopped') ? 'playing' : 'paused';
-            console.info(`Playback ${(current.status === 'paused' || current.status === 'stopped') ? 'starting' : 'paused'}!`);
+            // console.info(`Playback ${(current.status === 'paused' || current.status === 'stopped') ? 'starting' : 'paused'}!`);
 
 
             // Update stats
@@ -103,13 +103,13 @@ export class Player {
                 this.volumeChange = '+';
             }
 
-            console.log('systemAudio', this.systemAudio);
+            // console.log('systemAudio', this.systemAudio);
 
             if (this.systemAudio === 'pulseaudio') {
-                console.log(`pactl set-sink-volume 0 ${this.volumeChange}${process.env.SYSTEM_VOLUME_STEP}%`);
+                // console.log(`pactl set-sink-volume 0 ${this.volumeChange}${process.env.SYSTEM_VOLUME_STEP}%`);
                 exec(`pactl set-sink-volume 0 ${this.volumeChange}${process.env.SYSTEM_VOLUME_STEP}%`);
             } else if (this.systemAudio === 'alsa') {
-                console.log(`amixer -q -D sset Master ${process.env.SYSTEM_VOLUME_STEP}${this.volumeChange}`);
+                // console.log(`amixer -q -D sset Master ${process.env.SYSTEM_VOLUME_STEP}${this.volumeChange}`);
                 exec(`amixer -q -D sset Master ${process.env.SYSTEM_VOLUME_STEP}${this.volumeChange}`);
             } else if (this.systemAudio === 'omxplayer') {
                 this.playing.stdin.write(this.volumeChange);
@@ -150,10 +150,10 @@ export class Player {
             this.playerStats.action = 'prev';
             this.playerStats.status = 'loading';
 
-            console.log('prev: ', this.playerStats);
+            // console.log('prev: ', this.playerStats);
             // console.log({ prevVideo });
 
-            this.play(this.playerStats).then(result => {
+            this.play(this.playerStats, true).then(result => {
                 return resolve(this.playerStats);
             }).catch(() => {
                 return reject(this.playerStats);
@@ -168,6 +168,7 @@ export class Player {
 
             this.userTriggered = userTriggered;
 
+            // console.log('onPlayNext', this.playerStats);
             this.playerStats = await Server.getPlayerStats();
             let order = this.getVideoOrder(this.playerStats.videoId);
             let nextVideo: IVideo = await this.videosCtrl.getNext('videos', order);
@@ -177,7 +178,8 @@ export class Player {
             this.playerStats.action = 'next';
             this.playerStats.status = 'loading';
 
-            this.play(this.playerStats).then(() => {
+            // console.log('onPlayNext2', this.playerStats);
+            this.play(this.playerStats, this.userTriggered).then(() => {
                 return resolve(this.playerStats);
             }).catch(() => {
                 return reject(this.playerStats);
@@ -277,7 +279,7 @@ export class Player {
             };
 
             // Persist player stats
-            Server.setPlayerStats(stats);
+            await Server.setPlayerStats(stats);
 
             this.playerStats = stats;
 
@@ -380,7 +382,7 @@ export class Player {
             // OMXPLAYER won't pipe anything to stdout, only to stderr, if option -I or --info is used
             // Use "--alpha 0" for audio only mode
 
-            let playbackType = process.env.PLAYER_MODE === 'fullscreen' ? process.env.PLAYER_MODE_FULLSCREEN_ARG : process.env.PLAYER_MODE_AUDIO_ONLY_ARG;
+            let playbackType = this.getPlaybackType(process.env.PLAYER_MODE);
 
             let playbackString = `${playbackType}`;
             // this.playing = exec(`${process.env.PLAYER} ${playbackString} ${extractedURI}`);
@@ -397,6 +399,12 @@ export class Player {
             });
         });
 
+    }
+
+    getPlaybackType(type) {
+        if (type === 'fullscreen') { return process.env.PLAYER_MODE_FULLSCREEN_ARG; };
+        if (type === 'audio-only') { return process.env.PLAYER_MODE_AUDIO_ONLY_ARG; };
+        return '';
     }
 
     // UNUSED, omxplayer won't play playlist files
