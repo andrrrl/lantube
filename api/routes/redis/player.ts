@@ -53,7 +53,7 @@ export = (io) => {
                                 action: 'play',
                                 status: 'playing',
                                 ...video
-                            }, true).then(() => {
+                            }).then(() => {
                                 res.json({
                                     result: 'playing'
                                 });

@@ -203,7 +203,7 @@ export class Player {
         });
     }
 
-    async play(playerOptions, userTriggered = false) {
+    async play(playerOptions) {
 
 
         // Stop/clear any current playback before starting
