@@ -109,7 +109,8 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
 
   request({
     url: `${LANTUBE_SERVER}${options.module}/${(options.order ? options.order + '/' : '')}${(options.action !== 'list' ? options.action : '')}`,
-    json: true
+    json: true,
+    method: (options.module === 'server' && options.module === 'playlist') ? 'patch' : 'get',
   },
     function (error, response, body) {
       if (!error && response.statusCode == 200) {
@@ -255,6 +256,7 @@ if (typeof options.action !== 'undefined' && options.action !== 'help') {
       '    Play next video:     player next\n' +
       '    Play single video:   player play ORDER\n' +
       '    Stop any playback:   player stop\n' +
+      '    Playlist mode:       server playlist\n' +
       '    Show server stats:   server stats\n';
     '    Show player stats:   player stats\n';
 
