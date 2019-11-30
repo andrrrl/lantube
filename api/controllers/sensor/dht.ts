@@ -3,6 +3,12 @@ import { Socket } from 'net';
 
 export class DHT11 {
 
+    // Optional, default 11 (lightblue hw component), the other type is 22 (white hw component)
+    dhtType = 11;
+
+    // Raspberry Pi3 B+ pinout
+    dataPin = 4;
+
     constructor(private io: Socket) {
         this.io = io;
     };
@@ -18,32 +24,30 @@ export class DHT11 {
     }
 
     initSensor() {
-        return new Promise(async (resolve, reject) => {
+        return new Promise((resolve, reject) => {
 
-            const dataPin = 4;
-            const dhtType = 11; //optional
-            const sensor = dht(dataPin, dhtType);
+            const sensor = dht(this.dataPin, this.dhtType);
 
             this.readSensor(sensor);
 
             sensor.on('result', data => {
 
                 const temperatura = {
-                    sensor: 'dht-11',
+                    sensor: `dht-${this.dhtType}`,
                     value: `${data.temperature}°C`
                 }
 
                 const humedad = {
-                    sensor: 'dht-11',
+                    sensor: `dht-${this.dhtType}`,
                     value: `${data.humidity}%`
                 }
 
                 this.io.emit('SENSOR_MESSAGE', { temperatura, humedad });
                 console.log(`temperatura: ${data.temperature}°C`);
                 console.log(`humedad: ${data.humidity}%`);
-                resolve({
+                return resolve({
                     sensor: {
-                        name: 'dht-11',
+                        name: `dht-${this.dhtType}`,
                         dataTypes: ['temperatura', 'humedad']
                     }
                 });
@@ -52,9 +56,8 @@ export class DHT11 {
             sensor.on('badChecksum', () => {
                 this.io.emit('SENSOR_MESSAGE', { message: 'checksum failed' });
                 console.log('checksum failed');
+                return reject({ message: 'Error: comprobar conexión del componente.' });
             });
-
-
         });
     }
 }
