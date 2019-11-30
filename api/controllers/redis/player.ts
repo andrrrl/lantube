@@ -205,7 +205,6 @@ export class Player {
 
     async play(playerOptions) {
 
-
         // Stop/clear any current playback before starting
         return new Promise(async (resolve, reject) => {
             if (this.playerStats.playlist && this.playerStats.status === 'playing') {
@@ -246,22 +245,20 @@ export class Player {
             // Persist player stats
             Server.setPlayerStats(stats);
 
+            this.playerStats = stats;
+
             this.io.emit('PLAYER_MESSAGE', stats);
 
-            console.log(this.playing);
-            // Player type?
-            if (process.env.PLAYER === 'omxplayer') {
-                if (!this.playing) {
+            if (!this.playing) {
 
-                    console.log('Extracting Youtube URL...');
-                    let youtubeURL = await this.extracYoutubeURL(videoUrl);
+                console.log('Extracting Youtube URL...');
+                let youtubeURL = await this.extracYoutubeURL(videoUrl);
 
-                    console.log('Starting OMXPLAYER...');
-                    await this.startPlayer(youtubeURL);
+                console.log('Starting OMXPLAYER...');
+                await this.startPlayer(youtubeURL);
 
-                    await this.initPlaybackSession();
-                    return resolve(this.playerStats);
-                }
+                await this.initPlaybackSession();
+                return resolve(this.playerStats);
             }
         }).catch(async result => {
             // console.log('ERROR, can\'t stop the beat I can\'t stop.');
@@ -306,7 +303,7 @@ export class Player {
         // }
 
 
-        if (this.playerStats.playlist === true && action !== 'stop') {
+        if (this.playerStats.playlist === true && action !== 'stop' && action !== 'play') {
             this.playNext(false);
         } else {
             // Update stats
@@ -356,7 +353,7 @@ export class Player {
             this.playing.on('disconnect', () => { });
             this.playing.on('exit', () => { });
             this.playing.on('close', () => {
-                console.log('this.playing closed');
+                console.log('this.playing closed with action: ', this.playerStats.action);
                 this.finishPlayback(this.playerStats.action);
             });
             this.playing.stderr.once('data', (data) => {
