@@ -317,16 +317,7 @@ export class Player {
 
     async finishPlayback(action) {
         console.log('playback before end', this.playerStats);
-        // this.stopped = true;
-
-        // console.log('User triggered?', this.userTriggered);
-        // console.log('Audio only mode?', this.playerStats.audioOnly);
-        // console.log('Playlist mode?', this.playerStats.playlist);
         console.log('Action?', this.playerStats.action);
-        // if (this.playerStats.playlist === true && this.playerStats.action !== 'stop') {
-        //     this.playNext(false);
-        // }
-
 
         if (this.playerStats.playlist === true && action !== 'stop' && action !== 'play') {
             this.playNext(false);
