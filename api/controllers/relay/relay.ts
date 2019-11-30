@@ -2,6 +2,7 @@ import * as onoff from 'onoff';
 
 export class FanRelay {
     static relay: onoff.Gpio;
+    static gpioPin = 23;
 
     private static cleanUp() {
         process.on('SIGINT', () => {
@@ -17,7 +18,9 @@ export class FanRelay {
         if (this.relay) {
             this.relay.unexport();
         }
-        this.relay = new onoff.Gpio(23, 'out');
+
+        // Raspberry Pi3 B+ pinout
+        this.relay = new onoff.Gpio(this.gpioPin, 'out');
         this.cleanUp();
 
         this.relay.writeSync(onoff.Gpio.HIGH);
@@ -28,7 +31,8 @@ export class FanRelay {
         if (this.relay) {
             this.relay.unexport();
         }
-        this.relay = new onoff.Gpio(23, 'out');
+        // Raspberry Pi3 B+ pinout
+        this.relay = new onoff.Gpio(this.gpioPin, 'out');
         this.cleanUp();
 
         this.relay.writeSync(onoff.Gpio.LOW);
