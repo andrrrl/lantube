@@ -61,7 +61,7 @@ const player = require('./api/routes/redis/player');
 const videos = require('./api/routes/redis/videos');
 // const dht = require('./api/routes/sensor/dht');
 const coreTemp = require('./api/routes/sensor/coreTemp');
-const relay = require('./api/routes/relay/relay');
+// const relay = require('./api/routes/relay/relay');
 
 // app.use('/', index);
 // app.use('/', stats);
@@ -69,7 +69,7 @@ app.use('/', player(io));
 app.use('/', videos(io));
 // app.use('/', dht(io));
 app.use('/', coreTemp(io));
-app.use('/', relay());
+// app.use('/', relay());
 
 // Error handler
 app.use((err: any, req, res, next) => {

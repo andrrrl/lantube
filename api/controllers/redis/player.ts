@@ -55,7 +55,7 @@ export class Player {
                     this.playing.stdin.write(process.env.PLAYER_PAUSE); // " " <== omxplayer, 
                 } else {
                     this.userTriggered = false;
-                    this.play(this.playerStats, true);
+                    this.play(this.playerStats);
                 }
             } else if (process.env.PLAYER_MODE === 'audio-only') {
                 exec("echo '{ \"command\": [\"cycle\", \"pause\"] }' | socat - /tmp/mpvsocket");
@@ -153,7 +153,7 @@ export class Player {
             // console.log('prev: ', this.playerStats);
             // console.log({ prevVideo });
 
-            this.play(this.playerStats, true).then(result => {
+            this.play(this.playerStats).then(result => {
                 return resolve(this.playerStats);
             }).catch(() => {
                 return reject(this.playerStats);
@@ -168,7 +168,6 @@ export class Player {
 
             this.userTriggered = userTriggered;
 
-            // console.log('onPlayNext', this.playerStats);
             this.playerStats = await Server.getPlayerStats();
             let order = this.getVideoOrder(this.playerStats.videoId);
             let nextVideo: IVideo = await this.videosCtrl.getNext('videos', order);
@@ -178,11 +177,10 @@ export class Player {
             this.playerStats.action = 'next';
             this.playerStats.status = 'loading';
 
-            // console.log('onPlayNext2', this.playerStats);
-            this.play(this.playerStats, this.userTriggered).then(() => {
-                return resolve(this.playerStats);
+            this.play(this.playerStats).then(() => {
+                resolve(this.playerStats);
             }).catch(() => {
-                return reject(this.playerStats);
+                reject(this.playerStats);
             });
         });
     }
@@ -215,27 +213,16 @@ export class Player {
                     if (!this.playing.killed) {
                         this.playing.kill();
                         if (this.playing.killed) {
-                            resolve(true);
+                            return resolve(true);
                         }
                     }
                 } else {
-                    resolve(true);
+                    return resolve(true);
                 }
             }
 
             this.playing = null;
-
-            // Update stats
-            let stats = {
-                player: process.env.PLAYER,
-                status: 'stopped',
-                videoId: null,
-                lastUpdated: new Date(),
-            };
-            this.io.emit('USER_MESSAGE', stats);
-            await Server.setPlayerStats(stats);
-
-            resolve(true);
+            return resolve(true);
         });
     }
 
@@ -243,7 +230,7 @@ export class Player {
 
         // Stop/clear any current playback before starting
         return new Promise(async (resolve, reject) => {
-            if (this.playerStats.playlist && this.playerStats.status === 'playing') {
+            if (this.playerStats.playlist && (this.playerStats.status === 'playing')) {
                 return resolve(false);
             }
 
@@ -294,8 +281,10 @@ export class Player {
                 await this.startPlayer(youtubeURL);
 
                 await this.initPlaybackSession();
-                resolve(this.playerStats);
+
+                return resolve(this.playerStats);
             }
+
         }).catch(async result => {
             // console.log('ERROR, can\'t stop the beat I can\'t stop.');
             // await this.play(this.playerOptions);
@@ -379,23 +368,21 @@ export class Player {
 
     startPlayer(extractedURI): Promise<ChildProcess.ChildProcess> {
         return new Promise((resolve, reject) => {
-            // OMXPLAYER won't pipe anything to stdout, only to stderr, if option -I or --info is used
-            // Use "--alpha 0" for audio only mode
 
             let playbackType = this.getPlaybackType(process.env.PLAYER_MODE);
 
             let playbackString = `${playbackType}`;
-            // this.playing = exec(`${process.env.PLAYER} ${playbackString} ${extractedURI}`);
             console.log(process.env.PLAYER, [process.env.PLAYER_EXTRA_ARGS, ...playbackString.split(' '), extractedURI]);
             this.playing = spawn(process.env.PLAYER, [process.env.PLAYER_EXTRA_ARGS, ...playbackString.split(' '), extractedURI]);
-
-            // console.log(this.playing.stdout);
 
             this.playing.on('disconnect', () => { });
             this.playing.on('exit', () => { });
             this.playing.on('close', () => {
                 console.log('this.playing closed with action: ', this.playerStats.action);
                 this.finishPlayback(this.playerStats.action);
+            });
+            this.playing.stderr.once('data', (data) => {
+                return resolve(this.playing);
             });
         });
 
