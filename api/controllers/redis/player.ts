@@ -319,7 +319,7 @@ export class Player {
         console.log('playback before end', this.playerStats);
         console.log('Action?', this.playerStats.action);
 
-        if (this.playerStats.playlist === true && action !== 'stop' && action !== 'play') {
+        if (this.playerStats.playlist === true && action !== 'stop') {
             this.playNext(false);
         } else {
             // Update stats
