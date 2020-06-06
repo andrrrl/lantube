@@ -7,6 +7,7 @@ export interface IPlayerStats {
     videoId?: string;
     videoInfo?: any;
     audioOnly?: boolean;
+    volume?: number;
     playlist: boolean;
     lastUpdated?: Date;
 }

@@ -6,6 +6,8 @@ export class Server {
     constructor() {
     }
 
+    initialVol = -1600;
+
     serverStats: any = {
         host: process.env.HOST_NAME,
         type: os.type(),
@@ -26,6 +28,7 @@ export class Server {
         videoId: '0',
         playlist: false,
         audioOnly: false,
+        volume: -1600,
         lastUpdated: new Date(),
     };
 
@@ -35,6 +38,9 @@ export class Server {
         return new Promise((resolve, reject) => {
             redis.get('playerStats', (err, stats) => {
                 this.playerStats = JSON.parse(stats);
+                if (!this.playerStats.volume) {
+                    this.playerStats.volume = this.initialVol;
+                }
                 if (this.playerStats && this.playerStats.status) {
                     resolve(this.playerStats);
                 } else {
@@ -52,7 +58,6 @@ export class Server {
                 });
             });
         });
-
     }
 
     setServerStats() {
@@ -70,5 +75,4 @@ export class Server {
             }
         });
     }
-
 }

@@ -62,6 +62,7 @@ export class Player {
                 videoId: current.videoId,
                 videoInfo: current.videoInfo,
                 playlist: current.playlist,
+                volume: current.volume,
                 lastUpdated: new Date(),
             };
 
@@ -76,13 +77,19 @@ export class Player {
     }
 
     // Only for omxplayer for now
-    volume(volume, emitSignal = true) {
+    volume(volume) {
         return new Promise(async (resolve, reject) => {
+
+            let currentStats = await Server.getPlayerStats();
+            let currVol = currentStats.volume;
 
             if (volume === 'down') {
                 this.volumeChange = '-';
+                currVol = currVol - 300;
+
             } else if (volume === 'up') {
                 this.volumeChange = '+';
+                currVol = currVol + 300;
             }
 
             if (process.env.PLAYER !== 'omxplayer') {
@@ -93,12 +100,13 @@ export class Player {
                 console.info('Volume: ' + this.volumeChange);
             }
 
-            if (emitSignal === true) {
-                let stats = await Server.getPlayerStats();
+            currentStats.volume = currVol;
 
-                // Emit stats change
-                this.io.emit('PLAYER_MESSAGE', stats);
-            }
+            // Persist player stats
+            Server.setPlayerStats(currentStats);
+
+            // Emit stats change
+            this.io.emit('PLAYER_MESSAGE', currentStats);
 
             resolve(this.volumeChange);
 
@@ -239,6 +247,7 @@ export class Player {
                 videoInfo: this.playerStats.videoInfo,
                 audioOnly: this.playerStats.audioOnly,
                 playlist: this.playerStats.playlist,
+                volume: this.playerStats.volume,
                 lastUpdated: new Date()
             };
 
@@ -277,6 +286,7 @@ export class Player {
             videoInfo: this.playerStats.videoInfo,
             audioOnly: this.playerStats.audioOnly,
             playlist: this.playerStats.playlist,
+            volume: this.playerStats.volume,
             lastUpdated: new Date(),
         };
 
@@ -303,7 +313,7 @@ export class Player {
         // }
 
 
-        if (this.playerStats.playlist === true && action !== 'stop' && action !== 'play') {
+        if (this.playerStats.playlist === true && action !== 'stop') {
             this.playNext(false);
         } else {
             // Update stats
@@ -315,6 +325,7 @@ export class Player {
                 videoInfo: this.playerStats.videoInfo,
                 audioOnly: this.playerStats.audioOnly,
                 playlist: this.playerStats.playlist,
+                volume: this.playerStats.volume,
                 lastUpdated: new Date(),
             };
 
@@ -345,7 +356,7 @@ export class Player {
         return new Promise((resolve, reject) => {
             // OMXPLAYER won't pipe anything to stdout, only to stderr, if option -I or --info is used
             // Use "--alpha 0" for audio only mode 
-            let playerString = `${process.env.PLAYER} ${this.playerStats.audioOnly ? `--alpha 0` : `-b`} -o both --vol -1200 -I --threshold 30 --audio_fifo 30 "${extractedURI}"`;
+            let playerString = `${process.env.PLAYER} ${this.playerStats.audioOnly ? `--alpha 0` : `-b`} -o both --vol ${this.playerStats.volume} -I --threshold 30 --audio_fifo 30 "${extractedURI}"`;
             console.log(playerString);
 
             this.playing = exec(playerString);
@@ -416,6 +427,7 @@ export class Player {
             videoInfo: this.playerStats.videoInfo,
             audioOnly: this.playerStats.audioOnly,
             playlist: this.playerStats.playlist,
+            volume: this.playerStats.volume,
             lastUpdated: new Date(),
         };
 
