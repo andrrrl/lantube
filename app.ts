@@ -43,15 +43,10 @@ let io = socketio(server);
 server.on('listening', () => {
     io.on('connection', async (socket) => {
         console.log("Listener conectado.");
-
         socket.removeAllListeners();
-
         socket.emit('SERVER_MESSAGE', { signal: 'connected' });
-
         let stats = await Server.getPlayerStats();
-
         socket.emit('PLAYER_MESSAGE', stats);
-
     });
 });
 
@@ -59,7 +54,8 @@ const index = require('./api/routes/redis/index');
 const stats = require('./api/routes/redis/stats');
 const player = require('./api/routes/redis/player');
 const videos = require('./api/routes/redis/videos');
-// const dht = require('./api/routes/sensor/dht');
+const dht = require('./api/routes/sensor/dht');
+const lcd = require('./api/routes/lcd/lcd');
 const coreTemp = require('./api/routes/sensor/coreTemp');
 const relay = require('./api/routes/relay/relay');
 
@@ -67,7 +63,8 @@ const relay = require('./api/routes/relay/relay');
 // app.use('/', stats);
 app.use('/', player(io));
 app.use('/', videos(io));
-// app.use('/', dht(io));
+app.use('/', dht(io));
+app.use('/', lcd(io));
 app.use('/', coreTemp(io));
 app.use('/', relay());
 

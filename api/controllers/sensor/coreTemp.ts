@@ -1,6 +1,7 @@
 import { Socket } from 'net';
 import { ChildProcess, exec } from 'child_process';
-import { FanRelay } from '../../controllers/relay/relay';
+import { FanRelay } from '../relay/relay';
+import { LCD } from '../lcd/lcd';
 export class CoreTemp {
     thermal: ChildProcess;
     relayStarted = false;
@@ -63,6 +64,9 @@ export class CoreTemp {
             }
 
             this.io.emit('SENSOR_MESSAGE', coreTemp);
+
+            const lcd = new LCD(this.io);
+            lcd.message(`Core temp: ${coreTemp.value} grados`);
 
             return resolve({
                 sensor: {
