@@ -6,7 +6,23 @@ export class DHT11 {
     // Optional, default 11 (lightblue hw component), the other type is 22 (white hw component)
     dhtType = 11;
 
-    // Raspberry Pi3 B+ pinout
+
+    // DHT-11 => Raspberry Pi3 B+ pinout:
+
+    /**
+     *  ╭────╮
+     * 
+     *   DHT11
+     * 
+     *  ╰┬┬┬┬╯
+     *   1234
+     * 
+     * 1 Vcc (rojo)       => Pin 2 (5v)
+     * 2 Signal (blanco)  => Pin 7 (data)
+     * 3 [sin uso]
+     * 4 Ground (negro)   => Pin 6 (ground)
+     * 
+     */
     dataPin = 4;
 
     constructor(private io: Socket) {
@@ -20,7 +36,7 @@ export class DHT11 {
         // 1000 ms * 60 * 5 === leer cada 5 minutos
         setTimeout(() => {
             sensor.read();
-        }, 300000);
+        }, 3000);
     }
 
     initSensor() {
@@ -45,10 +61,13 @@ export class DHT11 {
                 this.io.emit('SENSOR_MESSAGE', { temperatura, humedad });
                 console.log(`temperatura: ${data.temperature}°C`);
                 console.log(`humedad: ${data.humidity}%`);
+
                 return resolve({
                     sensor: {
                         name: `dht-${this.dhtType}`,
-                        dataTypes: ['temperatura', 'humedad']
+                        dataTypes: ['temperatura', 'humedad'],
+                        temperatura,
+                        humedad
                     }
                 });
             });
