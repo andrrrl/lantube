@@ -38,7 +38,7 @@ export class Server {
         return new Promise((resolve, reject) => {
             redis.get('playerStats', (err, stats) => {
                 this.playerStats = JSON.parse(stats);
-                if (!this.playerStats.volume) {
+                if (this.playerStats && !this.playerStats.volume) {
                     this.playerStats.volume = this.initialVol;
                 }
                 if (this.playerStats && this.playerStats.status) {

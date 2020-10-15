@@ -1,50 +1,30 @@
-import * as request from 'request-promise';
-import * as libxml from 'libxmljs';
+import { exec } from 'child_process';
 
 export class Search {
 
     public resultList = [];
     public videoList = [];
-    durationList: libxml.Element[];
-    imageList: libxml.Element[];
 
     search(term) {
 
-        term = term !== null ? term : process.argv[2];
+        return new Promise((resolve, reject) => {
+            term = term !== null ? term : process.argv[2];
 
-        this.videoList = [];
+            let yt = exec(`${process.env.YOUTUBE_DL} --default-search auto "ytsearch10: ${term}" --no-playlist --skip-download -J`);
+            let list = '';
 
-        let options = {
-            url: 'https://www.youtube.com/results?search_query=' + term,
-            json: false,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'
-            }
-        }
-
-        return request(options)
-            .then((body) => {
-                const html = libxml.parseHtmlString(body);
-                this.resultList = html.find('//a[@rel="spf-prefetch"]');
-                this.durationList = html.find('//span[@class="video-time"]');
-                this.imageList = html.find('//span[@class="yt-thumb-simple"]');
-                this.resultList.forEach((video, k) => {
-                    let imgPreferred = this.imageList[k].get('img').attr('src').value().includes('https');
-                    let imgFallback = this.imageList[k].get('img').attr('data-thumb') ? this.imageList[k].get('img').attr('data-thumb').value() : '';
-                    this.videoList.push({
-                        title: video.text().replace(/\"/g, ''),
-                        url: video.attr('href').value(),
-                        duration: this.durationList[k].text(),
-                        img: (imgPreferred ? this.imageList[k].get('img').attr('src').value() : (imgFallback ? imgFallback : ''))
-                    });
-                });
-
-                return this.videoList;
-            })
-            .catch((err) => {
-                console.log(err);
-                return err;
+            yt.stdout.on('data', (data) => {
+                list += data;
             });
+
+            yt.stdout.once('end', () => {
+                console.log(JSON.parse(list));
+                const entries = JSON.parse(list).entries;
+                this.videoList = entries.map(x => ({ title: x.title, url: x.id, duration: x.duration, img: x.thumbnail }));
+                return resolve(this.videoList);
+            });
+        });
+
     }
 
 }
