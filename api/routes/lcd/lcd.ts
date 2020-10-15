@@ -7,13 +7,14 @@ export = (io) => {
 
     let lcdCtrl = new LCD(io);
 
-    router.route('/api/lcd/:message')
+    /*router.route('/api/lcd/:message')
 
         .get(async (req, res, next) => {
             null
-            let lcd = await lcdCtrl.message(req.params.message);
+            let lcd = await lcdCtrl.message(0, req.params.message);
             res.json(lcd);
         });
+	*/
 
     // router.route('/api/lcd/off')
 
