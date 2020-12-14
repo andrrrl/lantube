@@ -158,7 +158,7 @@ export = (io) => {
                 },
                 order: firstOrder.order - 1,
                 status: 'playing'
-            }, true).then(() => {
+            }).then(() => {
                 res.json({
                     videoId: firstOrder.videoId,
                     url: firstOrder.url,
