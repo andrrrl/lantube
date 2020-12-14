@@ -55,8 +55,7 @@ server.on('listening', () => {
     });
 });
 
-const index = require('./api/routes/redis/index');
-const stats = require('./api/routes/redis/stats');
+// const stats = require('./api/routes/redis/stats');
 const player = require('./api/routes/redis/player');
 const videos = require('./api/routes/redis/videos');
 // const dht = require('./api/routes/sensor/dht');

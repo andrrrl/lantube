@@ -1,50 +1,24 @@
-import * as request from 'request-promise';
-import * as libxml from 'libxmljs';
+import * as yts from 'yt-search';
 
 export class Search {
 
-    public resultList = [];
     public videoList = [];
-    durationList: libxml.Element[];
-    imageList: libxml.Element[];
 
-    search(term) {
+    async search(term) {
 
-        term = term !== null ? term : process.argv[2];
+        const resultList = await yts(term);
 
-        this.videoList = [];
+        return new Promise((resolve, reject) => {
 
-        let options = {
-            url: 'https://www.youtube.com/results?search_query=' + term,
-            json: false,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11'
-            }
-        }
+            this.videoList = resultList.videos.map(video => ({
+                title: video.title,
+                url: video.url,
+                duration: video.timestamp,
+                img: video.thumbnail
+            }));
 
-        return request(options)
-            .then((body) => {
-                const html = libxml.parseHtmlString(body);
-                this.resultList = html.find('//a[@rel="spf-prefetch"]');
-                this.durationList = html.find('//span[@class="video-time"]');
-                this.imageList = html.find('//span[@class="yt-thumb-simple"]');
-                this.resultList.forEach((video, k) => {
-                    let imgPreferred = this.imageList[k].get('img').attr('src').value().includes('https');
-                    let imgFallback = this.imageList[k].get('img').attr('data-thumb') ? this.imageList[k].get('img').attr('data-thumb').value() : '';
-                    this.videoList.push({
-                        title: video.text().replace(/\"/g, ''),
-                        url: video.attr('href').value(),
-                        duration: this.durationList[k].text(),
-                        img: (imgPreferred ? this.imageList[k].get('img').attr('src').value() : (imgFallback ? imgFallback : ''))
-                    });
-                });
-
-                return this.videoList;
-            })
-            .catch((err) => {
-                console.log(err);
-                return err;
-            });
+            return resolve(this.videoList);
+        });
     }
 
 }

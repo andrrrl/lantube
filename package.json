@@ -34,7 +34,8 @@
         "request-promise": "^4.2.2",
         "serve-favicon": "^2.5.0",
         "shelljs": "^0.8.3",
-        "socket.io": "^3.0.1"
+        "socket.io": "^2.1.0",
+        "yt-search": "^2.5.1"
     },
     "devDependencies": {
         "@types/request": "^2.47.0",
