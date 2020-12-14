@@ -1,63 +1,63 @@
-import * as dht from 'pigpio-dht';
-import { Socket } from 'net';
+// import * as dht from 'pigpio-dht';
+// import { Socket } from 'net';
 
-export class DHT11 {
+// export class DHT11 {
 
-    // Optional, default 11 (lightblue hw component), the other type is 22 (white hw component)
-    dhtType = 11;
+//     // Optional, default 11 (lightblue hw component), the other type is 22 (white hw component)
+//     dhtType = 11;
 
-    // Raspberry Pi3 B+ pinout
-    dataPin = 4;
+//     // Raspberry Pi3 B+ pinout
+//     dataPin = 4;
 
-    constructor(private io: Socket) {
-        this.io = io;
-    };
+//     constructor(private io: Socket) {
+//         this.io = io;
+//     };
 
-    readSensor(sensor) {
-        console.log('Leyendo datos del sensor...')
-        sensor.read();
-        // warning: the sensor can only be red every 2 seconds
-        // 1000 ms * 60 * 5 === leer cada 5 minutos
-        setTimeout(() => {
-            sensor.read();
-        }, 300000);
-    }
+//     readSensor(sensor) {
+//         console.log('Leyendo datos del sensor...')
+//         sensor.read();
+//         // warning: the sensor can only be red every 2 seconds
+//         // 1000 ms * 60 * 5 === leer cada 5 minutos
+//         setTimeout(() => {
+//             sensor.read();
+//         }, 300000);
+//     }
 
-    initSensor() {
-        return new Promise((resolve, reject) => {
+//     initSensor() {
+//         return new Promise((resolve, reject) => {
 
-            const sensor = dht(this.dataPin, this.dhtType);
+//             const sensor = dht(this.dataPin, this.dhtType);
 
-            this.readSensor(sensor);
+//             this.readSensor(sensor);
 
-            sensor.on('result', data => {
+//             sensor.on('result', data => {
 
-                const temperatura = {
-                    sensor: `dht-${this.dhtType}`,
-                    value: `${data.temperature}°C`
-                }
+//                 const temperatura = {
+//                     sensor: `dht-${this.dhtType}`,
+//                     value: `${data.temperature}°C`
+//                 }
 
-                const humedad = {
-                    sensor: `dht-${this.dhtType}`,
-                    value: `${data.humidity}%`
-                }
+//                 const humedad = {
+//                     sensor: `dht-${this.dhtType}`,
+//                     value: `${data.humidity}%`
+//                 }
 
-                this.io.emit('SENSOR_MESSAGE', { temperatura, humedad });
-                console.log(`temperatura: ${data.temperature}°C`);
-                console.log(`humedad: ${data.humidity}%`);
-                return resolve({
-                    sensor: {
-                        name: `dht-${this.dhtType}`,
-                        dataTypes: ['temperatura', 'humedad']
-                    }
-                });
-            });
+//                 this.io.emit('SENSOR_MESSAGE', { temperatura, humedad });
+//                 console.log(`temperatura: ${data.temperature}°C`);
+//                 console.log(`humedad: ${data.humidity}%`);
+//                 return resolve({
+//                     sensor: {
+//                         name: `dht-${this.dhtType}`,
+//                         dataTypes: ['temperatura', 'humedad']
+//                     }
+//                 });
+//             });
 
-            sensor.on('badChecksum', () => {
-                this.io.emit('SENSOR_MESSAGE', { message: 'checksum failed' });
-                console.log('checksum failed');
-                return reject({ message: 'Error: comprobar conexión del componente.' });
-            });
-        });
-    }
-}
+//             sensor.on('badChecksum', () => {
+//                 this.io.emit('SENSOR_MESSAGE', { message: 'checksum failed' });
+//                 console.log('checksum failed');
+//                 return reject({ message: 'Error: comprobar conexión del componente.' });
+//             });
+//         });
+//     }
+// }
