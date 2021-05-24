@@ -1,3 +1,4 @@
+import { Player } from './api/controllers/redis/player';
 import * as cors from 'cors';
 import * as helmet from 'helmet';
 import * as express from 'express';
@@ -5,6 +6,7 @@ import * as bodyParser from 'body-parser'
 import * as HttpStatus from 'http-status-codes';
 import * as socketio from 'socket.io';
 import * as ServerSchema from './api/schemas/redis/Server';
+import * as redis from './api/connections/redis';
 
 // Load Server
 let Server = new ServerSchema.Server();
@@ -38,37 +40,69 @@ let server = app.listen(app.get('port'), async () => {
     await Server.setPlayerStats(stats);
 });
 
-let io = socketio(server);
+let io = socketio(server,);
 
 server.on('listening', () => {
     io.on('connection', async (socket) => {
-        console.log("Listener conectado.");
+        console.log('Listener conectado.');
         socket.removeAllListeners();
         socket.emit('SERVER_MESSAGE', { signal: 'connected' });
         let stats = await Server.getPlayerStats();
         socket.emit('PLAYER_MESSAGE', stats);
     });
+
+    io.on('disconnect', () => {
+        io.sockets.removeAllListeners();
+        console.log('Listeners desconectados.');
+    });
+
+    io.on('CLIENT_MESSAGE', (client) => {
+        if (client.message === 'disconnectAll') {
+            io.sockets.removeAllListeners();
+        }
+    });
+
+    process.on('SIGINT', () => {
+        console.log('\nGracefully shutting down from SIGINT (Ctrl-C)');
+
+        const PlayerCtrl = new Player(io);
+        PlayerCtrl.stopAll();
+
+        console.log('Disconnecting sockets');
+        io.sockets.removeAllListeners();
+        console.log('Disconnecting redis');
+        redis.removeAllListeners();
+
+        process.exit(1);
+    });
 });
 
-const index = require('./api/routes/redis/index');
-const stats = require('./api/routes/redis/stats');
+// const index = require('./api/routes/redis/index');
+// const stats = require('./api/routes/redis/stats');
 const player = require('./api/routes/redis/player');
 const videos = require('./api/routes/redis/videos');
-// const dht = require('./api/routes/sensor/dht');
+// const dht = require('./api/routes/sensor/dht'); // requiere sudo
+// const fc28 = require('./api/routes/sensor/fc-28');
+// const lcd = require('./api/routes/lcd/lcd');
+// const cam = require('./api/routes/cam/cam');
 const ds18b20 = require('./api/routes/sensor/ds18b20');
-const lcd = require('./api/routes/lcd/lcd');
 const coreTemp = require('./api/routes/sensor/coreTemp');
-const relay = require('./api/routes/relay/relay');
+// const relay = require('./api/routes/relay/relay');
+const browser = require('./api/routes/browser/browser');
+
 
 // app.use('/', index);
 // app.use('/', stats);
 app.use('/', player(io));
 app.use('/', videos(io));
 // app.use('/', dht(io));
+// app.use('/', fc28(io));
+// app.use('/', lcd(io));
+// app.use('/', cam(io));
 app.use('/', ds18b20(io));
-app.use('/', lcd(io));
 app.use('/', coreTemp(io));
-app.use('/', relay());
+// app.use('/', relay());
+app.use('/', browser(io));
 
 // Error handler
 app.use((err: any, req, res, next) => {
@@ -115,5 +149,6 @@ app.all('*', (req, res, next) => {
         next();
     }
 });
+
 
 export = app;
