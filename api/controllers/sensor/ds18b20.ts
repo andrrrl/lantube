@@ -1,16 +1,20 @@
-import * as ds10b20 from 'ds18b20-raspi';
+import * as ds18b20 from 'ds18b20-raspi';
 import { Socket } from 'net';
 import { LCD } from '../lcd/lcd';
 
 export class DS18B20 {
 
     // Optional, for a specific 1-Wire device id
-    static deviceId = '';
+    static deviceId = '28-0000096f75b2';
 
     // Sensor name
     static sensorName = 'DS18B20'
     static io: Socket;
 
+    static dangerTempLimit: 30;
+    static coolTempLimit: 25;
+
+    static ds18b20Temp;
 
     // DS18B20 => Raspberry Pi3 B+ pinout:
 
@@ -30,41 +34,39 @@ export class DS18B20 {
      */
 
     constructor(private io: Socket) {
+        console.log(`Inciando ${DS18B20.sensorName}`);
+        // process.on('warning', e => console.warn(e.stack));
         DS18B20.io = io;
     };
 
-    static initSensor() {
-        return new Promise((resolve, reject) => {
-            console.log(`Leyendo datos del sensor ${this.sensorName}...`)
+    static readSensor() {
+        console.log(`Leyendo datos del sensor ${this.sensorName}...`);
+        return new Promise(async (resolve, reject) => {
 
-            ds10b20.readSimpleC((err, temperature) => {
-
-                if (err) {
-                    return reject(err);
-                }
-
-                const temperatura = {
-                    sensor: `${this.sensorName}`,
-                    type: 'temperature',
+            this.ds18b20Temp = await ds18b20.readSimpleC(this.deviceId, 2);
+            const temperatura = {
+                sensor: `${this.sensorName}`,
+                type: 'temperature',
+                temperature: {
                     unit: '°C',
-                    value: temperature
+                    value: this.ds18b20Temp,
+                    dangerTempLimit: this.dangerTempLimit,
+                    coolTempLimit: this.coolTempLimit
                 }
+            }
 
-                DS18B20.io.emit('SENSOR_MESSAGE', temperatura);
-                console.log(`Temperatura: ${temperature}°C`);
+            DS18B20.io.emit('SENSOR_MESSAGE', temperatura);
+            console.log(`Temperatura ambiente: ${this.ds18b20Temp}°C`);
 
-                LCD.init();
-                LCD.queueMessage({
-                    line1: `Temp amb: ${temperature}°C`,
-                    line2: ''
-                });
-
-                setTimeout(() => {
-                    DS18B20.initSensor();
-                }, 3000);
-                return resolve(temperature);
+            LCD.init();
+            LCD.queueMessage({
+                type: 'roomTemp',
+                line1: `Temp amb: ${this.ds18b20Temp}C`,
+                line2: null
             });
 
+            return resolve(temperatura);
         });
     }
+
 }

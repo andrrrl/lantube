@@ -3,8 +3,10 @@ import { Socket } from 'net';
 
 export class DHT11 {
 
+    static sensorName = 'DHT11';
+
     // Optional, default 11 (lightblue hw component), the other type is 22 (white hw component)
-    dhtType = 11;
+    static dhtType = 11;
 
 
     // DHT-11 => Raspberry Pi3 B+ pinout:
@@ -17,66 +19,73 @@ export class DHT11 {
      *  ╰┬┬┬┬╯
      *   1234
      * 
-     * 1 Vcc (rojo)       => Pin 2 (5v)
-     * 2 Signal (blanco)  => Pin 7 (data)
+     * 1 Vcc (rojo)             => Pin 2 (5v power)
+     * 2 Signal (blanco/azul)   => Pin 36 (data, GPIO 16) | Pin 4 (data, GPIO 7)
      * 3 [sin uso]
-     * 4 Ground (negro)   => Pin 6 (ground)
+     * 4 Ground (negro/marrón)  => Pin 6 (ground)
      * 
      */
-    dataPin = 4;
+    // NO ANDA!
+    static dataPin = 5;
+    static io: Socket;
+    static temperature: { sensor: string; value: string; };
+    static humidity: { sensor: string; value: string; };
 
     constructor(private io: Socket) {
-        this.io = io;
+        console.log(`Inciando ${DHT11.sensorName}`);
+
+        DHT11.io = io;
     };
 
-    readSensor(sensor) {
-        console.log('Leyendo datos del sensor...')
-        sensor.read();
-        // warning: the sensor can only be red every 2 seconds
-        // 1000 ms * 60 * 5 === leer cada 5 minutos
-        setTimeout(() => {
-            sensor.read();
-        }, 3000);
-    }
-
-    initSensor() {
+    static sendDhtTemp() {
         return new Promise((resolve, reject) => {
 
-            const sensor = dht(this.dataPin, this.dhtType);
 
-            this.readSensor(sensor);
+            console.log(`temperatura: ${this.temperature}°C`);
+            console.log(`humedad: ${this.humidity}%`);
 
-            sensor.on('result', data => {
-
-                const temperatura = {
-                    sensor: `dht-${this.dhtType}`,
-                    value: `${data.temperature}°C`
+            const tempHum = {
+                sensor: {
+                    name: `dht-${this.dhtType}`,
+                    dataTypes: ['temperatura', 'humedad'],
+                    temperature: this.temperature,
+                    humidity: this.humidity
                 }
+            };
 
-                const humedad = {
-                    sensor: `dht-${this.dhtType}`,
-                    value: `${data.humidity}%`
-                }
+            console.log(tempHum);
+            this.io.emit('SENSOR_MESSAGE', tempHum);
 
-                this.io.emit('SENSOR_MESSAGE', { temperatura, humedad });
-                console.log(`temperatura: ${data.temperature}°C`);
-                console.log(`humedad: ${data.humidity}%`);
+            return resolve(tempHum);
+        });
+    }
 
-                return resolve({
-                    sensor: {
-                        name: `dht-${this.dhtType}`,
-                        dataTypes: ['temperatura', 'humedad'],
-                        temperatura,
-                        humedad
-                    }
-                });
-            });
+    static initSensor() {
 
-            sensor.on('badChecksum', () => {
-                this.io.emit('SENSOR_MESSAGE', { message: 'checksum failed' });
-                console.log('checksum failed');
-                return reject({ message: 'Error: comprobar conexión del componente.' });
-            });
+        const sensor = dht(this.dataPin, this.dhtType);
+
+        console.log(`Leyendo datos del sensor ${DHT11.sensorName}...`);
+        sensor.read();
+
+        sensor.on('result', data => {
+
+            this.temperature = {
+                sensor: `dht-${this.dhtType}`,
+                value: `${data.temperature}°C`
+            }
+
+            this.humidity = {
+                sensor: `dht-${this.dhtType}`,
+                value: `${data.humidity}%`
+            }
+
+
+        });
+
+        sensor.on('badChecksum', () => {
+            this.io.emit('SENSOR_MESSAGE', { message: 'checksum failed' });
+            console.log('checksum failed');
+            return { message: 'Error: comprobar conexión del componente.' };
         });
     }
 }

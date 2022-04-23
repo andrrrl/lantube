@@ -4,5 +4,6 @@ export interface IVideo {
         title: string;
         url: string;
         img: string;
+        duration: string;
     }
 }

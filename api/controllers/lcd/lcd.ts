@@ -5,9 +5,10 @@ import { Socket } from 'net';
 export class LCD {
 
     public static messages: any[] = [];
+    public static io: Socket;
 
     constructor(private io: Socket) {
-        this.io = io;
+        LCD.io = io;
     };
 
     static lcd: Lcd;
@@ -50,7 +51,6 @@ export class LCD {
 
                     // this.io.emit('LCD_MESSAGE', lines);
 
-                    // this.lcd.close();
                     return resolve(lines);
                 });
             });
@@ -63,25 +63,34 @@ export class LCD {
     }
 
     public static queueMessage(message) {
-        console.log('Message queued:', message);
-        this.messages.push(message);
+        if (this.messages.length < 2) {
+            console.log('Message queued:', message);
+            this.messages.push(message);
+        } else {
+            console.log('Message not queued:', message);
+        }
         this.processMessages();
     }
 
     private static processMessages() {
-        if (this.messages.length === 2) {
-            console.log('Processing messages:', this.messages);
-
-            console.log('Message: 1', this.messages[0]);
+        if (this.messages.length === 1) {
+            console.log('Processing 1 message:', this.messages[0]);
             this.sendMessage(this.messages[0]);
 
-            setTimeout(() => {
-                console.log('Message: 2', this.messages[1]);
-                this.sendMessage(this.messages[1]);
-                this.messages = [];
-            }, 3000);
+        } else if (this.messages.length > 1) {
+            console.log('Processing messages:', this.messages);
 
+            if (this.messages.some(x => x.type === 'coreTemp' && x.line2 === null) && this.messages.some(x => x.type === 'roomTemp')) {
+                this.messages = [{ type: 'both', line1: this.messages[0].line1, line2: this.messages[1].line1 }];
+            } else {
+                this.sendMessage(this.messages.shift());
+            }
+            // this.sendMessage(this.messages.shift());
+
+        } else {
+            console.log('No messages to process');
         }
+        console.log('Cantidad de mensajes:', this.messages.length);
     }
 
 }

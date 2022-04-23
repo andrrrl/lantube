@@ -1,10 +1,9 @@
-import { execSync } from "child_process";
 import * as ChildProcess from 'child_process';
 import * as fs from 'fs';
 import * as ServerSchema from '../../schemas/redis/Server';
-import { Videos } from './../../controllers/redis/videos';
-import { IPlayerStats } from "../../interfaces/IPlayerStats";
-import { IVideo } from "../../interfaces/IVideo.interface";
+import { Youtube } from './youtube';
+import { IPlayerStats } from '../../interfaces/IPlayerStats';
+import { IVideo } from '../../interfaces/IVideo.interface';
 
 const
     exec = ChildProcess.exec;
@@ -19,20 +18,20 @@ export class Player {
 
     private playing: ChildProcess.ChildProcess;
 
-    formats: string = ' -f 34/18/43/35/44/22/45/37/46';
     playerStats: IPlayerStats;
 
     volumeChange: any;
-    videosCtrl: any;
+    youtubeCtrl: any;
     stopped: any;
     userTriggered = false;
 
     constructor(private io: any) {
         this.io = io;
-        this.videosCtrl = new Videos(this.io);
+        this.youtubeCtrl = new Youtube(this.io);
 
         Server.getPlayerStats().then(playerStats => {
             this.playerStats = playerStats;
+            this.playerStats.volume = 0;
         });
     };
 
@@ -46,12 +45,16 @@ export class Player {
             let status: any = (current.status === 'paused' || current.status === 'stopped') ? 'playing' : 'paused';
             console.info(`Playback ${(current.status === 'paused' || current.status === 'stopped') ? 'starting' : 'paused'}!`);
 
-            // If player is playing we just toggle play/pause
-            if (this.playing && this.playing.pid && this.playing.stdin.writable) {
-                this.playing.stdin.write(" ");
-            } else {
-                this.userTriggered = false;
-                this.play(this.playerStats);
+            if (process.env.PLAYER === 'vlc') {
+                // VLC 
+            } else if (process.env.PLAYER === 'omxplayer') {
+                // If player is playing we just toggle play/pause
+                if (this.playing && this.playing.pid && this.playing.stdin.writable) {
+                    this.playing.stdin.write(" ");
+                } else {
+                    this.userTriggered = false;
+                    this.play(this.playerStats);
+                }
             }
 
             // Update stats
@@ -72,7 +75,7 @@ export class Player {
             // Emit stats change
             this.io.emit('PLAYER_MESSAGE', stats);
 
-            resolve(true);
+            resolve(status);
         })
     }
 
@@ -83,21 +86,23 @@ export class Player {
             let currentStats = await Server.getPlayerStats();
             let currVol = currentStats.volume;
 
-            if (volume === 'down') {
-                this.volumeChange = '-';
-                currVol = currVol - 300;
 
-            } else if (volume === 'up') {
-                this.volumeChange = '+';
-                currVol = currVol + 300;
-            }
 
-            if (process.env.PLAYER !== 'omxplayer') {
-                console.info('Volume change not supported!');
-                reject('Volume change not supported!')
-            } else {
-                this.playing.stdin.write(this.volumeChange);
-                console.info('Volume: ' + this.volumeChange);
+            if (process.env.PLAYER === 'vlc') {
+                // VLC
+            } else if (process.env.PLAYER === 'omxplayer') {
+                if (volume === 'down') {
+                    this.volumeChange = '-';
+                    currVol = currVol - 300;
+
+                } else if (volume === 'up') {
+                    this.volumeChange = '+';
+                    currVol = currVol + 300;
+                }
+                if (currentStats.status === 'playing' || currentStats.status === 'paused') {
+                    this.playing.stdin.write(this.volumeChange);
+                    console.info('Volume: ' + this.volumeChange);
+                }
             }
 
             currentStats.volume = currVol;
@@ -128,7 +133,7 @@ export class Player {
 
             this.playerStats = await Server.getPlayerStats();
             let order = this.getVideoOrder(this.playerStats.videoId);
-            let prevVideo: IVideo = await this.videosCtrl.getPrev('videos', order);
+            let prevVideo: IVideo = await this.youtubeCtrl.getPrev('videos', order);
 
             this.playerStats.videoId = prevVideo.videoInfo.videoId;
             this.playerStats.videoInfo = prevVideo.videoInfo;
@@ -136,7 +141,8 @@ export class Player {
             this.playerStats.status = 'loading';
 
             console.log('prev: ', this.playerStats);
-            // console.log({ prevVideo });
+            // Emit stats change
+            this.io.emit('PLAYER_MESSAGE', this.playerStats);
 
             this.play(this.playerStats).then(result => {
                 resolve(this.playerStats);
@@ -155,12 +161,16 @@ export class Player {
 
             this.playerStats = await Server.getPlayerStats();
             let order = this.getVideoOrder(this.playerStats.videoId);
-            let nextVideo: IVideo = await this.videosCtrl.getNext('videos', order);
+            let nextVideo: IVideo = await this.youtubeCtrl.getNext('videos', order);
 
             this.playerStats.videoId = nextVideo.videoInfo.videoId;
             this.playerStats.videoInfo = nextVideo.videoInfo;
             this.playerStats.action = 'next';
             this.playerStats.status = 'loading';
+
+            console.log('next: ', this.playerStats);
+            // Emit stats change
+            this.io.emit('PLAYER_MESSAGE', this.playerStats);
 
             this.play(this.playerStats).then(() => {
                 resolve(this.playerStats);
@@ -194,7 +204,9 @@ export class Player {
 
             if (this.playing && this.playing.pid) {
                 if (this.playing.stdin.writable) {
-                    this.playing.stdin.write("q");
+                    if (process.env.PLAYER === 'omxplayer') {
+                        this.playing.stdin.write("q");
+                    }
                     if (!this.playing.killed) {
                         this.playing.kill();
                         if (this.playing.killed) {
@@ -202,7 +214,7 @@ export class Player {
                         }
                     }
                 } else {
-                    resolve(true);
+                    resolve({ playing: false });
                 }
             }
 
@@ -221,7 +233,9 @@ export class Player {
 
             if (this.playing && this.playing.pid) {
                 if (this.playing.stdin.writable) {
-                    this.playing.stdin.write("q");
+                    if (process.env.PLAYER === 'omxplayer') {
+                        this.playing.stdin.write("q");
+                    }
                     if (!this.playing.killed) {
                         this.playing.kill();
                     }
@@ -263,7 +277,7 @@ export class Player {
                 console.log('Extracting Youtube URL...');
                 let youtubeURL = await this.extracYoutubeURL(videoUrl);
 
-                console.log('Starting OMXPLAYER...');
+                console.log(`Starting ${process.env.PLAYER}...`);
                 await this.startPlayer(youtubeURL);
 
                 await this.initPlaybackSession();
@@ -344,8 +358,13 @@ export class Player {
 
     extracYoutubeURL(videoURL) {
         return new Promise((resolve, reject) => {
-            let video = exec(`${process.env.YOUTUBE_DL} --rm-cache-dir ${this.formats} -g ${videoURL}`);
-            video.stdout.once('data', (data) => {
+            
+            const formats = process.env.PLAYER_MODE === 'audio' ? process.env.AUDIO_ONLY_FORMATS : process.env.AUDIO_VIDEO_FORMATS; 
+            const ua = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.98 Mobile Safari/537.36';
+            const ref = 'https://www.youtube.com/';
+            const video = exec(`${process.env.YOUTUBE_DL} -g -f 140 ${videoURL}`);
+            // const video = exec(`${process.env.YOUTUBE_DL} --user-agent ${ua} --referer ${ref} --add-header "Host: rr2---sn-j5cax8pnpvo-o9oe.googlevideo.com" --rm-cache-dir -f ${formats} -g ${videoURL}`);
+            video.stdout.on('data', (data) => {
                 data = data.toString().replace('\n', '').replace('\n', '').replace('\n', '');
                 resolve(data);
             });
@@ -355,8 +374,15 @@ export class Player {
     startPlayer(extractedURI): Promise<ChildProcess.ChildProcess> {
         return new Promise((resolve, reject) => {
             // OMXPLAYER won't pipe anything to stdout, only to stderr, if option -I or --info is used
-            // Use "--alpha 0" for audio only mode 
-            let playerString = `${process.env.PLAYER} ${this.playerStats.audioOnly ? `--alpha 0` : `-b`} -o both --vol ${this.playerStats.volume} -I --threshold 30 --audio_fifo 30 "${extractedURI}"`;
+            // Use "--alpha 0 --win 0,0,1280,720" for audio only mode 
+            let playerString;
+
+            if (process.env.PLAYER === 'vlc') {
+                // VLC
+            } else if (process.env.PLAYER === 'omxplayer') {
+                this.playerStats.audioOnly = true;
+                playerString = `${process.env.PLAYER} ${this.playerStats.audioOnly ? `--win 0,0,0,0 --alpha 0` : `-b`} -o ${process.env.SYSTEM_AUDIO} --vol ${this.playerStats.volume} -I "${extractedURI}"`;
+            }
             console.log(playerString);
 
             this.playing = exec(playerString);
@@ -372,6 +398,23 @@ export class Player {
             });
         });
 
+    }
+
+    playFile(file) {
+        this.startPlayer(file);
+    }
+
+    togglePlaylist() {
+        return new Promise(async (resolve, reject) => {
+            this.playerStats = await Server.getPlayerStats();
+            this.playerStats.playlist = !this.playerStats.playlist;
+
+            Server.setPlayerStats(this.playerStats);
+
+            // Emit stats change
+            this.io.emit('PLAYER_MESSAGE', this.playerStats);
+            return resolve(this.playerStats);
+        });
     }
 
     // UNUSED, omxplayer won't play playlist files

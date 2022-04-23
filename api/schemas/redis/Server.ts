@@ -1,6 +1,8 @@
 import * as os from 'os';
 import { IPlayerStats } from '../../interfaces/IPlayerStats';
-let redis = require('../../connections/redis');
+import { Youtube } from '../../controllers/redis/youtube';
+const redis = require('../../connections/redis');
+
 export class Server {
 
     constructor() {
@@ -36,10 +38,16 @@ export class Server {
     // status, videoId, video_title
     public getPlayerStats(): Promise<IPlayerStats> {
         return new Promise((resolve, reject) => {
-            redis.get('playerStats', (err, stats) => {
+            redis.get('playerStats', async (err, stats) => {
                 this.playerStats = JSON.parse(stats);
                 if (this.playerStats && !this.playerStats.volume) {
                     this.playerStats.volume = this.initialVol;
+                }
+                if (this.playerStats && !this.playerStats.videoInfo) {
+                    let YoutubeCtrl = new Youtube(null);
+                    const count = await YoutubeCtrl.count('videos');
+                    console.log(count);
+                    this.playerStats.videoInfo = await YoutubeCtrl.getById('videos', `video${count}`);
                 }
                 if (this.playerStats && this.playerStats.status) {
                     resolve(this.playerStats);

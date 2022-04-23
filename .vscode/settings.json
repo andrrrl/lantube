@@ -2,5 +2,22 @@
   "python.formatting.provider": "autopep8",
   "eslint.options": {
     "module": "es2015"
-  }
+  },
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#89c666",
+    "activityBar.activeBorder": "#4570ba",
+    "activityBar.background": "#89c666",
+    "activityBar.foreground": "#15202b",
+    "activityBar.inactiveForeground": "#15202b99",
+    "activityBarBadge.background": "#4570ba",
+    "activityBarBadge.foreground": "#e7e7e7",
+    "statusBar.background": "#6db544",
+    "statusBar.foreground": "#15202b",
+    "statusBarItem.hoverBackground": "#579036",
+    "titleBar.activeBackground": "#6db544",
+    "titleBar.activeForeground": "#15202b",
+    "titleBar.inactiveBackground": "#6db54499",
+    "titleBar.inactiveForeground": "#15202b99"
+  },
+  "peacock.color": "#6db544"
 }

@@ -1,16 +1,15 @@
 import * as redis from '../../connections/redis';
 import * as express from 'express';
 import { Player } from './../../controllers/redis/player';
-import { Videos } from '../../controllers/redis/videos';
+import { Youtube } from '../../controllers/redis/youtube';
 import { Server } from '../../schemas/redis/Server';
 
 export = (io) => {
-    let router = express.Router();
-    let app = express();
+    const router = express.Router();
 
-    let PlayerCtrl = new Player(io);
-    let VideosCtrl = new Videos(io);
-    let ServerCtrl = new Server();
+    const PlayerCtrl = new Player(io);
+    const YoutubeCtrl = new Youtube(io);
+    const ServerCtrl = new Server();
 
 
     // PLAY
@@ -70,12 +69,22 @@ export = (io) => {
 
         });
 
+    // PLAY FILE
+    router.route('/api/player/playfile')
+        .post(async (req, res, next) => {
+            const filePath = req.body.path;
+            const status = await PlayerCtrl.playFile(filePath);
+            res.json({
+                result: status
+            });
+        });
+
     // PAUSE
     router.route('/api/player/pause')
         .get(async (req, res, next) => {
-            await PlayerCtrl.pause();
+            const status = await PlayerCtrl.pause();
             res.json({
-                result: 'paused'
+                result: status
             });
 
         });
@@ -120,7 +129,7 @@ export = (io) => {
 
     router.route('/api/player/pls')
         .get((req, res, next) => {
-            VideosCtrl.getAll('videos').then(videosRedis => {
+            YoutubeCtrl.getAll('videos').then(videosRedis => {
 
                 let playlist = PlayerCtrl.playlist(videosRedis);
 
@@ -141,7 +150,7 @@ export = (io) => {
     router.route('/api/player/playall')
         .get(async (req, res, next) => {
 
-            let videosRedis = await VideosCtrl.getAll('videos');
+            let videosRedis = await YoutubeCtrl.getAll('videos');
             videosRedis.sort((a, b) => a.order - b.order);
             let firstOrder = videosRedis[0];
 
@@ -176,9 +185,7 @@ export = (io) => {
 
     router.route('/api/player/playlist')
         .patch(async (req, res, next) => {
-            let stats = await ServerCtrl.getPlayerStats();
-            stats.playlist = !stats.playlist;
-            ServerCtrl.setPlayerStats(stats);
+            const stats = await PlayerCtrl.togglePlaylist();
             res.json(stats);
         });
 
@@ -196,7 +203,7 @@ export = (io) => {
     //  */
     router.route('/api/player/stats')
         .get(async (req, res, next) => {
-            let stats = await ServerCtrl.getPlayerStats();
+            const stats = await ServerCtrl.getPlayerStats();
             io.emit('PLAYER_MESSAGE', stats);
             res.json(stats);
         })
@@ -204,10 +211,10 @@ export = (io) => {
     router.route('/api/player/stats/update/:videoId')
         .put(async (req, res, next) => {
 
-            let videoId = req.params.videoId;
-            VideosCtrl.reorderAll('videos', videoId);
+            const videoId = req.params.videoId;
+            YoutubeCtrl.reorderAll('videos', videoId);
 
-            let stats = await ServerCtrl.getPlayerStats();
+            const stats = await ServerCtrl.getPlayerStats();
             res.json(stats);
         });
 

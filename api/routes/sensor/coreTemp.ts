@@ -5,13 +5,14 @@ let router = express.Router();
 
 export = (io) => {
 
-    let coreTempCtrl = new CoreTemp(io);
-
     router.route('/api/sensor/coreTemp')
 
         .get(async (req, res, next) => {
-            let coreTemp = await coreTempCtrl.sendCoreTemp();
+
+            new CoreTemp(io);
+            let coreTemp = await CoreTemp.sendCoreTemp();
             res.json(coreTemp);
+
         });
 
     return router;
