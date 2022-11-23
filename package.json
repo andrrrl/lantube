@@ -39,7 +39,7 @@
         "request-promise": "^4.2.2",
         "serve-favicon": "^2.5.0",
         "shelljs": "^0.8.5",
-        "socket.io": "^2.4.0"
+        "socket.io": "^2.5.0"
     },
     "devDependencies": {
         "@types/cli-color": "^0.3.29",
