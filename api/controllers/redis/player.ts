@@ -32,7 +32,9 @@ export class Player {
         Server.getPlayerStats().then(playerStats => {
             this.playerStats = playerStats;
             this.playerStats.volume = 0;
+            this.playerStats.audioOnly = process.env.PLAYER_MODE === 'audio' ? true : false;
         });
+
     };
 
     // Only for omxplayer for now
@@ -46,7 +48,7 @@ export class Player {
             console.info(`Playback ${(current.status === 'paused' || current.status === 'stopped') ? 'starting' : 'paused'}!`);
 
             if (process.env.PLAYER === 'vlc') {
-                // VLC 
+                // VLC
             } else if (process.env.PLAYER === 'omxplayer') {
                 // If player is playing we just toggle play/pause
                 if (this.playing && this.playing.pid && this.playing.stdin.writable) {
@@ -358,8 +360,8 @@ export class Player {
 
     extracYoutubeURL(videoURL) {
         return new Promise((resolve, reject) => {
-            
-            const formats = process.env.PLAYER_MODE === 'audio' ? process.env.AUDIO_ONLY_FORMATS : process.env.AUDIO_VIDEO_FORMATS; 
+
+            const formats = process.env.PLAYER_MODE === 'audio' ? process.env.AUDIO_ONLY_FORMATS : process.env.AUDIO_VIDEO_FORMATS;
             const ua = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.98 Mobile Safari/537.36';
             const ref = 'https://www.youtube.com/';
             const video = exec(`${process.env.YOUTUBE_DL} -g -f 140 ${videoURL}`);
@@ -374,11 +376,12 @@ export class Player {
     startPlayer(extractedURI): Promise<ChildProcess.ChildProcess> {
         return new Promise((resolve, reject) => {
             // OMXPLAYER won't pipe anything to stdout, only to stderr, if option -I or --info is used
-            // Use "--alpha 0 --win 0,0,1280,720" for audio only mode 
+            // Use "--alpha 0 --win 0,0,1280,720" for audio only mode
             let playerString;
 
             if (process.env.PLAYER === 'vlc') {
                 // VLC
+                playerString = `${process.env.PLAYER} ${this.playerStats.audioOnly ? process.env.PLAYER_MODE_AUDIO_ONLY_ARG : process.env.PLAYER_MODE_FULLSCREEN_ARG} "${extractedURI}"`;
             } else if (process.env.PLAYER === 'omxplayer') {
                 this.playerStats.audioOnly = true;
                 playerString = `${process.env.PLAYER} ${this.playerStats.audioOnly ? `--win 0,0,0,0 --alpha 0` : `-b`} -o ${process.env.SYSTEM_AUDIO} --vol ${this.playerStats.volume} -I "${extractedURI}"`;
