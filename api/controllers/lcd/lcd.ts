@@ -1,4 +1,4 @@
-import { IMessage } from './../../interfaces/IMessage.interface';
+import { Message } from '../../interfaces/Message.interface';
 import * as Lcd from 'lcd';
 import { Socket } from 'net';
 
@@ -17,7 +17,7 @@ export class LCD {
         this.lcd = new Lcd({ rs: 7, e: 8, data: [25, 24, 23, 18], cols: 16, rows: 2 });
     }
 
-    private static sendMessage(lines: IMessage) {
+    private static sendMessage(lines: Message) {
         return new Promise((resolve, reject) => {
 
             // Imprimir mensaje en la consola

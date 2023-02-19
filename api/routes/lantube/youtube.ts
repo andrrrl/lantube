@@ -1,6 +1,6 @@
 import * as express from "express";
-import { Youtube } from "../../controllers/redis/youtube";
-import { Search } from "../../controllers/redis/search";
+import { Youtube } from "../../controllers/lantube/youtube";
+import { Search } from "../../controllers/lantube/search";
 
 const router = express.Router();
 

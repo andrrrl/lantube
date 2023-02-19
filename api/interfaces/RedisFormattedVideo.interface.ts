@@ -1,4 +1,4 @@
-export interface IRedisFormattedVideo {
+export interface RedisFormattedVideo {
     videoId: string;
     videoString: string;
 }

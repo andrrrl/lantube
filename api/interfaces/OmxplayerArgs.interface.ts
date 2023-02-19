@@ -1,5 +1,5 @@
 
-export interface IOmxplayerArguments {
+export interface OmxplayerArguments {
     volume: { arg: '--vol', val: '-600' };
     output: { arg: '-o', val: 'both' };
     info: { arg: '-I', val: null };

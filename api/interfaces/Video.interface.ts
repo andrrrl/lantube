@@ -1,4 +1,4 @@
-export interface IVideo {
+export interface Video {
     videoInfo: {
         videoId: string;
         title: string;

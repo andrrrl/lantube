@@ -1,4 +1,4 @@
-export interface IYoutubeVideo {
+export interface YoutubeVideo {
     title: string;
     url: string;
     thumbnail_url: string;

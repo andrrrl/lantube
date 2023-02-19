@@ -1,11 +1,9 @@
 import * as yts from 'yt-search';
 
 export class Search {
-
     public videoList = [];
 
     async search(term) {
-
         const resultList = await yts(term);
 
         return new Promise((resolve, reject) => {
@@ -20,5 +18,4 @@ export class Search {
             return resolve(this.videoList);
         });
     }
-
 }
