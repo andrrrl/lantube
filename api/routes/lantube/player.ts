@@ -14,7 +14,8 @@ export = (io) => {
     // PLAY YT VIDEO
     router.route("/api/player/:id/play")
         .get(async (req, res, next) => {
-            const playing: PlayerStats = await PlayerCtrl.play(req);
+            const playerOptions: any = await YoutubeCtrl.getVideo(req);
+            const playing: PlayerStats = await PlayerCtrl.play(playerOptions);
             res.json({
                 result: 'playing',
                 video: playing.videoInfo

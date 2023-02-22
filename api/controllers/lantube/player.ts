@@ -249,8 +249,7 @@ export class Player {
         });
     }
 
-    async play(req): Promise<any> {
-        const playerOptions: any = await this.youtubeCtrl.getVideo(req);
+    async play(playerOptions: PlayerStats): Promise<any> {
 
         // Stop/clear any current playback before starting
         return new Promise(async (resolve, reject) => {
@@ -396,7 +395,7 @@ export class Player {
             const videoPlayer = exec(execString);
             // const videoPlayer = exec(`${process.env.YOUTUBE_DL} --user-agent ${ua} --referer ${ref} --add-header "Host: rr2---sn-j5cax8pnpvo-o9oe.googlevideo.com" --rm-cache-dir -f ${formats} -g ${videoURL}`);
 
-            videoPlayer.stdout.on("data", (data, chunk) => {
+            videoPlayer.stdout.on('data', (data, chunk) => {
                 data = data
                     .toString()
                     .replace("\n", "")
@@ -405,14 +404,14 @@ export class Player {
                 console.log({ data, chunk });
                 resolve(data);
             });
-            videoPlayer.stdout.on("error", (stoutError) => {
+            videoPlayer.stdout.on('error', (stoutError) => {
                 console.log({ stoutError });
             });
-            videoPlayer.stderr.on("error", (error) => {
+            videoPlayer.stderr.on('error', (error) => {
                 console.log({ error });
                 reject(error);
             });
-            videoPlayer.on("close", (closeResult, signal) => {
+            videoPlayer.on('close', (closeResult, signal) => {
                 console.log({ closeResult, signal });
                 reject(closeResult);
             });
