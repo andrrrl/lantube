@@ -10,13 +10,14 @@ export class MqttSensor {
     connect() {
         this.connectUrl = `mqtt://${this.host}:${this.port}`;
         this.clientId = `mqtt_${Math.random().toString(16).slice(3)}`;
-        
+
         const client = mqtt.connect(this.connectUrl, {
             clientId: this.clientId,
             clean: true,
             connectTimeout: 4000,
-            username: process.env.MQTT_USER,
+            username: this.host,
             password: process.env.MQTT_PASSWORD,
+            port: Number(this.port),
             reconnectPeriod: 1000,
         });
 
